@@ -36,49 +36,201 @@ Please follow these guidelines throughout the Bug Bounty event.
 
 All teams are expected to follow these rules strictly throughout the event.
 
-## Repository layout
+---
 
-This directory is the repository root. The application code, fixtures, tests,
-and documentation live directly under it; there is no additional project
-subdirectory to enter before running commands.
+# Ripple
 
-```text
-backend/   FastAPI application and simulation engine
-fixtures/  Mandatory simulation fixtures and examples
-tests/     Unit and API tests
-docs/      Simulation contract and integration notes
+**See how one late payment travels through your business, before it does.**
+
+Manipal Hackathon 2026 (M#26), Round 2, Microfinance track: "The Supplier-Business-Customer Loop".
+Team HitNRun: Chirantan (lead), Aman, Moksha, Nandini, John.
+
+## What it is
+
+A small manufacturer pays suppliers on their terms and is paid by customers on theirs. Every order draws on one
+shared pool of cash and one shared pool of material, so a single late payment can stall an unrelated order weeks later.
+
+Ripple keeps the owner's khata (parties, invoices, orders, stock, payments), turns it into a structured snapshot,
+and plays the business forward day by day with a **deterministic engine**. It shows the exact day cash runs short,
+the chain of events that causes it, how likely that is given each customer's real payment habits, which fix closes
+the gap and at what cost, and drafts the WhatsApp message to make the fix happen.
+
+- **Every amount and date on screen comes from the engine or the records.** The browser only formats integer paise.
+- **Risk wraps the engine; it is not a model.** Each customer's payment delay is sampled from their own history
+  (shrunk towards everyone's history) and the same deterministic engine re-runs once per sample.
+- **The engine shows how it decides.** The Decisions view replays the engine's own execution log for any day.
+- **Munim**, the assistant, answers only from tool results; a grounding check rejects any number not in them.
+
+## Live deployment and test accounts
+
+Live URL: _add after deploying (see Deployment)._
+
+| How | Credentials | Sees |
+|---|---|---|
+| "Open demo business" on the sign-in page | none | A private copy of the demo business, deleted after 24 hours |
+| Owner | `owner@ripple.demo` / `ripple-demo-2026` | Everything (shared demo business) |
+| Accountant | `accountant@ripple.demo` / `ripple-demo-2026` | Everything except team settings |
+| Supervisor | `supervisor@ripple.demo` / `ripple-demo-2026` | Orders and inventory only; the server removes every amount |
+
+The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials are needed to evaluate.
+
+## Screens
+
+| Route | Purpose |
+|---|---|
+| `/app/today` | Morning view: headline sentence, position strip, ranked actions, this week, what changed |
+| `/app/engine` | Network (suppliers left, customers right, by exposure), Flow (the event graph the engine runs, with waiting bars and the cash and stock pools), Decisions (one day of the engine's loop), Timeline, Inspector, Table, what-if scenarios with diff |
+| `/app/book` | Position, goods, runway fan chart, risk and drivers, why the dip, ways to fix, transactions ledger |
+| `/app/khata` | Customers and suppliers, party drawer, reminders, 45-day MSME clock |
+| `/app/orders` | Sales orders with forecast delivery, purchase orders, "Can I take this order?" |
+| `/app/inventory` | Raw materials (needed, free, cover, reorder point, ABC), finished goods, recipes, movements |
+| `/app/settings` | Business profile, money rules, team and access, display, language, accessibility, data, privacy, account |
+| `/setup` | Describe the business in words, review what was understood against your own quotes, approve |
+
+Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY KAVERI`, `FIX`), `M` toggles Munim.
+In the Engine: `←` `→` one day, `Shift ←` `Shift →` one week, `N` next issue, `Space` play.
+
+## Architecture
+
+```
+Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, same origin)
+                                                 ├─ records (SQLite, every row scoped by business_id)
+                                                 ├─ snapshot builder: records → BusinessSnapshot
+                                                 ├─ simulation core (deterministic contract, plus execution log)
+                                                 ├─ risk engine: samples delays, re-runs the core (worker process)
+                                                 ├─ fixes and scenarios: candidates evaluated by engine runs
+                                                 ├─ Munim: read-only tools, Groq tool calling, number grounding, templates
+                                                 └─ intake: text → facts with quotes → approval → records
 ```
 
-## Simulation engine
+Recompute pipeline: every write bumps the business's data version, which invalidates the cached run. The next read
+rebuilds the snapshot and runs the engine (about 10 ms), and a risk run is queued two seconds later in a worker process.
+Every baseline and scenario run is stored (`sim_run`) with its snapshot hash and its engine and schema versions.
 
-The `simulation-engine` branch includes a typed, deterministic business
-simulation module and FastAPI endpoints for running and comparing scenarios.
-See the [simulation contract](docs/SIMULATION_CONTRACT.md), [fixtures](docs/SIMULATION_FIXTURES.md),
-[examples](docs/SIMULATION_EXAMPLES.md), and [handoff](docs/SIMULATION_HANDOFF.md).
+| Path | What |
+|---|---|
+| `backend/app/simulation/` | Engine (contract `simulation.contract.v1`), validation, transformations, comparison |
+| `backend/app/snapshot/builder.py` | Records → snapshot, stable IDs, labels (PRD 10) |
+| `backend/app/services/runs.py` | Cached baseline, net position, runway, buffer breach |
+| `backend/app/services/risk.py` | Delay sampling, Monte Carlo, drivers (PRD 11) |
+| `backend/app/services/fixes.py` | Fix candidates and their evaluation |
+| `backend/app/services/munim.py` | Assistant tools, LLM loop, grounding check, template answers |
+| `backend/app/services/messages.py` | Fixed en/ta/hi message templates, `wa.me` links |
+| `backend/app/records/seed.py` | Mahalakshmi Fabrics persona dataset (synthetic) |
+| `frontend/src/lib/format.ts` | The only place paise become rupees |
 
-Garment-specific onboarding is documented in the
-[snapshot intake guide](docs/SNAPSHOT_INTAKE.md). It extracts reviewed business
-facts, builds the existing `BusinessSnapshot`, and leaves simulation execution
-to the deterministic engine.
+## Stack and supported environments
 
-From this repository root, run the tests with:
+- Backend: Python 3.14 (tests pass on 3.14.5), FastAPI, Pydantic v2, SQLite through the standard library `sqlite3`,
+  Groq SDK. Passwords are hashed with `hashlib.scrypt`.
+- Frontend: React 18, Vite 5, TypeScript (strict), TanStack Query, Zustand, React Flow (`@xyflow/react`), Radix
+  Dialog and Popover, cmdk, i18next, Phosphor icons, self-hosted Anek (Latin, Tamil, Devanagari) and IBM Plex Mono.
+- Browsers: latest Chrome, Edge, Firefox and Safari, on phone (Today, Khata, Book) and desktop. Voice input needs a
+  Chromium browser and is hidden elsewhere.
 
-```text
-python -m unittest discover -s tests -v
+## Run locally
+
+Backend, from this directory:
+
 ```
-
-Start the API with:
-
-```text
+python -m pip install -r requirements.txt
 uvicorn backend.app.main:app --reload
 ```
 
-To load local Groq settings from `.env` without exposing them in the repository:
+The database is created at `data/ripple.db` on first start and the shared demo business is seeded automatically.
 
-```powershell
-.\.venv\Scripts\dotenv.exe run -- `
-  .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app `
-  --host 127.0.0.1 --port 8000
+Frontend, in a second terminal:
+
+```
+cd frontend
+npm ci
+npm run dev          # http://localhost:5173, proxies /api to :8000
+npm run build        # production build into frontend/dist, served by FastAPI at /
 ```
 
-Swagger UI is then available at `http://127.0.0.1:8000/docs`.
+Vite cannot build from a folder whose path contains `#`. If your checkout path has one (for example `M# 2026`),
+clone to a path without `#` or build from a copy.
+
+## Deployment
+
+One container serves the API and the built SPA from one origin (`Dockerfile`, `railway.json`).
+
+1. Create a Railway service from this repository; it builds the `Dockerfile`.
+2. Attach a persistent volume at `/data` (the SQLite file lives there).
+3. Set `DEMO_PASSWORD` and, optionally, `GROQ_API_KEY`. Keep one replica.
+4. Health check: `GET /api/health`.
+
+Render works the same way with a persistent disk at `/data`. The Dockerfile has not yet been built on a team machine
+(Docker is not installed on the build laptop), so do one deploy well before Checkpoint 1.
+
+## Environment variables
+
+See `.env.example`. `GROQ_API_KEY` is optional: without it, set-up accepts reviewed facts only and Munim answers
+from templates, labelled as such on screen. Others: `DATABASE_URL`, `DEMO_PASSWORD`, `ALLOWED_ORIGINS`,
+`COOKIE_SECURE`, `RISK_SAMPLES`, `RISK_DRIVER_SAMPLES`, `RISK_FIX_SAMPLES`, `RISK_PROCESSES`, `MAX_SANDBOXES`,
+`RIPPLE_TODAY`.
+
+## Database
+
+SQLite, created automatically on start (schema in `backend/app/core/db.py`). Money columns are integer paise. The
+shared demo business is seeded on first start; owners can restore it from Settings > Data > Load demo data.
+
+## Tests
+
+```
+python -m unittest discover -s tests -v        # 64 backend tests: engine, intake, builder, risk, fixes, API, security
+cd frontend && npx vitest run                  # money and date formatting
+cd e2e && npm install && node smoke.mjs shots  # browser smoke against a running server (RIPPLE_URL, BROWSER_PATH)
+python -m scripts.bench_engine                 # E-5: one engine run and one risk refresh on the demo data
+```
+
+Measured on the build laptop: one engine run on the demo data (52 events, 90 days) takes about 9 ms. A full risk
+refresh (200 samples, plus 30 per customer for drivers) takes about 4 s in a worker process, and API responses stay
+under 200 ms while it runs.
+
+## Security notes (Bug Bounty)
+
+- Sessions are random tokens stored hashed on the server, sent as `HttpOnly`, `SameSite=Lax` cookies. Login errors are generic.
+- Roles are enforced by the API; supervisors' responses have every `*_paise` field removed on the server.
+- `business_id` always comes from the session. Another business's IDs return 404.
+- Writes require an `X-Ripple: 1` header (blocks cross-site form posts). Bodies are limited to 256 KB and validated
+  by Pydantic with length limits.
+- Rate limits: login 10 per minute per IP; Munim and set-up 20 per minute per user and 60 per hour per IP; demo
+  copies 6 per minute per IP.
+- CSP, `X-Frame-Options: DENY` and `nosniff` on every response; no stack traces in errors; CSV exports neutralise formulas.
+- Munim has no write tools; tool results are wrapped as data; any prepared action needs a click in the normal UI.
+- "Open demo business" gives each visitor a private copy, so one tester cannot wipe the demo for others.
+
+## Known limitations
+
+- The engine is a documented greedy daily policy, not an optimiser. "Optimal funding" stays unsupported.
+- The risk engine samples customer payment timing only; supplier-side dates are not sampled in v1.
+- The demo's payment history is synthetic. Risk numbers show the method working, not predictive accuracy.
+- Tamil and Hindi UI strings and message templates were written by the build team and need review by a fluent speaker.
+- Excel import, receipt image upload, WhatsApp and SMS notifications, and bank feeds are not built.
+- One business shape only: buy materials, produce, deliver, collect on credit.
+
+## Decisions taken during the build
+
+| PRD item | What was built | Why |
+|---|---|---|
+| Q1: where "+₹22.1L" came from | The old build computed its fix table in the browser (`frontend/src/data/fixes.ts`, a JavaScript re-simulation), not in the engine | Removed; every fix value now comes from an engine run |
+| E-1 execution log | Optional `execution_log` on `SimulationResult`, off by default. The Decisions view reads it; nothing is reconstructed | Additive and contract-compatible |
+| E-5 run time | Engine hot path made allocation-free with identical results (all original engine tests unchanged): about 9 ms per run | Risk needed it |
+| Risk drivers | A driver's share is the part of the expected shortfall that disappears when only that customer pays on terms, on the same random draws | With the first shortfall on day 34, a "30-day chance" was too coarse to rank drivers |
+| Early-payment discount, extension, invoice finance | Evaluated by the engine on a copy of the snapshot with the stated edit (discount, moved due date, fee), recorded as an assumption | The five transformations cannot change an amount or move a supplier payment |
+| Overdue receivables | Timed at the date the customer promised (if the owner recorded one), else the due date, else today | PRD 10.1 plus the owner's promise date |
+| SQLModel | Standard library `sqlite3` with a thin helper | Fewer moving parts on Python 3.14 |
+| Flow layout | Deterministic lane and row packing on the server instead of ELK | Positions are fixed by data, so no general layout engine is needed |
+| Charts | Hand-drawn SVG instead of visx | Full control of marks, one dependency fewer |
+
+## AI tools disclosed
+
+- In the product: Groq-hosted LLMs for intake extraction and for Munim (tool calling). They never compute money or dates.
+- In development: the team used AI coding assistants (including Claude Code) to write and review code and documents.
+
+## Third-party resources and synthetic data
+
+Libraries are listed in `requirements.txt` and `frontend/package.json`. Fonts: Anek (Ek Type, OFL) and IBM Plex Mono
+(OFL), self-hosted. Mahalakshmi Fabrics, its parties, phone numbers, GSTINs, Udyam numbers and payment history are
+fictional.
