@@ -42,6 +42,5 @@ Thumbs.db
 !.vscode/extensions.json
 
 # Agents
-AGENTS.md
 # Ripple runtime data
 backend/data/

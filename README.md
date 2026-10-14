@@ -56,6 +56,9 @@ docs/               simulation contract, handoff notes, optional UI patch
 
 ### How it fits together
 
+Garment-specific onboarding is documented in the [snapshot intake guide](docs/SNAPSHOT_INTAKE.md). It extracts reviewed business facts, builds the existing `BusinessSnapshot`, and leaves simulation execution to the deterministic engine.
+
+
 ```text
 React UI ── src/services/*.ts ──HTTP──> /api/*  (FastAPI)
                                            │
@@ -110,6 +113,7 @@ python -m unittest discover -s tests -v
 
 ### Environment variables
 
+<<<<<<< HEAD
 See [`.env.example`](.env.example). Only `GOOGLE_API_KEY` matters for the demo;
 without it the assistant answers from built-in replies and everything else works.
 
@@ -176,3 +180,18 @@ Previously disclosed limitations are out of scope for Bug Bounty reports.
    - 2,000 workspaces, with the least recently used evicted first.
 8. **Offline fallback.** If the backend can't be reached, the frontend falls back to its built-in sample data and logs a `[ripple]` warning in the browser console.
 9. **Storage.** SQLite with a single process. Run one uvicorn worker.
+=======
+```text
+uvicorn backend.app.main:app --reload
+```
+
+To load local Groq settings from `.env` without exposing them in the repository:
+
+```powershell
+.\.venv\Scripts\dotenv.exe run -- `
+  .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app `
+  --host 127.0.0.1 --port 8000
+```
+
+Swagger UI is then available at `http://127.0.0.1:8000/docs`.
+>>>>>>> a8c4b9e7cfc0d12b3863e377e88091d0a554a54e

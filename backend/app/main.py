@@ -13,6 +13,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .api.config import FRONTEND_DIST
 from .api.routes import router as api_router
+from .intake.builder import SnapshotBuildError, build_snapshot
+from .intake.drafts import DraftStore
+from .intake.extractor import ExtractionError, GroqExtractor
+from .intake.schemas import ApprovalRequest, DraftCorrection, DraftResponse, IntakeRequest
 from .simulation.comparison import compare_scenarios
 from .simulation.engine import simulate
 from .simulation.schemas import ComparisonRequest, SimulationRequest
@@ -20,12 +24,14 @@ from .simulation.validation import SimulationValidationError
 
 
 app = FastAPI(title="Supplier-Business-Customer Loop API")
+draft_store = DraftStore()
+extractor = GroqExtractor()
 
 _cors = os.getenv("RIPPLE_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _cors.split(",") if o.strip()],
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "X-Workspace-Id"],
 )
 
@@ -52,6 +58,19 @@ async def request_validation_error_handler(_: Request, exc: RequestValidationErr
 @app.exception_handler(ValidationError)
 async def pydantic_validation_error_handler(_: Request, exc: ValidationError) -> JSONResponse:
     return JSONResponse(status_code=422, content={"error": {"code": "VALIDATION_ERROR", "details": jsonable_encoder(exc.errors())}})
+
+
+@app.exception_handler(ExtractionError)
+async def extraction_error_handler(_: Request, exc: ExtractionError) -> JSONResponse:
+    return JSONResponse(
+        status_code=502 if exc.status is None else exc.status,
+        content={"error": {"code": exc.code, "details": {"message": str(exc)}}},
+    )
+
+
+@app.exception_handler(SnapshotBuildError)
+async def snapshot_build_error_handler(_: Request, exc: SnapshotBuildError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"error": {"code": "SNAPSHOT_NOT_READY", "details": exc.issues}})
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -91,11 +110,47 @@ async def compare_simulation(request: ComparisonRequest):
     return compare_scenarios(request.snapshot, request.scenario, request.policy)
 
 
+@app.post("/snapshot/draft", response_model=DraftResponse)
+def create_snapshot_draft(request: IntakeRequest):
+    facts = request.reviewed_facts or extractor.extract(request.source_text)
+    return draft_store.create(request, facts).response()
+
+
+@app.patch("/snapshot/draft/{draft_id}", response_model=DraftResponse)
+def update_snapshot_draft(draft_id: str, correction: DraftCorrection):
+    try:
+        return draft_store.update(draft_id, correction.facts).response()
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail={"code": "UNKNOWN_DRAFT"}) from exc
+
+
+@app.post("/snapshot/approve")
+def approve_snapshot(request: ApprovalRequest):
+    if request.approval != "APPROVE":
+        raise HTTPException(status_code=422, detail={"code": "EXPLICIT_APPROVAL_REQUIRED"})
+    try:
+        draft = draft_store.get(request.draft_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail={"code": "UNKNOWN_DRAFT"}) from exc
+    if request.draft_version != draft.version:
+        raise HTTPException(status_code=409, detail={"code": "STALE_DRAFT_VERSION", "current_version": draft.version})
+    response = draft.response()
+    if response.unresolved_questions or response.validation_issues or response.draft_snapshot is None:
+        raise HTTPException(status_code=422, detail={
+            "code": "DRAFT_NOT_READY",
+            "unresolved_questions": response.unresolved_questions,
+            "validation_issues": response.validation_issues,
+        })
+    snapshot = build_snapshot(draft.facts, draft.metadata())
+    draft.approved = True
+    return {"schema_version": snapshot.schema_version, "draft_id": draft.draft_id, "draft_version": draft.version, "snapshot": snapshot}
+
+
 app.include_router(api_router)
 
 
 # ── serve the built React app (frontend/dist) from the same origin ────────
-_RESERVED = ("api/", "simulation/", "docs", "redoc", "openapi.json", "health")
+_RESERVED = ("api/", "simulation/", "snapshot/", "docs", "redoc", "openapi.json", "health")
 
 
 @app.get("/{full_path:path}", include_in_schema=False)
