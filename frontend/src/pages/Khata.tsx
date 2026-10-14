@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowDownLeft, ArrowUpRight, Download, FileUp, Plus, Search, TrendingUp } from 'lucide-react'
 import { PartyCard } from '../components/PartyCard'
+import { Modal } from '../components/Modal'
 import { PartyFormModal } from '../components/PartyFormModal'
 import { UploadModal } from '../components/UploadModal'
 import { SampleBadge } from '../components/SampleBadge'
@@ -20,9 +21,9 @@ const sorters: Record<SortKey, (a: Party, b: Party) => number> = {
   total: (a, b) => b.totalAmount - a.totalAmount,
 }
 
-function Column({ kind, parties }: { kind: PartyKind; parties: Party[] }) {
+function Column({ kind, parties, onDelete, initialQuery = '' }: { kind: PartyKind; parties: Party[]; onDelete: (party: Party) => void; initialQuery?: string }) {
   const isCustomer = kind === 'customer'
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery)
   const [sort, setSort] = useState<SortKey>('owed')
   const id = `col-${kind}`
 
@@ -49,7 +50,7 @@ function Column({ kind, parties }: { kind: PartyKind; parties: Party[] }) {
               Search {isCustomer ? 'customers' : 'suppliers'}
             </label>
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-            <input id={`${id}-search`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or product" className="field py-2 pl-9" />
+            <input id={`${id}-search`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or product" className="field py-2 !pl-10" />
           </div>
           <div>
             <label htmlFor={`${id}-sort`} className="sr-only">
@@ -72,7 +73,7 @@ function Column({ kind, parties }: { kind: PartyKind; parties: Party[] }) {
         ) : (
           <ul className="space-y-3">
             {shown.map((p) => (
-              <PartyCard key={p.id} party={p} />
+              <PartyCard key={p.id} party={p} onDelete={onDelete} />
             ))}
           </ul>
         )}
@@ -142,10 +143,12 @@ function Tally({ parties }: { parties: Party[] }) {
 }
 
 export default function Khata() {
-  const { parties, partiesLoading } = useApp()
+  const { parties, partiesLoading, deleteParty, pushToast } = useApp()
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [modal, setModal] = useState<'customer' | 'supplier' | 'upload' | null>(null)
+  const [partyToDelete, setPartyToDelete] = useState<Party | null>(null)
 
   // Open a modal when another page (like the assistant) asks for it.
   useEffect(() => {
@@ -158,6 +161,20 @@ export default function Khata() {
 
   const customers = parties.filter((p) => p.kind === 'customer')
   const suppliers = parties.filter((p) => p.kind === 'supplier')
+  const selectedParty = searchParams.get('party') ?? ''
+  const selectedPartyId = searchParams.get('partyId')
+
+  const handleDelete = (party: Party) => {
+    setPartyToDelete(party)
+  }
+
+  const confirmDelete = async () => {
+    if (!partyToDelete) return
+    const party = partyToDelete
+    setPartyToDelete(null)
+    await deleteParty(party.id)
+    pushToast(`${party.name} removed from the khata.`)
+  }
 
   const downloadTemplate = async () => {
     const csv = await exportPartiesCsv(parties)
@@ -203,8 +220,18 @@ export default function Khata() {
         <p className="py-16 text-center text-muted">Loading your khata…</p>
       ) : (
         <div className="grid items-start gap-6 lg:grid-cols-3">
-          <Column kind="customer" parties={customers} />
-          <Column kind="supplier" parties={suppliers} />
+          <Column
+            kind="customer"
+            parties={customers}
+            onDelete={handleDelete}
+            initialQuery={selectedParty || customers.find((party) => party.id === selectedPartyId)?.name || ''}
+          />
+          <Column
+            kind="supplier"
+            parties={suppliers}
+            onDelete={handleDelete}
+            initialQuery={selectedParty || suppliers.find((party) => party.id === selectedPartyId)?.name || ''}
+          />
           <Tally parties={parties} />
         </div>
       )}
@@ -212,6 +239,22 @@ export default function Khata() {
       <PartyFormModal kind="customer" open={modal === 'customer'} onClose={() => setModal(null)} />
       <PartyFormModal kind="supplier" open={modal === 'supplier'} onClose={() => setModal(null)} />
       <UploadModal open={modal === 'upload'} onClose={() => setModal(null)} />
+      <Modal
+        open={partyToDelete !== null}
+        onClose={() => setPartyToDelete(null)}
+        title={`Delete ${partyToDelete?.name ?? 'party'}?`}
+        description="This removes the party from your khata and tally."
+        maxWidth="max-w-md"
+      >
+        <div className="flex justify-end gap-2">
+          <button type="button" className="btn btn-ghost" onClick={() => setPartyToDelete(null)}>
+            Cancel
+          </button>
+          <button type="button" className="btn bg-loss text-white hover:opacity-90" onClick={confirmDelete}>
+            Delete
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -32,6 +32,11 @@ export function shortDate(d: Date): string {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
+export function shortISODate(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  return new Date(year, (month ?? 1) - 1, day ?? 1).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
 export function dateFromDay(day: number): Date {
   return addDays(startOfToday(), day)
 }

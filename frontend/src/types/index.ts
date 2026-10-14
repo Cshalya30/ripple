@@ -13,9 +13,9 @@ export interface Party {
   totalAmount: number
   paidAmount: number
   owedAmount: number
-  /** ISO date (yyyy-mm-dd). Captured by forms, never displayed on the Khata page. */
+  /** ISO date (yyyy-mm-dd). */
   transactionDate: string
-  /** ISO date (yyyy-mm-dd). Captured by forms, never displayed on the Khata page. */
+  /** ISO date (yyyy-mm-dd). */
   dueDate: string
   /** Marks parties that drive the projected shortfall. */
   causesShortfall?: boolean

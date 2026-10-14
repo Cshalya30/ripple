@@ -8,7 +8,7 @@ import { formatINR } from '../lib/format'
 
 type Step = 'drop' | 'map'
 
-const previewRows = sampleRows.slice(0, 5).map((r) => ({
+const samplePreviewRows = sampleRows.slice(0, 5).map((r) => ({
   'Party name': r.party,
   Type: r.type,
   Phone: r.phone,
@@ -20,6 +20,46 @@ const previewRows = sampleRows.slice(0, 5).map((r) => ({
   'Due date': isoFromOffset(r.dueIn),
 }))
 
+type PreviewRow = Record<(typeof FILE_COLUMNS)[number], string>
+
+function parseCsv(text: string): { rows: PreviewRow[]; count: number } {
+  const rows: string[][] = []
+  let row: string[] = []
+  let cell = ''
+  let quoted = false
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i]
+    if (char === '"') {
+      if (quoted && text[i + 1] === '"') {
+        cell += '"'
+        i += 1
+      } else {
+        quoted = !quoted
+      }
+    } else if (char === ',' && !quoted) {
+      row.push(cell)
+      cell = ''
+    } else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && text[i + 1] === '\n') i += 1
+      row.push(cell)
+      if (row.some((value) => value.trim())) rows.push(row)
+      row = []
+      cell = ''
+    } else {
+      cell += char
+    }
+  }
+  row.push(cell)
+  if (row.some((value) => value.trim())) rows.push(row)
+
+  const headers = rows.shift()?.map((header) => header.replace(/^\ufeff/, '').trim()) ?? []
+  return {
+    rows: rows.slice(0, 5).map((values) => Object.fromEntries(FILE_COLUMNS.map((column) => [column, values[headers.indexOf(column)] ?? ''])) as PreviewRow),
+    count: rows.length,
+  }
+}
+
 export function UploadModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { importParties, pushToast } = useApp()
   const [step, setStep] = useState<Step>('drop')
@@ -28,6 +68,8 @@ export function UploadModal({ open, onClose }: { open: boolean; onClose: () => v
   const [error, setError] = useState('')
   const [mapping, setMapping] = useState<Record<string, string>>(DEFAULT_MAPPING)
   const [importing, setImporting] = useState(false)
+  const [previewRows, setPreviewRows] = useState<PreviewRow[]>(samplePreviewRows)
+  const [rowCount, setRowCount] = useState(sampleRows.length)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -38,10 +80,12 @@ export function UploadModal({ open, onClose }: { open: boolean; onClose: () => v
       setDragging(false)
       setMapping(DEFAULT_MAPPING)
       setImporting(false)
+      setPreviewRows(samplePreviewRows)
+      setRowCount(sampleRows.length)
     }
   }, [open])
 
-  const accept = (file: File | undefined) => {
+  const accept = async (file: File | undefined) => {
     if (!file) return
     if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
       setError(`"${file.name}" is not supported. Upload an .xlsx or .csv file.`)
@@ -49,6 +93,18 @@ export function UploadModal({ open, onClose }: { open: boolean; onClose: () => v
     }
     setError('')
     setFileName(file.name)
+    if (file.size > 0 && /\.csv$/i.test(file.name)) {
+      const parsed = parseCsv(await file.text())
+      if (parsed.count === 0) {
+        setError(`"${file.name}" does not contain any data rows.`)
+        return
+      }
+      setPreviewRows(parsed.rows)
+      setRowCount(parsed.count)
+    } else {
+      setPreviewRows(samplePreviewRows)
+      setRowCount(sampleRows.length)
+    }
     setStep('map')
   }
 
@@ -61,9 +117,9 @@ export function UploadModal({ open, onClose }: { open: boolean; onClose: () => v
 
   const doImport = async () => {
     setImporting(true)
-    const n = await importParties()
-    const customers = sampleRows.filter((r) => r.type === 'Customer').length
-    pushToast(`Imported ${n} rows: ${customers} customers and ${n - customers} suppliers`)
+    const added = await importParties()
+    const customers = added.filter((party) => party.kind === 'customer').length
+    pushToast(`Imported ${added.length} rows: ${customers} customers and ${added.length - customers} suppliers`)
     onClose()
   }
 
@@ -112,7 +168,7 @@ export function UploadModal({ open, onClose }: { open: boolean; onClose: () => v
             <FileSpreadsheet size={20} className="text-gain" aria-hidden="true" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{fileName}</p>
-              <p className="text-xs text-muted">{sampleRows.length} rows found. Showing the first 5.</p>
+              <p className="text-xs text-muted">{rowCount} rows found. Showing the first {Math.min(rowCount, 5)}.</p>
             </div>
             <button type="button" className="btn btn-ghost px-3 py-1.5" onClick={() => setStep('drop')}>
               <ArrowLeft size={14} aria-hidden="true" />
@@ -176,7 +232,7 @@ export function UploadModal({ open, onClose }: { open: boolean; onClose: () => v
               Cancel
             </button>
             <button type="button" className="btn btn-primary" disabled={missing.length > 0 || importing} onClick={doImport}>
-              {importing ? 'Importing…' : `Import ${sampleRows.length} rows`}
+              {importing ? 'Importing…' : `Import ${rowCount} rows`}
             </button>
           </div>
         </div>

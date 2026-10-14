@@ -1,9 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { AlertTriangle, ArrowDownLeft, ArrowUpRight, BookOpen, CalendarClock, MessageCircle, Users, Wallet, Workflow } from 'lucide-react'
 import { EngineDiagram } from '../components/EngineDiagram'
-import { PartyDrawer } from '../components/PartyDrawer'
 import { SampleBadge } from '../components/SampleBadge'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { useApp } from '../context/AppContext'
@@ -12,7 +11,6 @@ import { getForecast } from '../services/forecastService'
 import { BUSINESS } from '../data/parties'
 import { formatINR } from '../lib/format'
 import { urgencyMeta } from '../lib/urgency'
-import type { Party } from '../types'
 
 function Ripples() {
   return (
@@ -40,9 +38,8 @@ export default function Home() {
   const { parties, partiesLoading, businessName } = useApp()
   const navigate = useNavigate()
   const { data: forecast } = useService(getForecast)
-  const [selected, setSelected] = useState<Party | null>(null)
   const engineRef = useRef<HTMLElement>(null)
-  const onSelect = useCallback((p: Party) => setSelected(p), [])
+  const onSelect = (party: { id: string }) => navigate(`/khata?partyId=${encodeURIComponent(party.id)}`)
 
   const totals = useMemo(() => {
     const receive = parties.filter((p) => p.kind === 'customer').reduce((s, p) => s + p.owedAmount, 0)
@@ -197,7 +194,6 @@ export default function Home() {
         </ol>
       </section>
 
-      <PartyDrawer party={selected} onClose={() => setSelected(null)} />
     </div>
   )
 }

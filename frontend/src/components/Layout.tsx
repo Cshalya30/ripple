@@ -79,7 +79,7 @@ export default function Layout() {
               Search customers, suppliers and payments
             </label>
             <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-            <input id="global-search" type="search" placeholder="Search parties, payments" className="field w-64 py-2 pl-9" />
+            <input id="global-search" type="search" placeholder="Search parties, payments" className="field w-64 py-2 !pl-10" />
           </div>
           <NotificationsMenu />
           <div className="flex items-center gap-2.5 rounded-xl border border-line bg-surface py-1.5 pl-1.5 pr-3">

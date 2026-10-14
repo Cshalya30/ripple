@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   BaseEdge,
   Controls,
@@ -16,7 +16,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useReducedMotion } from 'framer-motion'
-import { Factory, Store } from 'lucide-react'
+import { Expand, Factory, Minimize2, Store } from 'lucide-react'
 import type { Party } from '../types'
 import { daysFromToday } from '../lib/dates'
 import { formatINR } from '../lib/format'
@@ -191,11 +191,15 @@ export function EngineDiagram({ parties, cash, businessName, onSelect }: Props) 
   const palette = usePalette()
   const reduceMotion = !!useReducedMotion()
   const [hovered, setHovered] = useState<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const instanceRef = useRef<ReactFlowInstance | null>(null)
 
   const { nodes, edges, meCenter } = useMemo(() => {
-    const byDue = (a: Party, b: Party) => a.dueDate.localeCompare(b.dueDate)
-    const suppliers = parties.filter((p) => p.kind === 'supplier').sort(byDue)
-    const customers = parties.filter((p) => p.kind === 'customer').sort(byDue)
+    const urgencyRank = { risk: 0, soon: 1, ok: 2 } as const
+    const byUrgencyThenDue = (a: Party, b: Party) => urgencyRank[urgencyOf(a)] - urgencyRank[urgencyOf(b)] || a.dueDate.localeCompare(b.dueDate)
+    const suppliers = parties.filter((p) => p.kind === 'supplier').sort(byUrgencyThenDue)
+    const customers = parties.filter((p) => p.kind === 'customer').sort(byUrgencyThenDue)
     const rows = Math.max(suppliers.length, customers.length, 1)
     const colHeight = rows * PITCH - (PITCH - NODE_H)
     const offsetFor = (count: number) => ((rows - count) * PITCH) / 2
@@ -274,12 +278,60 @@ export function EngineDiagram({ parties, cash, businessName, onSelect }: Props) 
     return { nodes: ns, edges: es, meCenter: { x: ME_X + ME_W / 2, y: meY + ME_H / 2 } }
   }, [parties, cash, businessName, hovered, onSelect, palette, reduceMotion])
 
-  const onInit = (instance: ReactFlowInstance) => {
-    if (window.innerWidth < 640) instance.setCenter(meCenter.x, meCenter.y, { zoom: 0.55, duration: 0 })
+  const refit = useCallback(() => {
+    requestAnimationFrame(() => {
+      const instance = instanceRef.current
+      if (!instance) return
+      instance.fitView({ padding: 0.1, duration: 0 })
+      if (window.innerWidth < 640) instance.setCenter(meCenter.x, meCenter.y, { zoom: 0.55, duration: 0 })
+    })
+  }, [meCenter])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const observer = new ResizeObserver(refit)
+    observer.observe(container)
+    window.addEventListener('resize', refit)
+    const onFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement === container)
+      refit()
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', refit)
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
+    }
+  }, [refit])
+
+  const toggleFullscreen = async () => {
+    const container = containerRef.current
+    if (!container) return
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else await container.requestFullscreen()
+    } catch (error) {
+      console.error('[ripple] Could not change money-flow fullscreen state.', error)
+    }
   }
 
   return (
-    <div className="h-[560px] w-full sm:h-[680px]" role="group" aria-label="Money flow diagram. Suppliers on the left, your business in the centre, customers on the right.">
+    <div
+      ref={containerRef}
+      className={`relative w-full bg-surface ${isFullscreen ? 'h-screen' : 'h-[560px] sm:h-[680px]'}`}
+      role="group"
+      aria-label="Money flow diagram. Suppliers on the left, your business in the centre, customers on the right."
+    >
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        className="absolute right-3 top-3 z-10 rounded-lg border border-line bg-surface/90 p-2 text-muted shadow-soft hover:bg-sunken hover:text-ink"
+        aria-label={isFullscreen ? 'Exit fullscreen' : 'View money flow fullscreen'}
+        title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+      >
+        {isFullscreen ? <Minimize2 size={16} aria-hidden="true" /> : <Expand size={16} aria-hidden="true" />}
+      </button>
       <ReactFlow
         key={parties.length}
         nodes={nodes}
@@ -288,7 +340,10 @@ export function EngineDiagram({ parties, cash, businessName, onSelect }: Props) 
         edgeTypes={edgeTypes}
         fitView
         fitViewOptions={{ padding: 0.1 }}
-        onInit={onInit}
+        onInit={(instance) => {
+          instanceRef.current = instance
+          refit()
+        }}
         minZoom={0.25}
         maxZoom={1.6}
         nodesDraggable={false}

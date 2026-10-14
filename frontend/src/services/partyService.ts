@@ -71,6 +71,14 @@ export async function createParty(input: NewParty): Promise<Party> {
   }
 }
 
+export async function deleteParty(partyId: string): Promise<void> {
+  try {
+    await api<void>(`/api/parties/${encodeURIComponent(partyId)}`, { method: 'DELETE' })
+  } catch (err) {
+    warnFallback('deleteParty', err)
+  }
+}
+
 function sampleAsParties(): Party[] {
   return sampleRows.map((r): Party => {
     const kind: Party['kind'] = r.type === 'Customer' ? 'customer' : 'supplier'

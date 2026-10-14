@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Party } from '../types'
-import { createParty, importSampleFile, listParties, type NewParty } from '../services/partyService'
+import { createParty, deleteParty as deletePartyRequest, importSampleFile, listParties, type NewParty } from '../services/partyService'
 import { BUSINESS_DEFAULT } from '../lib/brand'
 
 type Theme = 'light' | 'dark'
@@ -17,7 +17,8 @@ interface AppState {
   parties: Party[]
   partiesLoading: boolean
   addParty: (input: NewParty) => Promise<Party>
-  importParties: () => Promise<number>
+  deleteParty: (partyId: string) => Promise<void>
+  importParties: () => Promise<Party[]>
   businessName: string
   setBusinessName: (name: string) => void
   toasts: Toast[]
@@ -78,10 +79,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return party
   }, [])
 
+  const deleteParty = useCallback(async (partyId: string) => {
+    await deletePartyRequest(partyId)
+    setParties((p) => p.filter((party) => party.id !== partyId))
+  }, [])
+
   const importParties = useCallback(async () => {
     const added = await importSampleFile()
     setParties((p) => [...added, ...p])
-    return added.length
+    return added
   }, [])
 
   const value = useMemo<AppState>(
@@ -91,6 +97,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       parties,
       partiesLoading,
       addParty,
+      deleteParty,
       importParties,
       businessName,
       setBusinessName,
@@ -98,7 +105,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pushToast,
       dismissToast,
     }),
-    [theme, parties, partiesLoading, addParty, importParties, businessName, toasts, pushToast, dismissToast],
+    [theme, parties, partiesLoading, addParty, deleteParty, importParties, businessName, toasts, pushToast, dismissToast],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
