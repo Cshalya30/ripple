@@ -191,7 +191,12 @@ def tool_get_risk(ctx: Context, **_: Any) -> dict[str, Any]:
     key = f"{ctx.run.built.snapshot_hash}:baseline"
     result = risk_service.jobs.get(key)
     if result is None:
-        return {"status": "computing" if risk_service.jobs.status(key) == "COMPUTING" else "unavailable"}
+        status = risk_service.jobs.status(key)
+        if status == "MISSING":
+            run, buffer = ctx.run, ctx.run.derived["summary"]["buffer_paise"]
+            risk_service.jobs.submit(key, lambda: risk_service.compute(run.business_id, run.built, buffer))
+            status = "COMPUTING"
+        return {"status": "being calculated; ask again in a few seconds" if status == "COMPUTING" else "unavailable"}
     if result["status"] != "READY":
         return {"status": "not enough payment history", "payments_used": result["payments_used"]}
     return {
@@ -494,9 +499,9 @@ def fallback(ctx: Context, message: str, reason: str) -> dict[str, Any]:
     lang = ctx.lang if ctx.lang in ("en", "ta", "hi") else "en"
     tool_log: list[dict[str, Any]] = []
 
-    def use(name: str, **args: Any) -> dict[str, Any]:
-        result = call_tool(ctx, name, args)
-        tool_log.append({"tool": name, "args": args, "result": result})
+    def use(tool: str, **args: Any) -> dict[str, Any]:
+        result = call_tool(ctx, tool, args)
+        tool_log.append({"tool": tool, "args": args, "result": result})
         return result
 
     reply = None
@@ -529,6 +534,8 @@ def fallback(ctx: Context, message: str, reason: str) -> dict[str, Any]:
             drivers = ", ".join(f"{d['customer']} {d['share']}" for d in r["biggest_drivers"])
             reply = (f"Chance of a shortfall: " + ", ".join(f"{k} {v}" for k, v in r["chance_of_shortfall"].items())
                      + f". Based on {r['payments_used']} past payments, {r['samples']} simulated futures. Biggest drivers: {drivers}.")
+        elif r["status"] == "not enough payment history":
+            reply = f"Not enough payment history to estimate risk ({r['payments_used']} payments). The plan is shown without percentages."
         else:
             reply = f"Risk is {r['status']}."
     elif party and ctx.role != "SUPERVISOR":

@@ -1347,13 +1347,25 @@ def setup_approve(body: SetupApproveBody, principal: Principal = Depends(OWNER))
 
 # ---------------------------------------------------------------- pure engine endpoints
 
+# Event-days per request on the open engine endpoints. The demo is about 5,000; the contract maximum
+# (500 events x 730 days) would let one caller tie up the server for many seconds.
+MAX_EVENT_DAYS = 60_000
+
+
+def _check_size(snapshot) -> None:
+    if len(snapshot.events) * snapshot.horizon_days > MAX_EVENT_DAYS:
+        raise HTTPException(status_code=422, detail={"code": "SNAPSHOT_TOO_LARGE", "max_event_days": MAX_EVENT_DAYS})
+
+
 @router.post("/simulation/run")
 def simulation_run(request_body: SimulationRequest, principal: Principal = Depends(FINANCE)):
-    limiter.check(f"sim:{principal.user_id}", 60, 60)
+    limiter.check(f"sim:{principal.user_id}", 30, 60)
+    _check_size(request_body.snapshot)
     return simulate(request_body.snapshot, request_body.scenario, request_body.policy, request_body.include_execution_log)
 
 
 @router.post("/simulation/compare")
 def simulation_compare(request_body: ComparisonRequest, principal: Principal = Depends(FINANCE)):
-    limiter.check(f"sim:{principal.user_id}", 60, 60)
+    limiter.check(f"sim:{principal.user_id}", 30, 60)
+    _check_size(request_body.snapshot)
     return compare_scenarios(request_body.snapshot, request_body.scenario, request_body.policy)
