@@ -1,0 +1,1241 @@
+{
+  "schema_version": "simulation.contract.v1",
+  "engine_version": "simulation-engine.v1.0.0",
+  "scenario_id": "fixture-b-delayed-old-receipt",
+  "scheduling_policy": {
+    "name": "GREEDY_DAILY",
+    "description": "Eligible resource-adding events execute first. Consuming events are then tried greedily by order priority, event priority, original due date, and stable event ID; infeasible events are skipped without implicit reservation."
+  },
+  "assumptions": [
+    "Integer paise and integer inventory quantities are used throughout.",
+    "Lower priority number means higher scheduling priority.",
+    "Stock is allocated only when production starts; advance reservation is outside scope.",
+    "The daily scheduler is greedy and does not claim global optimisation.",
+    "Production material, cost, and duration are authoritative on the order record.",
+    "Credit interest uses simple daily interest, 365-day denominator, drawdown day excluded, repayment day included, cumulative interest rounded up to paise.",
+    "Old customer receipt is delayed by agreement or collection reality."
+  ],
+  "daily_balances": [
+    {
+      "day": 0,
+      "date": "2026-01-01",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 1,
+      "date": "2026-01-02",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 2,
+      "date": "2026-01-03",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 3,
+      "date": "2026-01-04",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 4,
+      "date": "2026-01-05",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 5,
+      "date": "2026-01-06",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 6,
+      "date": "2026-01-07",
+      "cash_paise": 2000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 7
+    },
+    {
+      "day": 7,
+      "date": "2026-01-08",
+      "cash_paise": 1000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 5
+    },
+    {
+      "day": 8,
+      "date": "2026-01-09",
+      "cash_paise": 0,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 3
+    },
+    {
+      "day": 9,
+      "date": "2026-01-10",
+      "cash_paise": 0,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 3
+    },
+    {
+      "day": 10,
+      "date": "2026-01-11",
+      "cash_paise": 0,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 1
+    },
+    {
+      "day": 11,
+      "date": "2026-01-12",
+      "cash_paise": 0,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 1
+    },
+    {
+      "day": 12,
+      "date": "2026-01-13",
+      "cash_paise": 0,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 1
+    },
+    {
+      "day": 13,
+      "date": "2026-01-14",
+      "cash_paise": 0,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 1
+    },
+    {
+      "day": 14,
+      "date": "2026-01-15",
+      "cash_paise": 6000000,
+      "inventory": [],
+      "outstanding_debt_paise": 0,
+      "pending_event_count": 0
+    }
+  ],
+  "event_results": [
+    {
+      "id": "delivery",
+      "type": "DELIVERY",
+      "order_id": "order-new",
+      "original_due_date": "2026-01-07",
+      "actual_execution_date": "2026-01-11",
+      "status": "EXECUTED",
+      "lateness_days": 4,
+      "blocking_history": [
+        {
+          "day": 0,
+          "date": "2026-01-01",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 1,
+          "date": "2026-01-02",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "date": "2026-01-03",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 7,
+          "date": "2026-01-08",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 8,
+          "date": "2026-01-09",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 9,
+          "date": "2026-01-10",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": [
+        "production-complete"
+      ]
+    },
+    {
+      "id": "material-arrival",
+      "type": "INVENTORY_ARRIVAL",
+      "order_id": null,
+      "original_due_date": null,
+      "actual_execution_date": "2026-01-09",
+      "status": "EXECUTED",
+      "lateness_days": null,
+      "blocking_history": [
+        {
+          "day": 0,
+          "date": "2026-01-01",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 1,
+          "date": "2026-01-02",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "date": "2026-01-03",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "supplier-payment"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 7,
+          "date": "2026-01-08",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-09"
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": [
+        "supplier-payment"
+      ]
+    },
+    {
+      "id": "new-customer-receipt",
+      "type": "CASH_RECEIPT",
+      "order_id": "order-new",
+      "original_due_date": null,
+      "actual_execution_date": "2026-01-15",
+      "status": "EXECUTED",
+      "lateness_days": null,
+      "blocking_history": [
+        {
+          "day": 0,
+          "date": "2026-01-01",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 1,
+          "date": "2026-01-02",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "date": "2026-01-03",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 7,
+          "date": "2026-01-08",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 8,
+          "date": "2026-01-09",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 9,
+          "date": "2026-01-10",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "delivery"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 10,
+          "date": "2026-01-11",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-15"
+              }
+            }
+          ]
+        },
+        {
+          "day": 11,
+          "date": "2026-01-12",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-15"
+              }
+            }
+          ]
+        },
+        {
+          "day": 12,
+          "date": "2026-01-13",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-15"
+              }
+            }
+          ]
+        },
+        {
+          "day": 13,
+          "date": "2026-01-14",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-15"
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": [
+        "delivery"
+      ]
+    },
+    {
+      "id": "old-customer-receipt",
+      "type": "CASH_RECEIPT",
+      "order_id": null,
+      "original_due_date": "2026-01-08",
+      "actual_execution_date": "2026-01-08",
+      "status": "EXECUTED",
+      "lateness_days": 0,
+      "blocking_history": [],
+      "dependency_event_ids": []
+    },
+    {
+      "id": "production-complete",
+      "type": "PRODUCTION_COMPLETE",
+      "order_id": "order-new",
+      "original_due_date": null,
+      "actual_execution_date": "2026-01-11",
+      "status": "EXECUTED",
+      "lateness_days": null,
+      "blocking_history": [
+        {
+          "day": 0,
+          "date": "2026-01-01",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 1,
+          "date": "2026-01-02",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "date": "2026-01-03",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 7,
+          "date": "2026-01-08",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-start"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 8,
+          "date": "2026-01-09",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-11"
+              }
+            }
+          ]
+        },
+        {
+          "day": 9,
+          "date": "2026-01-10",
+          "reasons": [
+            {
+              "code": "LAG_NOT_ELAPSED",
+              "details": {
+                "eligible_date": "2026-01-11"
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": [
+        "production-start"
+      ]
+    },
+    {
+      "id": "production-start",
+      "type": "PRODUCTION_START",
+      "order_id": "order-new",
+      "original_due_date": null,
+      "actual_execution_date": "2026-01-09",
+      "status": "EXECUTED",
+      "lateness_days": null,
+      "blocking_history": [
+        {
+          "day": 0,
+          "date": "2026-01-01",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 1,
+          "date": "2026-01-02",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "date": "2026-01-03",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 7,
+          "date": "2026-01-08",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "material-arrival"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": [
+        "material-arrival"
+      ]
+    },
+    {
+      "id": "supplier-payment",
+      "type": "SUPPLIER_PAYMENT",
+      "order_id": null,
+      "original_due_date": "2026-01-04",
+      "actual_execution_date": "2026-01-08",
+      "status": "EXECUTED",
+      "lateness_days": 4,
+      "blocking_history": [
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": []
+    }
+  ],
+  "order_results": [
+    {
+      "order_id": "order-new",
+      "promised_delivery_date": "2026-01-07",
+      "delivery_event_id": "delivery",
+      "delivery_date": "2026-01-11",
+      "delivery_lateness_days": 4,
+      "status": "DELIVERED"
+    }
+  ],
+  "missed_commitments": [
+    {
+      "id": "delivery",
+      "type": "DELIVERY",
+      "order_id": "order-new",
+      "original_due_date": "2026-01-07",
+      "actual_execution_date": "2026-01-11",
+      "status": "EXECUTED",
+      "lateness_days": 4,
+      "blocking_history": [
+        {
+          "day": 0,
+          "date": "2026-01-01",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 1,
+          "date": "2026-01-02",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 2,
+          "date": "2026-01-03",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 7,
+          "date": "2026-01-08",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 8,
+          "date": "2026-01-09",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "day": 9,
+          "date": "2026-01-10",
+          "reasons": [
+            {
+              "code": "DEPENDENCY_PENDING",
+              "details": {
+                "predecessor_event_ids": [
+                  "production-complete"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": [
+        "production-complete"
+      ]
+    },
+    {
+      "id": "supplier-payment",
+      "type": "SUPPLIER_PAYMENT",
+      "order_id": null,
+      "original_due_date": "2026-01-04",
+      "actual_execution_date": "2026-01-08",
+      "status": "EXECUTED",
+      "lateness_days": 4,
+      "blocking_history": [
+        {
+          "day": 3,
+          "date": "2026-01-04",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        },
+        {
+          "day": 4,
+          "date": "2026-01-05",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        },
+        {
+          "day": 5,
+          "date": "2026-01-06",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        },
+        {
+          "day": 6,
+          "date": "2026-01-07",
+          "reasons": [
+            {
+              "code": "INSUFFICIENT_CASH",
+              "details": {
+                "required_paise": 4000000,
+                "available_paise": 2000000,
+                "shortfall_paise": 2000000
+              }
+            }
+          ]
+        }
+      ],
+      "dependency_event_ids": []
+    }
+  ],
+  "unresolved_events": [],
+  "financing_summary": {
+    "total_outstanding_principal_paise": 0,
+    "total_paid_interest_paise": 0,
+    "total_accrued_interest_paise": 0,
+    "overdue_financing_obligations": [],
+    "facilities": []
+  },
+  "metrics": {
+    "missed_commitment_count": 2,
+    "unresolved_order_count": 0,
+    "minimum_executable_cash_paise": 0,
+    "closing_cash_paise": 6000000,
+    "outstanding_debt_paise": 0,
+    "accrued_financing_cost_paise": 0,
+    "overdue_financing_obligation_count": 0,
+    "extra_funding_needed_to_preserve_target_schedule": "UNSUPPORTED"
+  },
+  "comparison_metrics": null,
+  "transaction_totals": {
+    "cash_receipts_paise": 9000000,
+    "gross_drawdowns_paise": 0,
+    "ordinary_payments_paise": 4000000,
+    "production_start_costs_paise": 1000000,
+    "drawdown_fees_paise": 0,
+    "principal_repayments_paise": 0,
+    "paid_interest_paise": 0,
+    "inventory_arrivals_quantity": 1,
+    "production_consumption_quantity": 1
+  }
+}

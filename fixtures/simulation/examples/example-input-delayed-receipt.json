@@ -1,0 +1,185 @@
+{
+  "snapshot": {
+    "schema_version": "simulation.contract.v1",
+    "business_id": "fixture-business",
+    "start_date": "2026-01-01",
+    "horizon_days": 15,
+    "opening_cash_paise": 2000000,
+    "opening_inventory": [],
+    "orders": [
+      {
+        "id": "order-new",
+        "customer_id": "customer-new",
+        "promised_delivery_date": "2026-01-07",
+        "material_requirements": [
+          {
+            "material_id": "material-a",
+            "quantity": 1,
+            "unit": "unit"
+          }
+        ],
+        "production_start_cost_paise": 1000000,
+        "production_duration_days": 2,
+        "priority": 1
+      }
+    ],
+    "events": [
+      {
+        "id": "old-customer-receipt",
+        "type": "CASH_RECEIPT",
+        "order_id": null,
+        "counterparty_id": "customer-old",
+        "earliest_date": "2026-01-03",
+        "due_date": "2026-01-03",
+        "dependencies": [],
+        "priority": 1,
+        "amount_paise": 3000000,
+        "inventory_quantities": null,
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      },
+      {
+        "id": "supplier-payment",
+        "type": "SUPPLIER_PAYMENT",
+        "order_id": null,
+        "counterparty_id": "supplier-a",
+        "earliest_date": "2026-01-04",
+        "due_date": "2026-01-04",
+        "dependencies": [],
+        "priority": 1,
+        "amount_paise": 4000000,
+        "inventory_quantities": null,
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      },
+      {
+        "id": "material-arrival",
+        "type": "INVENTORY_ARRIVAL",
+        "order_id": null,
+        "counterparty_id": "supplier-a",
+        "earliest_date": "2026-01-01",
+        "due_date": null,
+        "dependencies": [
+          {
+            "predecessor_event_id": "supplier-payment",
+            "lag_days": 1
+          }
+        ],
+        "priority": 1,
+        "amount_paise": null,
+        "inventory_quantities": [
+          {
+            "material_id": "material-a",
+            "quantity": 1,
+            "unit": "unit"
+          }
+        ],
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      },
+      {
+        "id": "production-start",
+        "type": "PRODUCTION_START",
+        "order_id": "order-new",
+        "counterparty_id": null,
+        "earliest_date": "2026-01-05",
+        "due_date": null,
+        "dependencies": [
+          {
+            "predecessor_event_id": "material-arrival",
+            "lag_days": 0
+          }
+        ],
+        "priority": 1,
+        "amount_paise": null,
+        "inventory_quantities": null,
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      },
+      {
+        "id": "production-complete",
+        "type": "PRODUCTION_COMPLETE",
+        "order_id": "order-new",
+        "counterparty_id": null,
+        "earliest_date": "2026-01-01",
+        "due_date": null,
+        "dependencies": [
+          {
+            "predecessor_event_id": "production-start",
+            "lag_days": 2
+          }
+        ],
+        "priority": 1,
+        "amount_paise": null,
+        "inventory_quantities": null,
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      },
+      {
+        "id": "delivery",
+        "type": "DELIVERY",
+        "order_id": "order-new",
+        "counterparty_id": "customer-new",
+        "earliest_date": "2026-01-01",
+        "due_date": "2026-01-07",
+        "dependencies": [
+          {
+            "predecessor_event_id": "production-complete",
+            "lag_days": 0
+          }
+        ],
+        "priority": 1,
+        "amount_paise": null,
+        "inventory_quantities": null,
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      },
+      {
+        "id": "new-customer-receipt",
+        "type": "CASH_RECEIPT",
+        "order_id": "order-new",
+        "counterparty_id": "customer-new",
+        "earliest_date": "2026-01-01",
+        "due_date": null,
+        "dependencies": [
+          {
+            "predecessor_event_id": "delivery",
+            "lag_days": 4
+          }
+        ],
+        "priority": 1,
+        "amount_paise": 6000000,
+        "inventory_quantities": null,
+        "facility_id": null,
+        "principal_paise": null,
+        "assumptions": []
+      }
+    ],
+    "approved_credit_facilities": []
+  },
+  "scenario": {
+    "scenario_id": "fixture-b-delayed-old-receipt",
+    "assumptions": [
+      "Old customer receipt is delayed by agreement or collection reality."
+    ],
+    "changes": [
+      {
+        "type": "MOVE_RECEIPT_DATE",
+        "event_id": "old-customer-receipt",
+        "new_earliest_date": "2026-01-08",
+        "new_due_date": "2026-01-08",
+        "assumption": null
+      }
+    ]
+  },
+  "policy": {
+    "name": "GREEDY_DAILY",
+    "description": "Eligible resource-adding events execute first. Consuming events are then tried greedily by order priority, event priority, original due date, and stable event ID; infeasible events are skipped without implicit reservation."
+  }
+}
