@@ -79,45 +79,48 @@ class SnapshotIntakeTests(unittest.TestCase):
         with self.assertRaises(SnapshotBuildError):
             money_to_paise(Money(amount="1.001"))
 
-    def test_draft_approval_is_versioned(self):
+    def test_draft_approval_is_versioned_and_imports_records(self):
         from unittest.mock import patch
-        from backend.app.main import app
+        from support import sandbox
 
         class FakeExtractor:
             def extract(self, _: str) -> BusinessFacts:
                 return complete_facts()
 
-        with patch("backend.app.main.extractor", FakeExtractor()):
-            client = TestClient(app)
-            response = client.post("/snapshot/draft", json={
-                "business_id": "meera",
-                "start_date": "2026-01-01",
-                "horizon_days": 90,
-                "source_text": "Cash in hand is INR 50,000",
-            })
-            self.assertEqual(response.status_code, 200)
-            draft = response.json()
-            approved = client.post("/snapshot/approve", json={
-                "draft_id": draft["draft_id"],
-                "draft_version": draft["draft_version"],
-                "approval": "APPROVE",
-            })
-            self.assertEqual(approved.status_code, 200)
-            self.assertEqual(approved.json()["snapshot"]["business_id"], "meera")
+        client = sandbox()
+        with patch("backend.app.api.app_routes.extractor", FakeExtractor()):
+            response = client.post("/api/setup/draft", json={"source_text": "Cash in hand is INR 50,000"})
+        self.assertEqual(response.status_code, 200, response.text)
+        draft = response.json()
+        stale = client.post("/api/setup/approve", json={"draft_id": draft["draft_id"], "draft_version": 99, "approval": "APPROVE"})
+        self.assertEqual(stale.status_code, 409)
+        approved = client.post("/api/setup/approve", json={
+            "draft_id": draft["draft_id"], "draft_version": draft["draft_version"], "approval": "APPROVE",
+        })
+        self.assertEqual(approved.status_code, 200, approved.text)
+        self.assertEqual(approved.json()["imported"]["orders"], 1)
+        book = client.get("/api/book/summary").json()
+        self.assertEqual(book["position"]["cash_now_paise"], 5_000_000)
 
     def test_draft_accepts_reviewed_facts_without_provider(self):
-        from backend.app.main import app
+        from support import sandbox
 
-        client = TestClient(app)
-        response = client.post("/snapshot/draft", json={
-            "business_id": "meera",
-            "start_date": "2026-01-01",
-            "horizon_days": 90,
+        client = sandbox()
+        response = client.post("/api/setup/draft", json={
             "source_text": "Cash in hand is INR 50,000",
             "reviewed_facts": complete_facts().model_dump(mode="json"),
         })
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["status"], "READY_FOR_REVIEW")
+
+    def test_drafts_are_private_to_their_business(self):
+        from support import sandbox
+
+        mine, other = sandbox(), sandbox()
+        draft = mine.post("/api/setup/draft", json={"source_text": "Cash in hand is INR 50,000",
+                                                    "reviewed_facts": complete_facts().model_dump(mode="json")}).json()
+        response = other.post("/api/setup/approve", json={"draft_id": draft["draft_id"], "draft_version": 1, "approval": "APPROVE"})
+        self.assertEqual(response.status_code, 404)
 
 
 if __name__ == "__main__":

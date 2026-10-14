@@ -14,6 +14,7 @@ from .schemas import (
     EventResult,
     EventStatus,
     EventType,
+    ExecutionLogEntry,
     FinancingFacilitySummary,
     FinancingSummary,
     InventoryQuantity,
@@ -41,6 +42,7 @@ class RuntimeState:
     actual_days: dict[str, int] = field(default_factory=dict)
     blocking_history: dict[str, list[BlockingRecord]] = field(default_factory=dict)
     debt_by_facility: dict[str, DebtState] = field(default_factory=dict)
+    reason_cache: dict[str, tuple[tuple, list[BlockingReason]]] = field(default_factory=dict)
     transaction_totals: dict[str, int] = field(default_factory=lambda: {
         "cash_receipts_paise": 0,
         "gross_drawdowns_paise": 0,
@@ -58,6 +60,7 @@ def simulate(
     snapshot: BusinessSnapshot,
     scenario: Scenario | None = None,
     policy: SchedulingPolicy | None = None,
+    include_execution_log: bool = False,
 ) -> SimulationResult:
     scheduling_policy = policy or SchedulingPolicy()
     scenario_id = scenario.scenario_id if scenario is not None else "baseline"
@@ -74,14 +77,22 @@ def simulate(
     )
 
     daily_balances: list[DailyBalance] = []
+    execution_log: list[ExecutionLogEntry] | None = [] if include_execution_log else None
     min_cash = state.cash_paise
     for day in range(transformed.horizon_days):
+        seq = 0
         while True:
             executable = _select_next_executable(day, transformed.start_date, events, orders, state)
             if executable is None:
-                _record_blockers_for_day(day, transformed.start_date, events, orders, state)
+                day_blocks = _record_blockers_for_day(day, transformed.start_date, events, orders, state)
+                if execution_log is not None:
+                    _log_end_of_day(execution_log, day, transformed.start_date, seq, day_blocks, events, orders, state)
                 break
+            cash_before = state.cash_paise
             _apply_event(executable, day, events, orders, state)
+            if execution_log is not None:
+                execution_log.append(_log_entry(day, transformed.start_date, seq, executable, orders, "EXECUTED", cash_before, state.cash_paise, []))
+                seq += 1
             min_cash = min(min_cash, state.cash_paise)
 
         min_cash = min(min_cash, state.cash_paise)
@@ -142,7 +153,61 @@ def simulate(
         metrics=metrics,
         comparison_metrics=None,
         transaction_totals=state.transaction_totals,
+        execution_log=execution_log,
     )
+
+
+GROUP_NAMES = ("BRING_IN", "MOVE_GOODS", "PAY_OUT")
+
+
+def _log_entry(
+    day: int,
+    start_date: date,
+    seq: int,
+    event: Event,
+    orders: dict[str, Order],
+    outcome: str,
+    cash_before: int,
+    cash_after: int,
+    reasons: list[BlockingReason],
+) -> ExecutionLogEntry:
+    group, owner_priority, event_priority, due, event_id = _event_sort_key(event, orders)
+    return ExecutionLogEntry(
+        day=day,
+        date=start_date + timedelta(days=day),
+        seq=seq,
+        event_id=event.id,
+        type=event.type,
+        group=GROUP_NAMES[group],
+        sort_key=[group, owner_priority, event_priority, None if due == date.max else due.isoformat(), event_id],
+        outcome=outcome,
+        cash_before_paise=cash_before,
+        cash_after_paise=cash_after,
+        reasons=reasons,
+    )
+
+
+def _log_end_of_day(
+    log: list[ExecutionLogEntry],
+    day: int,
+    start_date: date,
+    seq: int,
+    day_blocks: list[tuple[str, list[BlockingReason]]],
+    events: dict[str, Event],
+    orders: dict[str, Order],
+    state: RuntimeState,
+) -> None:
+    """Record what the engine could not do at the end of the day, in policy order."""
+    entries = []
+    for event_id, reasons in day_blocks:
+        event = events[event_id]
+        if (event.earliest_date - start_date).days > day:
+            continue
+        resource = any(reason.code not in {"DEPENDENCY_PENDING", "LAG_NOT_ELAPSED", "NOT_YET_ELIGIBLE"} for reason in reasons)
+        entries.append((_event_sort_key(event, orders), event, "BLOCKED" if resource else "NOT_ELIGIBLE", reasons))
+    entries.sort(key=lambda item: item[0])
+    for offset, (_, event, outcome, reasons) in enumerate(entries):
+        log.append(_log_entry(day, start_date, seq + offset, event, orders, outcome, state.cash_paise, state.cash_paise, reasons))
 
 
 def _select_next_executable(
@@ -155,7 +220,7 @@ def _select_next_executable(
     feasible: list[Event] = []
     for event_id in sorted(state.pending_event_ids):
         event = events[event_id]
-        if _timing_blockers(event, day, start_date, state):
+        if not _timing_ok(event, day, start_date, state):
             continue
         if _resource_blockers(event, day, orders, state):
             continue
@@ -176,6 +241,35 @@ def _event_sort_key(event: Event, orders: dict[str, Order]) -> tuple[int, int, i
     owner_priority = orders[event.order_id].priority if event.order_id in orders else event.priority
     due = event.due_date or date.max
     return group, owner_priority, event.priority, due, event.id
+
+
+def _timing_ok(event: Event, day: int, start_date: date, state: RuntimeState) -> bool:
+    """Allocation-free equivalent of `not _timing_blockers(...)`, used on the hot path."""
+    if day < (event.earliest_date - start_date).days:
+        return False
+    for dependency in event.dependencies:
+        predecessor_day = state.actual_days.get(dependency.predecessor_event_id)
+        if predecessor_day is None or day < predecessor_day + dependency.lag_days:
+            return False
+    return True
+
+
+def _cached_timing_blockers(event: Event, day: int, start_date: date, state: RuntimeState) -> list[BlockingReason]:
+    """Same reasons as `_timing_blockers`, reused while everything they depend on is unchanged:
+    whether the earliest date has passed, and for each dependency whether it is pending or its lag has elapsed."""
+    signature = (
+        day >= (event.earliest_date - start_date).days,
+        tuple(
+            None if (actual := state.actual_days.get(dep.predecessor_event_id)) is None else (actual, day < actual + dep.lag_days)
+            for dep in event.dependencies
+        ),
+    )
+    cached = state.reason_cache.get(event.id)
+    if cached is not None and cached[0] == signature:
+        return cached[1]
+    reasons = _timing_blockers(event, day, start_date, state)
+    state.reason_cache[event.id] = (signature, reasons)
+    return reasons
 
 
 def _timing_blockers(event: Event, day: int, start_date: date, state: RuntimeState) -> list[BlockingReason]:
@@ -305,22 +399,28 @@ def _assert_dependency_lag_consistency_for_completion(event: Event, events: dict
                 raise RuntimeError(f"production duration dependency mismatch for {event.id}")
 
 
-def _record_blockers_for_day(day: int, start_date: date, events: dict[str, Event], orders: dict[str, Order], state: RuntimeState) -> None:
+def _record_blockers_for_day(
+    day: int, start_date: date, events: dict[str, Event], orders: dict[str, Order], state: RuntimeState
+) -> list[tuple[str, list[BlockingReason]]]:
     current_date = start_date + timedelta(days=day)
+    recorded: list[tuple[str, list[BlockingReason]]] = []
     for event_id in sorted(state.pending_event_ids):
         event = events[event_id]
-        timing_reasons = _timing_blockers(event, day, start_date, state)
+        timing_reasons = [] if _timing_ok(event, day, start_date, state) else _cached_timing_blockers(event, day, start_date, state)
         earliest_day = (event.earliest_date - start_date).days
         if timing_reasons and day >= min(earliest_day, day):
             recordable = [reason for reason in timing_reasons if reason.code != "NOT_YET_ELIGIBLE"]
             if recordable:
                 state.blocking_history.setdefault(event.id, []).append(BlockingRecord(day=day, date=current_date, reasons=recordable))
+                recorded.append((event.id, recordable))
             continue
         if timing_reasons:
             continue
         resource_reasons = _resource_blockers(event, day, orders, state)
         if resource_reasons:
             state.blocking_history.setdefault(event.id, []).append(BlockingRecord(day=day, date=current_date, reasons=resource_reasons))
+            recorded.append((event.id, resource_reasons))
+    return recorded
 
 
 def _build_event_results(

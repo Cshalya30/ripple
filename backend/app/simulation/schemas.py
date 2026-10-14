@@ -276,6 +276,21 @@ class SimulationMetrics(StrictBaseModel):
     extra_funding_needed_to_preserve_target_schedule: Literal["UNSUPPORTED"] = "UNSUPPORTED"
 
 
+class ExecutionLogEntry(StrictBaseModel):
+    """One line of the engine's daily loop, in execution order (E-1)."""
+    day: StrictInt
+    date: date
+    seq: StrictInt
+    event_id: StrictStr
+    type: EventType
+    group: Literal["BRING_IN", "MOVE_GOODS", "PAY_OUT"]
+    sort_key: list[Any]
+    outcome: Literal["EXECUTED", "BLOCKED", "NOT_ELIGIBLE"]
+    cash_before_paise: StrictInt
+    cash_after_paise: StrictInt
+    reasons: list[BlockingReason] = Field(default_factory=list)
+
+
 class SimulationResult(StrictBaseModel):
     schema_version: StrictStr
     engine_version: StrictStr
@@ -291,6 +306,7 @@ class SimulationResult(StrictBaseModel):
     metrics: SimulationMetrics
     comparison_metrics: dict[str, Any] | None = None
     transaction_totals: dict[str, StrictInt]
+    execution_log: list[ExecutionLogEntry] | None = None
 
 
 class ComparisonRequest(StrictBaseModel):
@@ -303,6 +319,7 @@ class SimulationRequest(StrictBaseModel):
     snapshot: BusinessSnapshot
     scenario: Scenario | None = None
     policy: SchedulingPolicy = Field(default_factory=SchedulingPolicy)
+    include_execution_log: bool = False
 
 
 class ComparisonResult(StrictBaseModel):

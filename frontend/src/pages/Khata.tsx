@@ -1,260 +1,166 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowDownLeft, ArrowUpRight, Download, FileUp, Plus, Search, TrendingUp } from 'lucide-react'
-import { PartyCard } from '../components/PartyCard'
-import { Modal } from '../components/Modal'
-import { PartyFormModal } from '../components/PartyFormModal'
-import { UploadModal } from '../components/UploadModal'
-import { SampleBadge } from '../components/SampleBadge'
-import { AnimatedNumber } from '../components/AnimatedNumber'
-import { useApp } from '../context/AppContext'
-import { exportPartiesCsv } from '../services/partyService'
-import { formatINR } from '../lib/format'
-import type { Party, PartyKind } from '../types'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Amount, Dialog, ErrorNote, LastSix, SkeletonRows, Status } from '../components/ui'
+import { api, errorText } from '../lib/api'
+import { percent, rupees, shortDate } from '../lib/format'
+import { useParties, useWrite } from '../lib/queries'
+import { useUI } from '../lib/store'
+import type { Me, PartyRow } from '../lib/types'
 
-type SortKey = 'owed' | 'due' | 'name' | 'total'
-
-const sorters: Record<SortKey, (a: Party, b: Party) => number> = {
-  owed: (a, b) => b.owedAmount - a.owedAmount,
-  due: (a, b) => a.dueDate.localeCompare(b.dueDate),
-  name: (a, b) => a.name.localeCompare(b.name),
-  total: (a, b) => b.totalAmount - a.totalAmount,
-}
-
-function Column({ kind, parties, onDelete, initialQuery = '' }: { kind: PartyKind; parties: Party[]; onDelete: (party: Party) => void; initialQuery?: string }) {
-  const isCustomer = kind === 'customer'
-  const [query, setQuery] = useState(initialQuery)
-  const [sort, setSort] = useState<SortKey>('owed')
-  const id = `col-${kind}`
-
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return parties
-      .filter((p) => !q || p.name.toLowerCase().includes(q) || p.details.toLowerCase().includes(q) || p.products.some((x) => x.toLowerCase().includes(q)))
-      .sort(sorters[sort])
-  }, [parties, query, sort])
+export function Khata({ me }: { me: Me }) {
+  const { t } = useTranslation()
+  const [tab, setTab] = useState<'CUSTOMER' | 'SUPPLIER'>('CUSTOMER')
+  const [adding, setAdding] = useState(false)
+  const parties = useParties(tab)
+  const ui = useUI()
 
   return (
-    <section className="card flex flex-col overflow-hidden" aria-labelledby={`${id}-title`}>
-      <div className="space-y-3 border-b border-line p-4">
-        <div className="flex items-center justify-between">
-          <h2 id={`${id}-title`} className="flex items-center gap-2 text-lg font-bold">
-            {isCustomer ? <ArrowDownLeft size={18} className="text-gain" aria-hidden="true" /> : <ArrowUpRight size={18} className="text-loss" aria-hidden="true" />}
-            {isCustomer ? 'Customers' : 'Suppliers'}
-          </h2>
-          <span className="num rounded-full bg-sunken px-2.5 py-0.5 text-sm font-semibold">{parties.length}</span>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <label htmlFor={`${id}-search`} className="sr-only">
-              Search {isCustomer ? 'customers' : 'suppliers'}
-            </label>
-            <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
-            <input id={`${id}-search`} type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or product" className="field py-2 !pl-10" />
-          </div>
-          <div>
-            <label htmlFor={`${id}-sort`} className="sr-only">
-              Sort {isCustomer ? 'customers' : 'suppliers'}
-            </label>
-            <select id={`${id}-sort`} value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="field w-auto py-2">
-              <option value="owed">{isCustomer ? 'Owes most' : 'Owed most'}</option>
-              <option value="due">Due soonest</option>
-              <option value="total">Highest total</option>
-              <option value="name">Name A to Z</option>
-            </select>
-          </div>
-        </div>
+    <div className="page">
+      <div className="page-head">
+        <h1 className="h1">{t('nav.khata')}</h1>
+        <span className="spacer" />
+        <button className="btn btn-secondary" onClick={() => setAdding(true)}>Add {tab === 'CUSTOMER' ? 'customer' : 'supplier'}</button>
+        <button className="btn btn-primary" onClick={() => ui.openPayment({})}>{t('common.recordPayment')}</button>
       </div>
-      <div className="max-h-[640px] flex-1 overflow-y-auto p-4">
-        {shown.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted">
-            {query ? `No ${isCustomer ? 'customers' : 'suppliers'} match "${query}". Clear the search to see everyone.` : `No ${isCustomer ? 'customers' : 'suppliers'} yet. Add one to start your khata.`}
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {shown.map((p) => (
-              <PartyCard key={p.id} party={p} onDelete={onDelete} />
-            ))}
-          </ul>
-        )}
+      <div className="tabs" role="tablist">
+        <button className="tab" role="tab" aria-selected={tab === 'CUSTOMER'} onClick={() => setTab('CUSTOMER')}>Customers</button>
+        <button className="tab" role="tab" aria-selected={tab === 'SUPPLIER'} onClick={() => setTab('SUPPLIER')}>Suppliers</button>
       </div>
-    </section>
-  )
-}
-
-function Tally({ parties }: { parties: Party[] }) {
-  const rows = useMemo(() => parties.filter((p) => p.owedAmount > 0).sort((a, b) => b.owedAmount - a.owedAmount), [parties])
-  const receive = parties.filter((p) => p.kind === 'customer').reduce((s, p) => s + p.owedAmount, 0)
-  const pay = parties.filter((p) => p.kind === 'supplier').reduce((s, p) => s + p.owedAmount, 0)
-  const net = receive - pay
-
-  return (
-    <section className="card flex flex-col overflow-hidden" aria-labelledby="tally-title">
-      <div className="border-b border-line p-4">
-        <h2 id="tally-title" className="text-lg font-bold">
-          Tally
-        </h2>
-        <p className="text-sm text-muted">Everything you will receive and everything you owe.</p>
-      </div>
-      <div className="max-h-[420px] flex-1 overflow-y-auto lg:max-h-[440px]">
-        {rows.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted">Nothing outstanding. Add a customer or supplier to see it here.</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {rows.map((p) => {
-              const incoming = p.kind === 'customer'
-              return (
-                <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{p.name}</p>
-                    <p className="text-xs text-muted">{incoming ? 'will receive' : 'to pay'}</p>
-                  </div>
-                  <p className={`num shrink-0 text-sm font-bold ${incoming ? 'text-gain' : 'text-loss'}`}>{incoming ? formatINR(p.owedAmount, { sign: true }) : formatINR(-p.owedAmount)}</p>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
-      <div className="space-y-3 border-t border-line bg-sunken/60 p-4">
-        <dl className="space-y-1.5 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted">Total to receive</dt>
-            <dd className="num font-semibold text-gain">{formatINR(receive, { sign: true })}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted">Total to pay</dt>
-            <dd className="num font-semibold text-loss">{formatINR(-pay)}</dd>
-          </div>
-        </dl>
-        <div className={`rounded-xl px-4 py-3 ${net < 0 ? 'bg-loss-soft' : 'bg-gain-soft'}`}>
-          <p className="text-sm font-medium text-muted">Net position</p>
-          <p className={`font-display text-3xl font-extrabold ${net < 0 ? 'text-loss' : 'text-gain'}`}>
-            <AnimatedNumber value={net} format={(n) => formatINR(n, { sign: true })} duration={0.6} />
-          </p>
-        </div>
-        <Link to="/forecast" className="btn btn-primary w-full">
-          <TrendingUp size={16} aria-hidden="true" />
-          View forecast
-        </Link>
-      </div>
-    </section>
-  )
-}
-
-export default function Khata() {
-  const { parties, partiesLoading, deleteParty, pushToast } = useApp()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [modal, setModal] = useState<'customer' | 'supplier' | 'upload' | null>(null)
-  const [partyToDelete, setPartyToDelete] = useState<Party | null>(null)
-
-  // Open a modal when another page (like the assistant) asks for it.
-  useEffect(() => {
-    const open = (location.state as { open?: string } | null)?.open
-    if (open === 'customer' || open === 'supplier' || open === 'upload') {
-      setModal(open)
-      navigate(location.pathname, { replace: true, state: null })
-    }
-  }, [location, navigate])
-
-  const customers = parties.filter((p) => p.kind === 'customer')
-  const suppliers = parties.filter((p) => p.kind === 'supplier')
-  const selectedParty = searchParams.get('party') ?? ''
-  const selectedPartyId = searchParams.get('partyId')
-
-  const handleDelete = (party: Party) => {
-    setPartyToDelete(party)
-  }
-
-  const confirmDelete = async () => {
-    if (!partyToDelete) return
-    const party = partyToDelete
-    setPartyToDelete(null)
-    await deleteParty(party.id)
-    pushToast(`${party.name} removed from the khata.`)
-  }
-
-  const downloadTemplate = async () => {
-    const csv = await exportPartiesCsv(parties)
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ripple-khata-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
-  }
-
-  return (
-    <div className="mx-auto max-w-[1400px] space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold sm:text-3xl">Your khata</h2>
-            <SampleBadge />
-          </div>
-          <p className="text-muted">Who owes you, who you owe. This feeds your forecast.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn btn-primary" onClick={() => setModal('customer')}>
-            <Plus size={16} aria-hidden="true" />
-            Add customer
-          </button>
-          <button type="button" className="btn btn-primary" onClick={() => setModal('supplier')}>
-            <Plus size={16} aria-hidden="true" />
-            Add supplier
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={() => setModal('upload')}>
-            <FileUp size={16} aria-hidden="true" />
-            Upload Excel/CSV
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={downloadTemplate}>
-            <Download size={16} aria-hidden="true" />
-            Download CSV
-          </button>
-        </div>
-      </div>
-
-      {partiesLoading ? (
-        <p className="py-16 text-center text-muted">Loading your khata…</p>
-      ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-3">
-          <Column
-            kind="customer"
-            parties={customers}
-            onDelete={handleDelete}
-            initialQuery={selectedParty || customers.find((party) => party.id === selectedPartyId)?.name || ''}
-          />
-          <Column
-            kind="supplier"
-            parties={suppliers}
-            onDelete={handleDelete}
-            initialQuery={selectedParty || suppliers.find((party) => party.id === selectedPartyId)?.name || ''}
-          />
-          <Tally parties={parties} />
-        </div>
-      )}
-
-      <PartyFormModal kind="customer" open={modal === 'customer'} onClose={() => setModal(null)} />
-      <PartyFormModal kind="supplier" open={modal === 'supplier'} onClose={() => setModal(null)} />
-      <UploadModal open={modal === 'upload'} onClose={() => setModal(null)} />
-      <Modal
-        open={partyToDelete !== null}
-        onClose={() => setPartyToDelete(null)}
-        title={`Delete ${partyToDelete?.name ?? 'party'}?`}
-        description="This removes the party from your khata and tally."
-        maxWidth="max-w-md"
-      >
-        <div className="flex justify-end gap-2">
-          <button type="button" className="btn btn-ghost" onClick={() => setPartyToDelete(null)}>
-            Cancel
-          </button>
-          <button type="button" className="btn bg-loss text-white hover:opacity-90" onClick={confirmDelete}>
-            Delete
-          </button>
-        </div>
-      </Modal>
+      {parties.isLoading && <SkeletonRows rows={8} h={48} />}
+      {parties.isError && <ErrorNote text={errorText(parties.error)} retry={() => parties.refetch()} />}
+      {parties.data && (tab === 'CUSTOMER'
+        ? <Customers rows={parties.data.parties} total={parties.data.total_outstanding_paise} msme={!!me.business.udyam_number} />
+        : <Suppliers rows={parties.data.parties} total={parties.data.total_outstanding_paise} />)}
+      <AddParty open={adding} kind={tab} onClose={() => setAdding(false)} />
     </div>
+  )
+}
+
+function Customers({ rows, total, msme }: { rows: PartyRow[]; total: number; msme: boolean }) {
+  const ui = useUI()
+  return (
+    <div className="table-wrap">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>#</th><th>Customer</th><th className="hide-narrow">Buys</th><th>Terms</th><th className="money money-first">Outstanding</th>
+            <th>Oldest due</th><th className="hide-mobile">Pays, avg</th><th className="hide-mobile">Last 6</th>{msme && <th className="hide-mobile">45-day clock</th>}<th />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p, i) => (
+            <tr key={p.id} className="clickable" onClick={() => ui.openParty(p.id)}>
+              <td className="mono faint">{i + 1}</td>
+              <td className="wrap">{p.name}<span className="sub">{p.city}{p.risk_share ? ` · ${percent(p.risk_share)} of risk` : ''}</span></td>
+              <td className="small muted hide-narrow">{p.tags.slice(0, 3).join(', ')}</td>
+              <td className="small nowrap">{p.terms_days} days</td>
+              <td className="money money-first"><Amount paise={p.outstanding_paise} direction="IN" sign={false} /></td>
+              <td className="wrap small">
+                {p.oldest_due ? <span className="mono">{shortDate(p.oldest_due)}</span> : <span className="faint">·</span>}
+                {p.days_overdue > 0 && <span className="sub" style={{ color: 'var(--out)' }}>{p.days_overdue} days late</span>}
+              </td>
+              <td className="small hide-mobile nowrap" title={p.n_payments ? `Pays ${p.avg_delay_days} days late on average over ${p.n_payments} payments` : 'No payment history'}>
+                {p.n_payments ? (p.avg_delay_days! > 0 ? <span className="mono">+{p.avg_delay_days} days</span> : 'on time') : <span className="faint">no history</span>}
+              </td>
+              <td className="hide-mobile"><LastSix delays={p.last6 ?? []} /></td>
+              {msme && (
+                <td className="small hide-mobile">
+                  {p.msme_clock_days_left === undefined ? <span className="faint">·</span>
+                    : p.msme_clock_days_left < 0 ? <Status tone="out">Over 45 days</Status>
+                      : <Status tone={p.msme_clock_days_left <= 7 ? 'attn' : 'wait'}>{p.msme_clock_days_left} days left</Status>}
+                </td>
+              )}
+              <td className="right nowrap" onClick={(e) => e.stopPropagation()}>
+                {p.outstanding_paise > 0 && <button className="btn btn-sm btn-secondary" onClick={() => ui.openComposer({ partyId: p.id, intent: 'reminder' })}>Remind</button>}{' '}
+                <button className="btn btn-sm btn-quiet" onClick={() => ui.openPayment({ partyId: p.id, direction: 'IN' })}>Record</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr><td /><td className="small muted">Total outstanding</td><td className="hide-narrow" /><td /><td className="money money-first"><span>{rupees(total)}</span></td><td colSpan={msme ? 5 : 4} /></tr>
+        </tfoot>
+      </table>
+    </div>
+  )
+}
+
+function Suppliers({ rows, total }: { rows: PartyRow[]; total: number }) {
+  const ui = useUI()
+  const terms = (p: PartyRow) => (p.terms_type === 'ADVANCE' ? 'Advance' : p.terms_type === 'ON_DELIVERY' ? 'On delivery' : `${p.terms_days} days credit`)
+  return (
+    <div className="table-wrap">
+      <table className="table">
+        <thead>
+          <tr><th>#</th><th>Supplier</th><th className="hide-mobile">Supplies</th><th>Terms</th><th className="money money-first">You owe</th><th>Next due</th><th className="hide-mobile">Lead time</th><th className="hide-mobile">MSME status</th><th /></tr>
+        </thead>
+        <tbody>
+          {rows.map((p, i) => (
+            <tr key={p.id} className="clickable" onClick={() => ui.openParty(p.id)}>
+              <td className="mono faint">{i + 1}</td>
+              <td className="wrap">{p.name}<span className="sub">{p.city}</span></td>
+              <td className="small muted hide-mobile">{p.tags.slice(0, 3).join(', ')}</td>
+              <td className="small">{terms(p)}</td>
+              <td className="money money-first"><Amount paise={p.outstanding_paise} direction="OUT" /></td>
+              <td className="wrap small">{p.next_due ? <><span className="mono">{shortDate(p.next_due.date)}</span><span className="sub">{rupees(p.next_due.amount_paise)}</span></> : <span className="faint">·</span>}</td>
+              <td className="small hide-mobile">{p.lead_time_days} days</td>
+              <td className="small wrap hide-mobile">
+                {p.msme_category ? (p.msme_category === 'MEDIUM' ? 'Medium' : <>{p.msme_category === 'MICRO' ? 'Micro' : 'Small'}<span className="sub">Pay within 45 days. Late payment delays your tax deduction (43B(h)).</span></>) : <span className="faint">Not registered</span>}
+              </td>
+              <td className="right nowrap" onClick={(e) => e.stopPropagation()}>
+                <button className="btn btn-sm btn-secondary" onClick={() => ui.openPayment({ partyId: p.id, direction: 'OUT' })}>Pay</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr><td /><td className="small muted">Total you owe</td><td className="hide-mobile" /><td /><td className="money money-first"><span>{rupees(total)}</span></td><td colSpan={4} /></tr>
+        </tfoot>
+      </table>
+    </div>
+  )
+}
+
+function AddParty({ open, kind, onClose }: { open: boolean; kind: 'CUSTOMER' | 'SUPPLIER'; onClose: () => void }) {
+  const [form, setForm] = useState({ name: '', city: '', phone: '', terms_type: 'CREDIT', terms_days: '30', lead_time_days: '0', msme_category: '', tags: '' })
+  const write = useWrite((body: unknown) => api.post('/parties', body))
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value })
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await write.mutateAsync({
+      kind, name: form.name, city: form.city || null, phone: form.phone || null, terms_type: form.terms_type,
+      terms_days: Number(form.terms_days) || 0, lead_time_days: Number(form.lead_time_days) || 0,
+      msme_category: form.msme_category || null, tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8) : [],
+    })
+    onClose()
+  }
+  return (
+    <Dialog open={open} onClose={onClose} title={`Add ${kind === 'CUSTOMER' ? 'customer' : 'supplier'}`}>
+      <form onSubmit={submit}>
+        <div className="form-grid">
+          <label className="field" style={{ gridColumn: '1 / -1' }}><span className="field-label">Name</span><input className="input" required maxLength={120} value={form.name} onChange={set('name')} /></label>
+          <label className="field"><span className="field-label">City</span><input className="input" maxLength={80} value={form.city} onChange={set('city')} /></label>
+          <label className="field"><span className="field-label">WhatsApp number</span><input className="input mono" maxLength={24} pattern="[0-9+ ()-]*" value={form.phone} onChange={set('phone')} /></label>
+          <label className="field"><span className="field-label">Terms</span>
+            <select className="select" value={form.terms_type} onChange={set('terms_type')}>
+              <option value="CREDIT">Credit</option>{kind === 'SUPPLIER' && <option value="ADVANCE">Advance</option>}{kind === 'SUPPLIER' && <option value="ON_DELIVERY">On delivery</option>}
+            </select>
+          </label>
+          <label className="field"><span className="field-label">Credit days</span><input className="input mono" type="number" min={0} max={365} value={form.terms_days} onChange={set('terms_days')} /></label>
+          {kind === 'SUPPLIER' && <label className="field"><span className="field-label">Lead time, days</span><input className="input mono" type="number" min={0} max={365} value={form.lead_time_days} onChange={set('lead_time_days')} /></label>}
+          {kind === 'SUPPLIER' && (
+            <label className="field"><span className="field-label">MSME category</span>
+              <select className="select" value={form.msme_category} onChange={set('msme_category')}><option value="">Not registered</option><option value="MICRO">Micro</option><option value="SMALL">Small</option><option value="MEDIUM">Medium</option></select>
+            </label>
+          )}
+          <label className="field" style={{ gridColumn: '1 / -1' }}><span className="field-label">{kind === 'CUSTOMER' ? 'Buys' : 'Supplies'} (comma separated)</span><input className="input" maxLength={200} value={form.tags} onChange={set('tags')} /></label>
+        </div>
+        {write.isError && <div style={{ marginTop: 12 }}><ErrorNote text={errorText(write.error)} /></div>}
+        <div className="dialog-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" disabled={write.isPending || !form.name.trim()}>Add</button>
+        </div>
+      </form>
+    </Dialog>
   )
 }

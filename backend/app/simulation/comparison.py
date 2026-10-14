@@ -4,9 +4,14 @@ from .engine import simulate
 from .schemas import BusinessSnapshot, ComparisonResult, ENGINE_VERSION, SCHEMA_VERSION, Scenario, SchedulingPolicy
 
 
-def compare_scenarios(snapshot: BusinessSnapshot, scenario: Scenario, policy: SchedulingPolicy | None = None) -> ComparisonResult:
-    baseline = simulate(snapshot, None, policy)
-    scenario_result = simulate(snapshot, scenario, policy)
+def compare_scenarios(
+    snapshot: BusinessSnapshot,
+    scenario: Scenario,
+    policy: SchedulingPolicy | None = None,
+    include_execution_log: bool = False,
+) -> ComparisonResult:
+    baseline = simulate(snapshot, None, policy, include_execution_log)
+    scenario_result = simulate(snapshot, scenario, policy, include_execution_log)
     comparison_metrics = _comparison_metrics(baseline, scenario_result)
     scenario_result.comparison_metrics = comparison_metrics
     return ComparisonResult(

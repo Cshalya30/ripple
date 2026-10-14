@@ -36,162 +36,201 @@ Please follow these guidelines throughout the Bug Bounty event.
 
 All teams are expected to follow these rules strictly throughout the event.
 
-## Ripple: what's in this repository
+---
 
-Ripple helps a small business see how one late payment ripples through its
-suppliers, stock and customers. It forecasts the next 90 days of cash, shows
-the dip, proposes fixes (each one re-simulated) and drafts the WhatsApp message.
+# Ripple
 
-```text
-backend/
-  app/simulation/   deterministic simulation engine (unchanged)
-  app/api/          Ripple REST API: khata store, Excel/CSV import, forecast + fixes adapter
-  app/assistant/    "Ask Ripple": Gemini via LangChain, Whisper speech-to-text
-  app/main.py       FastAPI app; also serves the built React app
-frontend/           React + Vite + TypeScript UI (only src/services/* talk to the API)
-fixtures/           simulation fixtures and examples
-tests/              engine tests + API tests (41 total)
-docs/               simulation contract, handoff notes, optional UI patch
-```
+**See how one late payment travels through your business, before it does.**
 
-### How it fits together
+Manipal Hackathon 2026 (M#26), Round 2, Microfinance track: "The Supplier-Business-Customer Loop".
+Team HitNRun: Chirantan (lead), Aman, Moksha, Nandini, John.
 
-Garment-specific onboarding is documented in the [snapshot intake guide](docs/SNAPSHOT_INTAKE.md). It extracts reviewed business facts, builds the existing `BusinessSnapshot`, and leaves simulation execution to the deterministic engine.
+## What it is
 
+A small manufacturer pays suppliers on their terms and is paid by customers on theirs. Every order draws on one
+shared pool of cash and one shared pool of material, so a single late payment can stall an unrelated order weeks later.
 
-```text
-React UI ── src/services/*.ts ──HTTP──> /api/*  (FastAPI)
-                                           │
-              khata (SQLite, per-browser workspace)
-                                           │
-          parties + recurring costs ──> BusinessSnapshot (paise)
-                                           │
-                     simulation engine (GREEDY_DAILY) ──> forecast, dip causes
-                                           │
-         fixes = engine scenarios (MOVE_RECEIPT_DATE, SPLIT_SUPPLIER_PAYMENT,
-                 ADD_CREDIT_BRIDGE) or snapshot changes, each re-simulated
-```
+Ripple keeps the owner's khata (parties, invoices, orders, stock, payments), turns it into a structured snapshot,
+and plays the business forward day by day with a **deterministic engine**. It shows the exact day cash runs short,
+the chain of events that causes it, how likely that is given each customer's real payment habits, which fix closes
+the gap and at what cost, and drafts the WhatsApp message to make the fix happen.
 
-The engine never lets cash go below zero: a bill it can't afford is paid late.
-The chart shows **committed cash** (every bill paid on its due day), derived
-from the same engine run by moving each late payment back to its due day. So
-the red dip equals exactly what the engine could not pay on time, and the
-"Why the dip happens" card says how late (e.g. Sharma Yarn Mills: Day 41, 7 days late).
+- **Every amount and date on screen comes from the engine or the records.** The browser only formats integer paise.
+- **Risk wraps the engine; it is not a model.** Each customer's payment delay is sampled from their own history
+  (shrunk towards everyone's history) and the same deterministic engine re-runs once per sample.
+- **The engine shows how it decides.** The Decisions view replays the engine's own execution log for any day.
+- **Munim**, the assistant, answers only from tool results; a grounding check rejects any number not in them.
 
-Engine docs: [contract](docs/SIMULATION_CONTRACT.md), [fixtures](docs/SIMULATION_FIXTURES.md),
-[examples](docs/SIMULATION_EXAMPLES.md), [handoff](docs/SIMULATION_HANDOFF.md).
+## Live deployment and test accounts
 
-## Run it
+Live URL: _add after deploying (see Deployment)._
 
-Requirements: Python 3.11+ and Node 18+.
-
-```bash
-# 1. backend (repository root)
-python -m venv .venv && source .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install -r requirements.txt                     # add -r requirements-voice.txt for the mic
-cp .env.example .env                                # then put your GOOGLE_API_KEY in .env
-uvicorn backend.app.main:app --reload               # http://localhost:8000
-
-# 2a. frontend in dev mode (second terminal)
-cd frontend && npm install && npm run dev           # http://localhost:5173, calls :8000
-
-# 2b. or one-URL mode: build once and let FastAPI serve it
-cd frontend && npm install && npm run build && cd ..
-uvicorn backend.app.main:app                        # UI + API on http://localhost:8000
-```
-
-Deployment (Railway for backend, Vercel for frontend):
-
-- **Backend (Railway)**: Deploy with Nixpacks. Root directory: repo root. Start command: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`. Environment variables: `RIPPLE_CORS_ORIGINS=<your-vercel-domain>` and `GOOGLE_API_KEY`.
-- **Frontend (Vercel)**: Root directory: `frontend`. Build command: `npm run build`, output: `dist`. Environment variable: `VITE_API_URL=<your-railway-url>`.
-
-Tests:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-### Environment variables
-
-<<<<<<< HEAD
-See [`.env.example`](.env.example). Only `GOOGLE_API_KEY` matters for the demo;
-without it the assistant answers from built-in replies and everything else works.
-
-## API
-
-| Method | Path | What it does |
+| How | Credentials | Sees |
 |---|---|---|
-| GET | `/health`, `/api/health` | Liveness; `/api/health` also reports assistant/voice status |
-| GET | `/api/business` | Business profile, safety buffer, today |
-| GET | `/api/parties` | Customers and suppliers in this workspace |
-| POST | `/api/parties` | Add a customer/supplier (validated) |
-| DELETE | `/api/parties/{id}` | Remove one |
-| POST | `/api/parties/upload` | Import an `.xlsx`/`.csv` ledger (multipart `file`) |
-| POST | `/api/parties/import` | Import parties as JSON |
-| POST | `/api/demo/reset` | Restore the demo khata for this workspace |
-| GET | `/api/forecast` | 90-day series, summary, dip causes, breakdowns, engine notes |
-| GET | `/api/fixes` | Fix options, each with its re-simulated series |
-| POST | `/api/assistant/chat` | Gemini answer grounded in the live forecast (`en`, `hi`, `route`) |
-| POST | `/api/assistant/transcribe` | Whisper transcript of an audio file |
-| POST | `/simulation/run`, `/simulation/compare` | Raw engine contract (see docs) |
+| "Open demo business" on the sign-in page | none | A private copy of the demo business, deleted after 24 hours |
+| Owner | `owner@ripple.demo` / `ripple-demo-2026` | Everything (shared demo business) |
+| Accountant | `accountant@ripple.demo` / `ripple-demo-2026` | Everything except team settings |
+| Supervisor | `supervisor@ripple.demo` / `ripple-demo-2026` | Orders and inventory only; the server removes every amount |
 
-Every `/api` call takes an optional `X-Workspace-Id` header (16–64 chars of
-`A-Z a-z 0-9 _ -`). The frontend generates one per browser, so visitors never see
-or change each other's data. Errors always look like
-`{"error": {"code": "...", "message"|"details": ...}}`.
+The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials are needed to evaluate.
 
-No login is needed: there is no account system, and each browser gets its own
-workspace automatically. Open the app and it is ready to test.
+## Screens
 
-## Data
+| Route | Purpose |
+|---|---|
+| `/app/today` | Morning view: headline sentence, position strip, ranked actions, this week, what changed |
+| `/app/engine` | Network (suppliers left, customers right, by exposure), Flow (the event graph the engine runs, with waiting bars and the cash and stock pools), Decisions (one day of the engine's loop), Timeline, Inspector, Table, what-if scenarios with diff |
+| `/app/book` | Position, goods, runway fan chart, risk and drivers, why the dip, ways to fix, transactions ledger |
+| `/app/khata` | Customers and suppliers, party drawer, reminders, 45-day MSME clock |
+| `/app/orders` | Sales orders with forecast delivery, purchase orders, "Can I take this order?" |
+| `/app/inventory` | Raw materials (needed, free, cover, reorder point, ABC), finished goods, recipes, movements |
+| `/app/settings` | Business profile, money rules, team and access, display, language, accessibility, data, privacy, account |
+| `/setup` | Describe the business in words, review what was understood against your own quotes, approve |
 
-All data is **synthetic sample data** (fictional businesses and phone numbers);
-nothing identifies a real person. Each new workspace starts with the same demo
-khata as the frontend's mock data (Mahalakshmi Fabrics, 6 suppliers, 8 customers).
-Demo rows move with today's date, so the dip is always on Day 34. Rows you add
-or import keep their real dates.
+Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY KAVERI`, `FIX`), `M` toggles Munim.
+In the Engine: `←` `→` one day, `Shift ←` `Shift →` one week, `N` next issue, `Space` play.
 
-## AI tools used
+## Architecture
 
-Disclose your team's tools here as required by the rulebook. This integration
-(the `backend/app/api` and `backend/app/assistant` packages, the frontend
-service-layer wiring, tests and this README) was written with Claude (Anthropic)
-and reviewed by the team. The assistant feature itself calls Google Gemini via
-LangChain and a local Whisper model (faster-whisper).
+```
+Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, same origin)
+                                                 ├─ records (SQLite, every row scoped by business_id)
+                                                 ├─ snapshot builder: records → BusinessSnapshot
+                                                 ├─ simulation core (deterministic contract, plus execution log)
+                                                 ├─ risk engine: samples delays, re-runs the core (worker process)
+                                                 ├─ fixes and scenarios: candidates evaluated by engine runs
+                                                 ├─ Munim: read-only tools, Groq tool calling, number grounding, templates
+                                                 └─ intake: text → facts with quotes → approval → records
+```
 
-## Known limitations
+Recompute pipeline: every write bumps the business's data version, which invalidates the cached run. The next read
+rebuilds the snapshot and runs the engine (about 10 ms), and a risk run is queued two seconds later in a worker process.
+Every baseline and scenario run is stored (`sim_run`) with its snapshot hash and its engine and schema versions.
 
-Previously disclosed limitations are out of scope for Bug Bounty reports.
+| Path | What |
+|---|---|
+| `backend/app/simulation/` | Engine (contract `simulation.contract.v1`), validation, transformations, comparison |
+| `backend/app/snapshot/builder.py` | Records → snapshot, stable IDs, labels (PRD 10) |
+| `backend/app/services/runs.py` | Cached baseline, net position, runway, buffer breach |
+| `backend/app/services/risk.py` | Delay sampling, Monte Carlo, drivers (PRD 11) |
+| `backend/app/services/fixes.py` | Fix candidates and their evaluation |
+| `backend/app/services/munim.py` | Assistant tools, LLM loop, grounding check, template answers |
+| `backend/app/services/messages.py` | Fixed en/ta/hi message templates, `wa.me` links |
+| `backend/app/records/seed.py` | Mahalakshmi Fabrics persona dataset (synthetic) |
+| `frontend/src/lib/format.ts` | The only place paise become rupees |
 
-1. **UI copy that is still static** (it lives in UI components, which were deliberately not changed):
-   - the red banner sentence on the Forecast page always names Sharma Yarn Mills and Kaveri Boutique;
-   - the WhatsApp composer's dates and the financed party's name are fixed;
-   - the upload dialog's preview table shows sample rows, not your file, and its toast counts customers from the sample (the actual import uses your file);
-   - the mic button records nothing until the optional patch below is applied;
-   - the assistant only shows English and Hindi, as before.
-2. **Optional UI patch.** [`docs/optional-ui-patch.diff`](docs/optional-ui-patch.diff) wires the mic to Whisper and fixes the upload toast count. Apply it with `git apply docs/optional-ui-patch.diff`. It was left unapplied on purpose.
-3. **Forecast model.** Customers who are overdue with no promised date are assumed to pay 7 days from today. Supplier bills already overdue are treated as due today. Bills due after Day 90 are outside the window.
-4. **Fixes.** At most four are offered (early payment, split, extension, invoice financing), built around the biggest bill at the dip and the biggest late receivable. If the balance never drops below the safety buffer, no fixes are shown.
-5. **Assistant.** It needs `GOOGLE_API_KEY`. Without it, or on any Gemini error, replies fall back to built-in keyword answers. Chat history lives in the browser tab only.
-6. **Voice.** It needs `requirements-voice.txt`, and the first use downloads the Whisper model, so the server needs internet once. Recordings are capped at 10 MB.
-7. **Limits:**
-   - 300 parties per workspace, 200 rows per import, 2 MB per upload;
-   - rate limits per client IP: 60 writes, 10 uploads, 20 chat and 10 voice requests per minute;
-   - 2,000 workspaces, with the least recently used evicted first.
-8. **Offline fallback.** If the backend can't be reached, the frontend falls back to its built-in sample data and logs a `[ripple]` warning in the browser console.
-9. **Storage.** SQLite with a single process. Run one uvicorn worker.
-=======
-```text
+## Stack and supported environments
+
+- Backend: Python 3.14 (tests pass on 3.14.5), FastAPI, Pydantic v2, SQLite through the standard library `sqlite3`,
+  Groq SDK. Passwords are hashed with `hashlib.scrypt`.
+- Frontend: React 18, Vite 5, TypeScript (strict), TanStack Query, Zustand, React Flow (`@xyflow/react`), Radix
+  Dialog and Popover, cmdk, i18next, Phosphor icons, self-hosted Anek (Latin, Tamil, Devanagari) and IBM Plex Mono.
+- Browsers: latest Chrome, Edge, Firefox and Safari, on phone (Today, Khata, Book) and desktop. Voice input needs a
+  Chromium browser and is hidden elsewhere.
+
+## Run locally
+
+Backend, from this directory:
+
+```
+python -m pip install -r requirements.txt
 uvicorn backend.app.main:app --reload
 ```
 
-To load local Groq settings from `.env` without exposing them in the repository:
+The database is created at `data/ripple.db` on first start and the shared demo business is seeded automatically.
 
-```powershell
-.\.venv\Scripts\dotenv.exe run -- `
-  .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app `
-  --host 127.0.0.1 --port 8000
+Frontend, in a second terminal:
+
+```
+cd frontend
+npm ci
+npm run dev          # http://localhost:5173, proxies /api to :8000
+npm run build        # production build into frontend/dist, served by FastAPI at /
 ```
 
-Swagger UI is then available at `http://127.0.0.1:8000/docs`.
->>>>>>> a8c4b9e7cfc0d12b3863e377e88091d0a554a54e
+Vite cannot build from a folder whose path contains `#`. If your checkout path has one (for example `M# 2026`),
+clone to a path without `#` or build from a copy.
+
+## Deployment
+
+One container serves the API and the built SPA from one origin (`Dockerfile`, `railway.json`).
+
+1. Create a Railway service from this repository; it builds the `Dockerfile`.
+2. Attach a persistent volume at `/data` (the SQLite file lives there).
+3. Set `DEMO_PASSWORD` and, optionally, `GROQ_API_KEY`. Keep one replica.
+4. Health check: `GET /api/health`.
+
+Render works the same way with a persistent disk at `/data`. The Dockerfile has not yet been built on a team machine
+(Docker is not installed on the build laptop), so do one deploy well before Checkpoint 1.
+
+## Environment variables
+
+See `.env.example`. `GROQ_API_KEY` is optional: without it, the set-up screen cannot read descriptions (the API still accepts reviewed facts) and Munim answers
+from templates, labelled as such on screen. Others: `DATABASE_URL`, `DEMO_PASSWORD`, `ALLOWED_ORIGINS`,
+`COOKIE_SECURE`, `RISK_SAMPLES`, `RISK_DRIVER_SAMPLES`, `RISK_FIX_SAMPLES`, `RISK_PROCESSES`, `MAX_SANDBOXES`,
+`RIPPLE_TODAY`.
+
+## Database
+
+SQLite, created automatically on start (schema in `backend/app/core/db.py`). Money columns are integer paise. The
+shared demo business is seeded on first start; owners can restore it from Settings > Data > Load demo data.
+
+## Tests
+
+```
+python -m unittest discover -s tests -v        # 64 backend tests: engine, intake, builder, risk, fixes, API, security
+cd frontend && npx vitest run                  # money and date formatting
+cd e2e && npm install && node smoke.mjs shots  # browser smoke against a running server (RIPPLE_URL, BROWSER_PATH)
+python -m scripts.bench_engine                 # E-5: one engine run and one risk refresh on the demo data
+```
+
+Measured on the build laptop: one engine run on the demo data (52 events, 90 days) takes about 9 ms. A full risk
+refresh (200 samples, plus 30 per customer for drivers) takes about 4 s in a worker process, and API responses stay
+under 200 ms while it runs.
+
+## Security notes (Bug Bounty)
+
+- Sessions are random tokens stored hashed on the server, sent as `HttpOnly`, `SameSite=Lax` cookies. Login errors are generic.
+- Roles are enforced by the API; supervisors' responses have every `*_paise` field removed on the server.
+- `business_id` always comes from the session. Another business's IDs return 404.
+- Writes require an `X-Ripple: 1` header (blocks cross-site form posts). Bodies are limited to 256 KB and validated
+  by Pydantic with length limits.
+- Rate limits: login 10 per minute per IP; Munim and set-up 20 per minute per user and 60 per hour per IP; demo
+  copies 6 per minute per IP.
+- CSP, `X-Frame-Options: DENY` and `nosniff` on every response; no stack traces in errors; CSV exports neutralise formulas.
+- Munim has no write tools; tool results are wrapped as data; any prepared action needs a click in the normal UI.
+- "Open demo business" gives each visitor a private copy, so one tester cannot wipe the demo for others.
+
+## Known limitations
+
+- The engine is a documented greedy daily policy, not an optimiser. "Optimal funding" stays unsupported.
+- The risk engine samples customer payment timing only; supplier-side dates are not sampled in v1.
+- The demo's payment history is synthetic. Risk numbers show the method working, not predictive accuracy.
+- Tamil and Hindi UI strings and message templates were written by the build team and need review by a fluent speaker.
+- Excel import, receipt image upload, WhatsApp and SMS notifications, and bank feeds are not built.
+- One business shape only: buy materials, produce, deliver, collect on credit.
+
+## Decisions taken during the build
+
+| PRD item | What was built | Why |
+|---|---|---|
+| Q1: where "+₹22.1L" came from | The old build computed its fix table in the browser (`frontend/src/data/fixes.ts`, a JavaScript re-simulation), not in the engine | Removed; every fix value now comes from an engine run |
+| E-1 execution log | Optional `execution_log` on `SimulationResult`, off by default. The Decisions view reads it; nothing is reconstructed | Additive and contract-compatible |
+| E-5 run time | Engine hot path made allocation-free with identical results (all original engine tests unchanged): about 9 ms per run | Risk needed it |
+| Risk drivers | A driver's share is the part of the expected shortfall that disappears when only that customer pays on terms, on the same random draws | With the first shortfall on day 34, a "30-day chance" was too coarse to rank drivers |
+| Early-payment discount, extension, invoice finance | Evaluated by the engine on a copy of the snapshot with the stated edit (discount, moved due date, fee), recorded as an assumption | The five transformations cannot change an amount or move a supplier payment |
+| Overdue receivables | Timed at the date the customer promised (if the owner recorded one), else the due date, else today | PRD 10.1 plus the owner's promise date |
+| SQLModel | Standard library `sqlite3` with a thin helper | Fewer moving parts on Python 3.14 |
+| Flow layout | Deterministic lane and row packing on the server instead of ELK | Positions are fixed by data, so no general layout engine is needed |
+| Charts | Hand-drawn SVG instead of visx | Full control of marks, one dependency fewer |
+
+## AI tools disclosed
+
+- In the product: Groq-hosted LLMs for intake extraction and for Munim (tool calling). They never compute money or dates.
+- In development: the team used AI coding assistants (including Claude Code) to write and review code and documents.
+
+## Third-party resources and synthetic data
+
+Libraries are listed in `requirements.txt` and `frontend/package.json`. Fonts: Anek (Ek Type, OFL) and IBM Plex Mono
+(OFL), self-hosted. Mahalakshmi Fabrics, its parties, phone numbers, GSTINs, Udyam numbers and payment history are
+fictional.
