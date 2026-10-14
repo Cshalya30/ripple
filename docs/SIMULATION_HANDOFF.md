@@ -1,5 +1,19 @@
 # Simulation Engine Handoff
 
+## What this component is
+
+This repository contains the deterministic simulation core and a thin FastAPI
+boundary. It calculates outcomes from a normalized `BusinessSnapshot`; it does
+not fetch data from an ERP, accounting package, bank, warehouse, or lender.
+
+The files under
+[`fixtures/simulation/examples/`](../fixtures/simulation/examples/) are
+hardcoded, deterministic examples used for demos and regression coverage.
+They are not loaded by the API in production. A consuming application must
+provide a contract-compliant request or add an adapter that builds one from
+real business systems. See
+[`SIMULATION_EXAMPLES.md`](SIMULATION_EXAMPLES.md) for the integration flow.
+
 ## Delivered
 
 - Typed Pydantic v2 schemas for snapshots, events, scenarios, results, and
@@ -16,6 +30,35 @@
   `POST /simulation/run` and `POST /simulation/compare`.
 - Mandatory fixtures, checked-in request/response examples, and regression
   tests.
+
+## API handoff
+
+Start the service from the repository root:
+
+```powershell
+uvicorn backend.app.main:app --reload
+```
+
+Endpoints:
+
+- `GET /health`
+- `POST /simulation/run`
+- `POST /simulation/compare`
+
+Request and response shapes are defined by
+[`SIMULATION_CONTRACT.md`](SIMULATION_CONTRACT.md) and the typed models in
+[`backend/app/simulation/schemas.py`](../backend/app/simulation/schemas.py).
+Both request parsing failures and domain validation failures return HTTP `422`
+with an `error.code` and machine-readable `error.details`.
+
+For a real integration, the caller is responsible for:
+
+- loading and authenticating the business data;
+- converting source currencies to integer paise;
+- normalizing inventory quantities and units;
+- generating stable IDs and dependency links;
+- choosing a consistent snapshot cutoff;
+- preserving the submitted snapshot and engine versions for audit.
 
 ## Validation run
 
@@ -48,12 +91,25 @@ both HTTP endpoints.
 6. The API returns `422` for both Pydantic request errors and domain validation
    errors using the documented machine-readable envelope.
 
-## Next integration choices
+## Known integration gaps
 
-- Decide where authenticated business snapshots will be loaded from.
-- Decide whether simulation results should be persisted or remain request-scoped.
-- Add production observability and request limits before exposing the endpoints
-  publicly.
-- Version the contract deliberately before adding breaking fields or event
-  types.
+- No ERP, accounting, banking, inventory, or lender adapters are included.
+- The API is synchronous and in-memory; results are request-scoped.
+- Authentication, authorization, persistence, audit storage, rate limiting, and
+  production observability are not implemented.
+- The engine requires a fully normalized dependency graph; it does not infer
+  business dependencies from arbitrary source-system records.
+- The current implementation supports the documented financing extension:
+  one drawdown and one repayment per facility. Confirm this extension against
+  the team's v1 contract before enabling it in a production workflow.
 
+## Recommended next handoff tasks
+
+1. Choose the first source system and define its field mapping to
+   `BusinessSnapshot`.
+2. Implement an adapter and snapshot builder outside the simulation engine.
+3. Add reconciliation checks for cash, inventory, dates, currency, and units.
+4. Add authenticated business-scoped API access and persistence.
+5. Store the normalized input, output, `schema_version`, and `engine_version`.
+6. Add integration tests using sanitized source-system payloads.
+7. Reconfirm the scheduling and financing policy before production rollout.

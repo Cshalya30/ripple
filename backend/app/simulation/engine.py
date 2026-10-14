@@ -61,6 +61,7 @@ def simulate(
 ) -> SimulationResult:
     scheduling_policy = policy or SchedulingPolicy()
     scenario_id = scenario.scenario_id if scenario is not None else "baseline"
+    original_due_dates = {event.id: event.due_date for event in snapshot.events}
     transformed, scenario_assumptions = apply_scenario(snapshot, scenario)
 
     events = {event.id: event for event in transformed.events}
@@ -95,7 +96,7 @@ def simulate(
             )
         )
 
-    event_results = _build_event_results(transformed, events, orders, state)
+    event_results = _build_event_results(transformed, events, orders, state, original_due_dates)
     order_results = _build_order_results(transformed, events, state)
     financing_summary = _build_financing_summary(transformed, state)
     unresolved_events = [event_result for event_result in event_results if event_result.status != EventStatus.EXECUTED]
@@ -327,13 +328,14 @@ def _build_event_results(
     events: dict[str, Event],
     orders: dict[str, Order],
     state: RuntimeState,
+    original_due_dates: dict[str, date | None],
 ) -> list[EventResult]:
     results: list[EventResult] = []
     horizon_last_day = snapshot.horizon_days - 1
     for event in sorted(events.values(), key=lambda item: item.id):
         actual_day = state.actual_days.get(event.id)
         actual_date = snapshot.start_date + timedelta(days=actual_day) if actual_day is not None else None
-        due_date = _commitment_due_date(event, orders)
+        due_date = _commitment_due_date(event, orders, original_due_dates)
         lateness = None
         if actual_date is not None and due_date is not None:
             lateness = max(0, (actual_date - due_date).days)
@@ -364,10 +366,14 @@ def _unresolved_status(event: Event, horizon_last_day: int, start_date: date, st
     return EventStatus.RESOURCE_BLOCKED_AT_HORIZON
 
 
-def _commitment_due_date(event: Event, orders: dict[str, Order]) -> date | None:
+def _commitment_due_date(
+    event: Event,
+    orders: dict[str, Order],
+    original_due_dates: dict[str, date | None],
+) -> date | None:
     if event.type == EventType.DELIVERY and event.order_id in orders:
         return orders[event.order_id].promised_delivery_date
-    return event.due_date
+    return original_due_dates.get(event.id, event.due_date)
 
 
 def _build_order_results(snapshot: BusinessSnapshot, events: dict[str, Event], state: RuntimeState) -> list[OrderResult]:
