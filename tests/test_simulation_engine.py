@@ -60,6 +60,9 @@ class MandatoryFixtureTests(unittest.TestCase):
     def test_fixture_b_delayed_old_receipt(self):
         snapshot = fixture_snapshot()
         result = simulate(snapshot, fixture_scenario("fixture_b_delayed_old_receipt"))
+        old_receipt = event_result(result, "old-customer-receipt")
+        self.assertEqual(old_receipt.original_due_date, date(2026, 1, 3))
+        self.assertEqual(old_receipt.lateness_days, 5)
         self.assertEqual(event_result(result, "supplier-payment").actual_execution_date, day(snapshot.start_date, 7))
         self.assertEqual(event_result(result, "material-arrival").actual_execution_date, day(snapshot.start_date, 8))
         self.assertEqual(event_result(result, "production-start").actual_execution_date, day(snapshot.start_date, 8))

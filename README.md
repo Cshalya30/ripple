@@ -36,9 +36,34 @@ Please follow these guidelines throughout the Bug Bounty event.
 
 All teams are expected to follow these rules strictly throughout the event.
 
+## Repository layout
+
+This directory is the repository root. The application code, fixtures, tests,
+and documentation live directly under it; there is no additional project
+subdirectory to enter before running commands.
+
+```text
+backend/   FastAPI application and simulation engine
+fixtures/  Mandatory simulation fixtures and examples
+tests/     Unit and API tests
+docs/      Simulation contract and integration notes
+```
+
 ## Simulation engine
 
 The `simulation-engine` branch includes a typed, deterministic business
 simulation module and FastAPI endpoints for running and comparing scenarios.
 See the [simulation contract](docs/SIMULATION_CONTRACT.md), [fixtures](docs/SIMULATION_FIXTURES.md),
 [examples](docs/SIMULATION_EXAMPLES.md), and [handoff](docs/SIMULATION_HANDOFF.md).
+
+From this repository root, run the tests with:
+
+```text
+python -m unittest discover -s tests -v
+```
+
+Start the API with:
+
+```text
+uvicorn backend.app.main:app --reload
+```

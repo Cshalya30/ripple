@@ -3,7 +3,14 @@
 The mandatory fixture set is
 [`fixtures/simulation/mandatory-fixtures.json`](../fixtures/simulation/mandatory-fixtures.json).
 It is intentionally small enough to inspect and is the source of truth for the
-example inputs and outputs.
+example inputs and outputs. It is not representative of a live integration and
+must not be treated as a database seed or production data feed.
+
+The checked-in examples under
+[`fixtures/simulation/examples/`](../fixtures/simulation/examples/) are
+generated request/response demonstrations. Real integrations should build the
+same contract-shaped request from external systems; they should not edit these
+files at runtime.
 
 ## Scenarios
 
@@ -28,4 +35,3 @@ Regenerate checked-in examples after changing the fixture contract:
 C:\Users\amanw\AppData\Local\Python\pythoncore-3.14-64\python.exe `
   fixtures\simulation\generate_examples.py
 ```
-
