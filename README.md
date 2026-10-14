@@ -56,6 +56,11 @@ simulation module and FastAPI endpoints for running and comparing scenarios.
 See the [simulation contract](docs/SIMULATION_CONTRACT.md), [fixtures](docs/SIMULATION_FIXTURES.md),
 [examples](docs/SIMULATION_EXAMPLES.md), and [handoff](docs/SIMULATION_HANDOFF.md).
 
+Garment-specific onboarding is documented in the
+[snapshot intake guide](docs/SNAPSHOT_INTAKE.md). It extracts reviewed business
+facts, builds the existing `BusinessSnapshot`, and leaves simulation execution
+to the deterministic engine.
+
 From this repository root, run the tests with:
 
 ```text
@@ -67,3 +72,13 @@ Start the API with:
 ```text
 uvicorn backend.app.main:app --reload
 ```
+
+To load local Groq settings from `.env` without exposing them in the repository:
+
+```powershell
+.\.venv\Scripts\dotenv.exe run -- `
+  .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app `
+  --host 127.0.0.1 --port 8000
+```
+
+Swagger UI is then available at `http://127.0.0.1:8000/docs`.

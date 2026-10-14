@@ -1,0 +1,1 @@
+"""Garment-specific snapshot intake."""
