@@ -165,7 +165,7 @@ Render works the same way with a persistent disk at `/data`. The Dockerfile has 
 
 ## Environment variables
 
-See `.env.example`. `GROQ_API_KEY` is optional: without it, set-up accepts reviewed facts only and Munim answers
+See `.env.example`. `GROQ_API_KEY` is optional: without it, the set-up screen cannot read descriptions (the API still accepts reviewed facts) and Munim answers
 from templates, labelled as such on screen. Others: `DATABASE_URL`, `DEMO_PASSWORD`, `ALLOWED_ORIGINS`,
 `COOKIE_SECURE`, `RISK_SAMPLES`, `RISK_DRIVER_SAMPLES`, `RISK_FIX_SAMPLES`, `RISK_PROCESSES`, `MAX_SANDBOXES`,
 `RIPPLE_TODAY`.
