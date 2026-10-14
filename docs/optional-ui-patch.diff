@@ -1,0 +1,110 @@
+diff -ruN a/frontend/src/components/AssistantWidget.tsx b/frontend/src/components/AssistantWidget.tsx
+--- a/frontend/src/components/AssistantWidget.tsx	2026-10-14 13:26:07.108219224 +0000
++++ b/frontend/src/components/AssistantWidget.tsx	2026-10-14 13:26:07.590154731 +0000
+@@ -3,7 +3,7 @@
+ import { AnimatePresence, motion } from 'framer-motion'
+ import { ChevronDown, Maximize2, Mic, Minus, Send, Sparkles, X } from 'lucide-react'
+ import { assistantLanguages, suggestedQuestions, voiceTranscripts, type AssistantAction } from '../data/assistant'
+-import { getReply } from '../services/assistantService'
++import { getReply, transcribeAudio } from '../services/assistantService'
+ import type { LanguageCode } from '../types'
+ 
+ interface ChatMessage {
+@@ -89,21 +89,80 @@
+     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+   }, [messages, typing, open, minimized])
+ 
+-  // Mock voice capture: record for ~3 seconds, then drop a transcript into the input.
++  // Voice capture: record up to 6 seconds, transcribe with the backend's Whisper model.
++  // No microphone or no voice backend: fall back to a sample transcript, as before.
+   useEffect(() => {
+     if (!listening) return
+     setSeconds(0)
++    let cancelled = false
++    let done = false
++    let recorder: MediaRecorder | null = null
++    let stream: MediaStream | null = null
++    const chunks: Blob[] = []
+     const tick = setInterval(() => setSeconds((s) => s + 1), 1000)
+-    const done = setTimeout(() => {
+-      setListening(false)
++    const useSample = () => {
+       setInput(voiceTranscripts[voiceIndex.current % voiceTranscripts.length])
+       voiceIndex.current += 1
+       setTranscriptNote(true)
++    }
++    const finish = async () => {
++      done = true
++      clearInterval(tick)
++      stream?.getTracks().forEach((t) => t.stop())
++      setListening(false)
++      try {
++        const text = chunks.length ? await transcribeAudio(new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' })) : ''
++        if (cancelled) return
++        if (text) {
++          setInput(text)
++          setTranscriptNote(false)
++        } else useSample()
++      } catch {
++        if (!cancelled) useSample()
++      }
+       setTimeout(() => inputRef.current?.focus(), 50)
++    }
++    const fallback = setTimeout(() => {
++      if (!recorder && !cancelled) {
++        done = true
++        clearInterval(tick)
++        setListening(false)
++        useSample()
++        setTimeout(() => inputRef.current?.focus(), 50)
++      }
+     }, 3200)
++    if (navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== 'undefined') {
++      navigator.mediaDevices
++        .getUserMedia({ audio: true })
++        .then((s) => {
++          if (cancelled || done) {
++            s.getTracks().forEach((t) => t.stop())
++            return
++          }
++          clearTimeout(fallback)
++          stream = s
++          recorder = new MediaRecorder(s)
++          recorder.ondataavailable = (e) => {
++            if (e.data.size) chunks.push(e.data)
++          }
++          recorder.onstop = () => void finish()
++          recorder.start()
++          setTimeout(() => {
++            if (recorder?.state === 'recording') recorder.stop()
++          }, 6000)
++        })
++        .catch(() => {
++          /* permission denied or no microphone: the 3.2 s fallback fills in a sample */
++        })
++    }
+     return () => {
+       clearInterval(tick)
+-      clearTimeout(done)
++      clearTimeout(fallback)
++      if (!done) {
++        cancelled = true
++        if (recorder?.state === 'recording') recorder.stop()
++        stream?.getTracks().forEach((t) => t.stop())
++      }
+     }
+   }, [listening])
+ 
+diff -ruN a/frontend/src/components/UploadModal.tsx b/frontend/src/components/UploadModal.tsx
+--- a/frontend/src/components/UploadModal.tsx	2026-10-14 13:26:07.109050743 +0000
++++ b/frontend/src/components/UploadModal.tsx	2026-10-14 13:26:07.590287370 +0000
+@@ -62,8 +62,7 @@
+   const doImport = async () => {
+     setImporting(true)
+     const n = await importParties()
+-    const customers = sampleRows.filter((r) => r.type === 'Customer').length
+-    pushToast(`Imported ${n} rows: ${customers} customers and ${n - customers} suppliers`)
++    pushToast(`Imported ${n} ${n === 1 ? 'row' : 'rows'} into your khata`)
+     onClose()
+   }
+ 

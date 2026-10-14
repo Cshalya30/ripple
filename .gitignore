@@ -43,3 +43,5 @@ Thumbs.db
 
 # Agents
 AGENTS.md
+# Ripple runtime data
+backend/data/

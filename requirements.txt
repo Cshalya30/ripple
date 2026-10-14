@@ -1,3 +1,12 @@
 pydantic==2.13.5
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
+# Ripple API (khata, uploads, assistant)
+python-multipart>=0.0.9
+openpyxl>=3.1,<4
+python-dotenv>=1.0
+tzdata  # timezone data for Windows and slim containers
+langchain-core>=0.3
+langchain-google-genai>=2.0
+# tests (FastAPI TestClient)
+httpx>=0.27

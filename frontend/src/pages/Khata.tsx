@@ -7,7 +7,7 @@ import { UploadModal } from '../components/UploadModal'
 import { SampleBadge } from '../components/SampleBadge'
 import { AnimatedNumber } from '../components/AnimatedNumber'
 import { useApp } from '../context/AppContext'
-import { TEMPLATE_CSV } from '../data/uploadSample'
+import { exportPartiesCsv } from '../services/partyService'
 import { formatINR } from '../lib/format'
 import type { Party, PartyKind } from '../types'
 
@@ -159,13 +159,14 @@ export default function Khata() {
   const customers = parties.filter((p) => p.kind === 'customer')
   const suppliers = parties.filter((p) => p.kind === 'supplier')
 
-  const downloadTemplate = () => {
-    const url = URL.createObjectURL(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }))
+  const downloadTemplate = async () => {
+    const csv = await exportPartiesCsv(parties)
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = 'ripple-khata-template.csv'
+    a.download = `ripple-khata-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
-    URL.revokeObjectURL(url)
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   return (
@@ -193,7 +194,7 @@ export default function Khata() {
           </button>
           <button type="button" className="btn btn-ghost" onClick={downloadTemplate}>
             <Download size={16} aria-hidden="true" />
-            Download template
+            Download CSV
           </button>
         </div>
       </div>

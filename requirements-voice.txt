@@ -1,0 +1,4 @@
+# Optional: local speech-to-text for the assistant's mic button.
+# First use downloads the Whisper model from Hugging Face (needs internet once).
+-r requirements.txt
+faster-whisper>=1.0
