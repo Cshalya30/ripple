@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 243 244 249;
+  --surface: 255 255 255;
+  --sunken: 237 239 247;
+  --ink: 15 22 52;
+  --muted: 93 103 132;
+  --line: 227 230 241;
+  --brand: 43 52 144;
+  --brand-soft: 232 234 250;
+  --on-brand: 255 255 255;
+  --gain: 12 125 88;
+  --gain-soft: 225 245 236;
+  --loss: 198 47 61;
+  --loss-soft: 252 232 234;
+  --warn: 148 88 0;
+  --warn-soft: 255 241 214;
+  --shadow: 20 28 70;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: 11 16 36;
+  --surface: 19 26 56;
+  --sunken: 14 20 46;
+  --ink: 237 240 255;
+  --muted: 160 169 201;
+  --line: 37 46 86;
+  --brand: 142 155 255;
+  --brand-soft: 29 38 86;
+  --on-brand: 11 16 36;
+  --gain: 61 220 151;
+  --gain-soft: 15 51 41;
+  --loss: 255 107 120;
+  --loss-soft: 58 22 32;
+  --warn: 255 184 77;
+  --warn-soft: 58 42 12;
+  --shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-bg font-sans text-ink antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.card {
+  @apply rounded-2xl border border-line bg-surface shadow-soft;
+}
+
+.lift {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgb(var(--shadow) / 0.06), 0 16px 32px -10px rgb(var(--shadow) / 0.18);
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[0.98];
+}
+.btn-primary {
+  @apply bg-brand text-on-brand hover:opacity-90;
+}
+.btn-ghost {
+  @apply border border-line bg-surface text-ink hover:bg-sunken;
+}
+
+.field {
+  @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/70;
+}
+.field[aria-invalid='true'] {
+  border-color: rgb(var(--loss));
+}
+
+/* React Flow tweaks */
+.react-flow__node {
+  cursor: pointer;
+}
+.react-flow__node:hover,
+.react-flow__node:focus-within {
+  z-index: 1000 !important;
+}
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__controls {
+  box-shadow: none !important;
+  border: 1px solid rgb(var(--line));
+  border-radius: 12px;
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: rgb(var(--surface)) !important;
+  border-bottom: 1px solid rgb(var(--line)) !important;
+  color: rgb(var(--ink)) !important;
+  fill: rgb(var(--ink)) !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+.react-flow__controls-button:hover {
+  background: rgb(var(--sunken)) !important;
+}
+.react-flow__background {
+  background: transparent !important;
+}
+
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.flow-dash {
+  animation: flowDash 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .flow-dash {
+    animation: none;
+  }
+}
