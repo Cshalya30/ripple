@@ -35,3 +35,10 @@ Please follow these guidelines throughout the Bug Bounty event.
 - Test only assigned projects and authorized accounts. Destructive testing, denial-of-service attacks, phishing, malware deployment, and attempts to access unrelated systems are prohibited.
 
 All teams are expected to follow these rules strictly throughout the event.
+
+## Simulation engine
+
+The `simulation-engine` branch includes a typed, deterministic business
+simulation module and FastAPI endpoints for running and comparing scenarios.
+See the [simulation contract](docs/SIMULATION_CONTRACT.md), [fixtures](docs/SIMULATION_FIXTURES.md),
+[examples](docs/SIMULATION_EXAMPLES.md), and [handoff](docs/SIMULATION_HANDOFF.md).

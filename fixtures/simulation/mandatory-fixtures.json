@@ -1,0 +1,197 @@
+{
+  "day_zero": "2026-01-01",
+  "money_unit": "paise",
+  "inventory_unit": "unit",
+  "baseline_snapshot": {
+    "schema_version": "simulation.contract.v1",
+    "business_id": "fixture-business",
+    "start_date": "2026-01-01",
+    "horizon_days": 15,
+    "opening_cash_paise": 2000000,
+    "opening_inventory": [],
+    "orders": [
+      {
+        "id": "order-new",
+        "customer_id": "customer-new",
+        "promised_delivery_date": "2026-01-07",
+        "material_requirements": [
+          {"material_id": "material-a", "quantity": 1, "unit": "unit"}
+        ],
+        "production_start_cost_paise": 1000000,
+        "production_duration_days": 2,
+        "priority": 1
+      }
+    ],
+    "events": [
+      {
+        "id": "old-customer-receipt",
+        "type": "CASH_RECEIPT",
+        "counterparty_id": "customer-old",
+        "earliest_date": "2026-01-03",
+        "due_date": "2026-01-03",
+        "dependencies": [],
+        "priority": 1,
+        "amount_paise": 3000000
+      },
+      {
+        "id": "supplier-payment",
+        "type": "SUPPLIER_PAYMENT",
+        "counterparty_id": "supplier-a",
+        "earliest_date": "2026-01-04",
+        "due_date": "2026-01-04",
+        "dependencies": [],
+        "priority": 1,
+        "amount_paise": 4000000
+      },
+      {
+        "id": "material-arrival",
+        "type": "INVENTORY_ARRIVAL",
+        "counterparty_id": "supplier-a",
+        "earliest_date": "2026-01-01",
+        "dependencies": [{"predecessor_event_id": "supplier-payment", "lag_days": 1}],
+        "priority": 1,
+        "inventory_quantities": [
+          {"material_id": "material-a", "quantity": 1, "unit": "unit"}
+        ]
+      },
+      {
+        "id": "production-start",
+        "type": "PRODUCTION_START",
+        "order_id": "order-new",
+        "earliest_date": "2026-01-05",
+        "dependencies": [{"predecessor_event_id": "material-arrival", "lag_days": 0}],
+        "priority": 1
+      },
+      {
+        "id": "production-complete",
+        "type": "PRODUCTION_COMPLETE",
+        "order_id": "order-new",
+        "earliest_date": "2026-01-01",
+        "dependencies": [{"predecessor_event_id": "production-start", "lag_days": 2}],
+        "priority": 1
+      },
+      {
+        "id": "delivery",
+        "type": "DELIVERY",
+        "order_id": "order-new",
+        "counterparty_id": "customer-new",
+        "earliest_date": "2026-01-01",
+        "due_date": "2026-01-07",
+        "dependencies": [{"predecessor_event_id": "production-complete", "lag_days": 0}],
+        "priority": 1
+      },
+      {
+        "id": "new-customer-receipt",
+        "type": "CASH_RECEIPT",
+        "order_id": "order-new",
+        "counterparty_id": "customer-new",
+        "earliest_date": "2026-01-01",
+        "dependencies": [{"predecessor_event_id": "delivery", "lag_days": 4}],
+        "priority": 1,
+        "amount_paise": 6000000
+      }
+    ],
+    "approved_credit_facilities": []
+  },
+  "scenarios": {
+    "fixture_b_delayed_old_receipt": {
+      "scenario_id": "fixture-b-delayed-old-receipt",
+      "assumptions": ["Old customer receipt is delayed by agreement or collection reality."],
+      "changes": [
+        {
+          "type": "MOVE_RECEIPT_DATE",
+          "event_id": "old-customer-receipt",
+          "new_earliest_date": "2026-01-08",
+          "new_due_date": "2026-01-08"
+        }
+      ]
+    },
+    "fixture_c_deposit": {
+      "scenario_id": "fixture-c-deposit",
+      "assumptions": ["Old customer receipt remains delayed to Day 7."],
+      "changes": [
+        {
+          "type": "MOVE_RECEIPT_DATE",
+          "event_id": "old-customer-receipt",
+          "new_earliest_date": "2026-01-08",
+          "new_due_date": "2026-01-08"
+        },
+        {
+          "type": "SPLIT_CUSTOMER_COLLECTION",
+          "event_id": "new-customer-receipt",
+          "deposit_event_id": "new-customer-deposit",
+          "deposit_amount_paise": 3000000,
+          "deposit_date": "2026-01-03",
+          "customer_agreement_assumption": "New customer agrees to pay a refundable deposit before production."
+        }
+      ]
+    },
+    "fixture_d_credit_bridge": {
+      "scenario_id": "fixture-d-credit-bridge",
+      "assumptions": ["Old customer receipt remains delayed to Day 7."],
+      "changes": [
+        {
+          "type": "MOVE_RECEIPT_DATE",
+          "event_id": "old-customer-receipt",
+          "new_earliest_date": "2026-01-08",
+          "new_due_date": "2026-01-08"
+        },
+        {
+          "type": "ADD_CREDIT_BRIDGE",
+          "facility_id": "facility-bridge",
+          "facility": {
+            "id": "facility-bridge",
+            "approved_limit_paise": 3000000,
+            "available_from_date": "2026-01-04",
+            "annual_interest_rate_bps": 1200,
+            "drawdown_fee_paise": 0,
+            "contractual_repayment_date": "2026-01-11",
+            "assumptions": ["Illustrative facility entered by user; no lender integration."]
+          },
+          "drawdown_event_id": "credit-drawdown",
+          "repayment_event_id": "credit-repayment",
+          "principal_paise": 3000000,
+          "drawdown_date": "2026-01-04",
+          "assumption": "Business chooses an explicit bridge drawdown on Day 3."
+        }
+      ]
+    },
+    "fixture_e_credit_repayment_stress": {
+      "scenario_id": "fixture-e-credit-repayment-stress",
+      "assumptions": ["Customer collections move beyond the 15-day planning horizon."],
+      "changes": [
+        {
+          "type": "MOVE_RECEIPT_DATE",
+          "event_id": "old-customer-receipt",
+          "new_earliest_date": "2026-01-17",
+          "new_due_date": "2026-01-17"
+        },
+        {
+          "type": "ADD_CREDIT_BRIDGE",
+          "facility_id": "facility-bridge",
+          "facility": {
+            "id": "facility-bridge",
+            "approved_limit_paise": 3000000,
+            "available_from_date": "2026-01-04",
+            "annual_interest_rate_bps": 1200,
+            "drawdown_fee_paise": 0,
+            "contractual_repayment_date": "2026-01-11",
+            "assumptions": ["Illustrative facility entered by user; no lender integration."]
+          },
+          "drawdown_event_id": "credit-drawdown",
+          "repayment_event_id": "credit-repayment",
+          "principal_paise": 3000000,
+          "drawdown_date": "2026-01-04",
+          "assumption": "Business chooses an explicit bridge drawdown on Day 3."
+        },
+        {
+          "type": "MOVE_RECEIPT_DATE",
+          "event_id": "new-customer-receipt",
+          "new_earliest_date": "2026-01-17",
+          "new_due_date": "2026-01-17",
+          "assumption": "The new customer collection is delayed beyond repayment maturity."
+        }
+      ]
+    }
+  }
+}
