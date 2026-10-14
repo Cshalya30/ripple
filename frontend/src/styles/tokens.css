@@ -1,0 +1,125 @@
+/* Bahi design tokens (PRD 17). Night is the default. */
+:root, [data-theme="night"] {
+  --ground:        #0D0C0A;
+  --surface:       #141310;
+  --raised:        #1B1915;
+  --hover:         #24211C;
+  --rule:          #2E2A23;
+  --rule-strong:   #463F34;
+  --text:          #ECE5D3;
+  --text-2:        #B3A994;
+  --text-3:        #7F7766;
+  --haldi:         #E4A43A;
+  --haldi-wash:    rgba(228,164,58,0.12);
+  --in:            #7DB88A;
+  --out:           #E8664F;
+  --in-wash:       rgba(125,184,138,0.12);
+  --out-wash:      rgba(232,102,79,0.12);
+  --focus:         #ECE5D3;
+  --scrim:         rgba(5,5,4,0.6);
+  --shadow-float:  0 12px 32px rgba(0,0,0,.45);
+  --on-primary:    #0D0C0A;
+  --primary:       var(--haldi);
+  color-scheme: dark;
+}
+
+[data-theme="day"] {
+  --ground:        #F3F1EC;
+  --surface:       #FAF9F6;
+  --raised:        #FFFFFF;
+  --hover:         #ECE9E2;
+  --rule:          #DDD8CD;
+  --rule-strong:   #BDB5A5;
+  --text:          #17150F;
+  --text-2:        #554F46;
+  --text-3:        #857E72;
+  --haldi:         #9E640C;
+  --haldi-wash:    rgba(158,100,12,0.10);
+  --in:            #2D7845;
+  --out:           #BC3A22;
+  --in-wash:       rgba(45,120,69,0.10);
+  --out-wash:      rgba(188,58,34,0.10);
+  --focus:         #17150F;
+  --scrim:         rgba(23,21,15,0.35);
+  --shadow-float:  0 8px 24px rgba(23,21,15,.12);
+  --primary:       var(--text);
+  --on-primary:    var(--ground);
+  color-scheme: light;
+}
+
+[data-theme="lamp"] {
+  --ground:        #1A1610;
+  --surface:       #201B14;
+  --raised:        #272118;
+  --hover:         #2E271D;
+  --rule:          #3A3125;
+  --rule-strong:   #54493A;
+  --text:          #E6D6B6;
+  --text-2:        #B9A887;
+  --text-3:        #8A7B62;
+  --haldi:         #D9A646;
+  --haldi-wash:    rgba(217,166,70,0.12);
+  --in:            #A6B878;
+  --out:           #DE7B57;
+  --in-wash:       rgba(166,184,120,0.12);
+  --out-wash:      rgba(222,123,87,0.12);
+  --focus:         #E6D6B6;
+  --scrim:         rgba(10,8,5,0.6);
+  --shadow-float:  0 12px 32px rgba(0,0,0,.45);
+  --on-primary:    #1A1610;
+  --primary:       var(--haldi);
+  color-scheme: dark;
+}
+
+[data-contrast="high"] {
+  --text-2: var(--text);
+  --text-3: var(--text-2);
+  --rule: var(--rule-strong);
+}
+
+:root {
+  --font-ui: 'Anek Latin Variable', 'Anek Tamil Variable', 'Anek Devanagari Variable', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --r-1: 2px;
+  --r-2: 4px;
+
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 280ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --rail: 216px;
+  --topbar: 48px;
+  --statusbar: 24px;
+  --munim: 380px;
+
+  /* Instrument density by default; Simple overrides below. */
+  --t-micro: 11px;  --lh-micro: 14px;
+  --t-small: 12px;  --lh-small: 16px;
+  --t-body: 13px;   --lh-body: 18px;
+  --t-lead: 15px;   --lh-lead: 20px;
+  --t-h2: 18px;     --lh-h2: 24px;
+  --t-h1: 22px;     --lh-h1: 28px;
+  --t-figure: 26px; --lh-figure: 32px;
+  --row: 32px;
+  --control: 32px;
+  --scale: 1;
+}
+
+.density-simple {
+  --t-micro: 12px;  --lh-micro: 16px;
+  --t-small: 13px;  --lh-small: 18px;
+  --t-body: 15px;   --lh-body: 22px;
+  --t-lead: 18px;   --lh-lead: 26px;
+  --t-h2: 22px;     --lh-h2: 28px;
+  --t-h1: 28px;     --lh-h1: 34px;
+  --t-figure: 30px; --lh-figure: 36px;
+  --row: 48px;
+  --control: 44px;
+}
+
+html[data-size="S"] { font-size: 93.75%; zoom: 0.94; }
+html[data-size="L"] { zoom: 1.15; }
+html[data-size="XL"] { zoom: 1.3; }
+html[data-targets="large"] { --control: 44px; --row: 44px; }

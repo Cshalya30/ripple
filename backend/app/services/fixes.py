@@ -125,7 +125,7 @@ def candidates(run: Run) -> list[dict[str, Any]]:
         expected = run_expected(run, receipt.id) or receipt.earliest_date
         advance = (receipt.amount_paise or 0) * FINANCE_ADVANCE_BP // 10_000
         days = max(30, (expected - advance_date).days)
-        fee = -(-advance * FINANCE_FEE_BP_PER_30D * days // (10_000 * 30))
+        fee = -(-advance * FINANCE_FEE_BP_PER_30D * days // (10_000 * 30 * 100)) * 100  # rounded up to whole rupees
         out.append({
             "id": "invoice-finance", "kind": "INVOICE_FINANCE", "party_id": receipt.counterparty_id, "party_name": customer,
             "title": f"Finance the {customer} invoice",

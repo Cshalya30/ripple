@@ -7,6 +7,7 @@ os.environ.pop("GROQ_API_KEY", None)
 os.environ.setdefault("RISK_SAMPLES", "40")
 os.environ.setdefault("RISK_DRIVER_SAMPLES", "10")
 os.environ.setdefault("RISK_FIX_SAMPLES", "20")
+os.environ.setdefault("RISK_PROCESSES", "0")
 
 from fastapi.testclient import TestClient  # noqa: E402
 

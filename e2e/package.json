@@ -1,0 +1,8 @@
+{
+  "name": "ripple-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser smoke test: demo login, every screen, a scenario, Munim, a payment, phone width in Tamil.",
+  "scripts": { "smoke": "node smoke.mjs shots" },
+  "dependencies": { "playwright-core": "^1.48.0" }
+}

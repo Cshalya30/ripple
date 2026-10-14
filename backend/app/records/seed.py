@@ -96,7 +96,7 @@ RECEIVABLES = [
 PAYABLES = [
     ("RRL/1188", "rajdhani", "Freight, September dispatches", 38_000, -12, 3),
     ("BDW/0763", "bhavani", "Dyeing, 1,400 m", 95_000, 5, 20),
-    ("GCS/5521", "gopal", "Combed cotton yarn 560 kg", 160_000, 20, 50),
+    ("GCS/5521", "gopal", "Combed cotton yarn 560 kg", 160_000, 20, 66),
     ("SYM/2207", "sharma", "Cotton yarn 40s, 1,250 kg", 352_000, 4, 34),
     ("LST/0342", "lakshmi", "Zari thread and silk yarn", 40_000, -10, 52),
     ("PPK/2290", "patel", "Packing covers and cartons", 24_000, 26, 71),

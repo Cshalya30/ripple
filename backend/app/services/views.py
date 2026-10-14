@@ -85,7 +85,7 @@ def cached_views(run) -> list[dict[str, Any]]:
     views = getattr(run, "_views", None)
     if views is None:
         views = event_views(run.built, run.result)
-        layout_rows(views)
+        layout_rows(views, len(run.result.daily_balances))
         run._views = views
     return views
 
@@ -129,12 +129,18 @@ def _wait_ranges(history, earliest_day: int) -> list[dict[str, Any]]:
     return ranges
 
 
-def layout_rows(events: list[dict[str, Any]], width_days: int = 6) -> None:
-    """Assign a row inside each lane so nodes do not overlap (deterministic)."""
+def layout_rows(events: list[dict[str, Any]], horizon: int, width_days: int = 6) -> None:
+    """Assign a day position and a row inside each lane so nodes do not overlap (deterministic).
+    Executed events sit on their execution day; blocked ones on the day they fell due;
+    events that never become possible within the forecast sit at its end."""
     by_lane: dict[str, list[dict[str, Any]]] = {}
     for event in events:
-        event["x_day"] = event["executed_day"] if event["executed_day"] is not None else (
-            max(event["earliest_day"] or 0, event.get("due_day") or 0) if event["state"] != "EXECUTED" else 0)
+        if event["executed_day"] is not None:
+            event["x_day"] = event["executed_day"]
+        elif event["state"] == "BLOCKED":
+            event["x_day"] = max(0, event["waited_from_day"] if event["waited_from_day"] is not None else (event.get("due_day") or 0))
+        else:
+            event["x_day"] = horizon
         by_lane.setdefault(event["lane"], []).append(event)
     for lane_events in by_lane.values():
         lane_events.sort(key=lambda e: (e["x_day"], e["id"]))
@@ -154,7 +160,7 @@ def run_payload(run, events: list[dict[str, Any]] | None = None) -> dict[str, An
     built, result = run.built, run.result
     evs = events if events is not None else cached_views(run)
     if events is not None:
-        layout_rows(evs)
+        layout_rows(evs, len(result.daily_balances))
     materials = built.meta["materials"]
     stock = []
     for material_id, info in materials.items():
@@ -186,6 +192,8 @@ def run_payload(run, events: list[dict[str, Any]] | None = None) -> dict[str, An
         "orders": [o.model_dump(mode="json") for o in result.order_results],
         "assumptions": result.assumptions,
         "warnings": built.warnings,
+        "facilities": [{"id": fid, "label": info["label"]} for fid, info in built.meta["facilities"].items()
+                       if any(f.id == fid for f in built.snapshot.approved_credit_facilities)],
     }
 
 
@@ -205,13 +213,19 @@ def network(business_id: str, run) -> dict[str, Any]:
         party_events = sorted(by_party.get(party["id"], []), key=lambda e: (e["executed_day"] if e["executed_day"] is not None else 10**6, e["id"]))
         upcoming = [e for e in party_events if e["direction"] != "NONE" and (e["executed_day"] is None or e["executed_day"] >= 0)]
         next_money = next((e for e in upcoming if e["state"] != "EXECUTED" or e["executed_day"] is not None), None)
-        blocked = any(e["state"] == "BLOCKED" or any(w["code"] in RESOURCE_CODES for w in e["waits"]) for e in party_events if e["direction"] == "OUT")
+        # Only money the business owes a supplier can be "blocked"; a customer's order can be late.
+        blocked = party["kind"] == "SUPPLIER" and any(
+            e["state"] == "BLOCKED" or any(w["code"] == "INSUFFICIENT_CASH" for w in e["waits"])
+            for e in party_events if e["type"] == "SUPPLIER_PAYMENT")
+        late_orders = [{"order_id": o.order_id, "lateness_days": o.delivery_lateness_days}
+                       for o in run.result.order_results
+                       if (o.delivery_lateness_days or 0) > 0 and any(e["order_id"] == o.order_id for e in party_events)]
         late_days = entry.get("max_days_overdue", 0)
         nodes.append({
             "id": party["id"], "kind": party["kind"], "name": party["name"], "city": party["city"],
             "tags": _json_list(party["tags_json"]), "outstanding_paise": entry.get("outstanding_paise", 0),
             "exposure_bp": entry.get("exposure_bp", 0), "oldest_due": entry.get("oldest_due"), "days_overdue": late_days,
-            "blocked": blocked, "next_event": next_money and {k: next_money[k] for k in ("id", "label", "executed_date", "due_date", "amount_paise", "state", "lateness_days")},
+            "blocked": blocked, "late_orders": late_orders, "next_event": next_money and {k: next_money[k] for k in ("id", "label", "executed_date", "due_date", "amount_paise", "state", "lateness_days")},
             "event_ids": [e["id"] for e in party_events],
             "risk": model["customers"].get(party["id"]),
         })
@@ -303,7 +317,12 @@ def do_today(business_id: str, run, risk: dict[str, Any] | None) -> list[dict[st
         inventory_wait = [w for w in event["waits"] if w["code"] == "INSUFFICIENT_INVENTORY" and w["from_day"] <= 7]
         if event["type"] == "PRODUCTION_START" and inventory_wait:
             details = inventory_wait[0]["first_details"]
+            material = run.built.meta["materials"].get(details["material_id"], {})
+            factor = material.get("unit_factor") or 1
+            qty = details["shortfall_quantity"] / factor
             actions.append({"kind": "STOCK", "order_id": event["order_id"], "material_id": details["material_id"],
+                            "material_name": material.get("name"),
+                            "short_label": f"{qty:,.1f}".rstrip("0").rstrip(".") + f" {material.get('unit', '')}",
                             "shortfall_quantity": details["shortfall_quantity"], "event_id": event["id"],
                             "from_day": inventory_wait[0]["from_day"], "to_day": inventory_wait[0]["to_day"], "action": "SHOW_ENGINE"})
     order = {"CHASE": 0, "PAY": 1, "RECEIVE": 2, "STOCK": 3, "REORDER": 4}

@@ -178,8 +178,32 @@ def compute(
     with_drivers: bool = True,
     samples: int | None = None,
 ) -> dict[str, Any]:
-    started = time.perf_counter()
+    """Read the delay history (database, this process), sample (worker process), store the run."""
     model = delay_model(business_id)
+    args = (model, built, buffer_paise, snapshot, scenario, scenario_key, with_drivers, samples or n_samples(), m_samples())
+    result = run_pure(simulate_risk, *args)
+    if result["status"] == "READY":
+        insert(get_conn(), "risk_run", {
+            "id": f"risk-{uuid.uuid4().hex[:16]}", "business_id": business_id, "snapshot_hash": built.snapshot_hash,
+            "scenario_hash": scenario_key, "seed": result["seed"], "n_samples": result["n_samples"], "m_samples": result["m_samples"],
+            "summary_json": {k: v for k, v in result.items() if k != "fan"}, "duration_ms": result["duration_ms"],
+        })
+    return result
+
+
+def simulate_risk(
+    model: dict[str, Any],
+    built: BuiltSnapshot,
+    buffer_paise: int,
+    snapshot: BusinessSnapshot | None,
+    scenario: Scenario | None,
+    scenario_key: str,
+    with_drivers: bool,
+    n: int,
+    m_default: int,
+) -> dict[str, Any]:
+    """Pure: no database, safe to run in a worker process."""
+    started = time.perf_counter()
     snap = snapshot or built.snapshot
     receipts = [e for e in snap.events if e.type == EventType.CASH_RECEIPT and built.meta["events"].get(e.id, {}).get("receipt_kind")]
     customers_in_play = sorted({e.counterparty_id for e in receipts if e.counterparty_id})
@@ -198,7 +222,6 @@ def compute(
     if not model["sufficient"]:
         return {**base, "status": "INSUFFICIENT_HISTORY", "n_samples": 0, "m_samples": 0, "computed_at": now_iso()}
 
-    n = samples or n_samples()
     seed = _seed(built.snapshot_hash, scenario_key)
     sampler = DelaySampler(model)
     outcomes = run_samples(built, snap, scenario, sampler, buffer_paise, n, seed)
@@ -208,7 +231,7 @@ def compute(
     if with_drivers:
         # Driver share: how much of the expected shortfall disappears when one customer pays on terms,
         # measured on the same random draws (common random numbers) so only that customer changes.
-        m = min(m_samples(), n)
+        m = min(m_default, n)
         reference = expected_gap(outcomes[:m])
         reductions = {}
         for customer in customers_in_play:
@@ -221,14 +244,34 @@ def compute(
                             "share": round(reduction / total, 4) if total > 0 else 0.0,
                             "reduction_paise": round(reduction), "no_history": info.get("no_history", False)})
     duration = (time.perf_counter() - started) * 1000
-    result = {**base, **summary, "status": "READY", "n_samples": n, "m_samples": m, "seed": seed, "drivers": drivers,
-              "computed_at": now_iso(), "duration_ms": round(duration)}
-    insert(get_conn(), "risk_run", {
-        "id": f"risk-{uuid.uuid4().hex[:16]}", "business_id": business_id, "snapshot_hash": built.snapshot_hash,
-        "scenario_hash": scenario_key, "seed": seed, "n_samples": n, "m_samples": m,
-        "summary_json": {k: v for k, v in result.items() if k != "fan"}, "duration_ms": duration,
-    })
-    return result
+    return {**base, **summary, "status": "READY", "n_samples": n, "m_samples": m, "seed": seed, "drivers": drivers,
+            "computed_at": now_iso(), "duration_ms": round(duration)}
+
+
+# ---------------------------------------------------------------- worker process
+# Sampling is CPU-bound. In a thread it holds the GIL and slows every API request,
+# so it runs in a separate process. RISK_PROCESSES=0 keeps it in-process (tests).
+
+_pool = None
+_pool_lock = threading.Lock()
+
+
+def run_pure(fn: Callable[..., dict[str, Any]], *args: Any) -> dict[str, Any]:
+    global _pool
+    if os.getenv("RISK_PROCESSES", "1") == "0":
+        return fn(*args)
+    with _pool_lock:
+        if _pool is None:
+            import multiprocessing
+            from concurrent.futures import ProcessPoolExecutor
+            _pool = ProcessPoolExecutor(max_workers=int(os.getenv("RISK_PROCESSES", "1")), mp_context=multiprocessing.get_context("spawn"))
+        pool = _pool
+    try:
+        return pool.submit(fn, *args).result(timeout=120)
+    except Exception:  # noqa: BLE001 - a broken pool falls back to in-process work
+        with _pool_lock:
+            _pool = None
+        return fn(*args)
 
 
 # ---------------------------------------------------------------- background jobs
