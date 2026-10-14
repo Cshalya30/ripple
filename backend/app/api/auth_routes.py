@@ -1,0 +1,161 @@
+from __future__ import annotations
+
+import json
+import os
+import secrets
+from datetime import datetime, timedelta, timezone
+from typing import Any, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..core import auth
+from ..core.auth import ANYONE, Principal, client_ip, limiter
+from ..core.db import delete_business_data, execute, insert, now_iso, query, query_one, today, tx, update
+from ..records.seed import seed_business
+
+router = APIRouter()
+
+DEMO_BUSINESS = "mahalakshmi"
+DEMO_ACCOUNTS = [
+    ("owner@ripple.demo", "Meera Sundaram", "OWNER"),
+    ("accountant@ripple.demo", "Ravi Kumar", "ACCOUNTANT"),
+    ("supervisor@ripple.demo", "Selvi Murugan", "SUPERVISOR"),
+]
+SANDBOX_TTL_HOURS = 24
+MAX_SANDBOXES = int(os.getenv("MAX_SANDBOXES", "400"))
+
+
+def demo_password() -> str:
+    return os.getenv("DEMO_PASSWORD", "ripple-demo-2026")
+
+
+class Strict(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class LoginBody(Strict):
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class PrefsBody(Strict):
+    language_ui: Literal["en", "ta", "hi"] | None = None
+    language_assistant: Literal["en", "ta", "hi"] | None = None
+    language_messages: Literal["en", "ta", "hi"] | None = None
+    theme: Literal["night", "day", "lamp"] | None = None
+    text_size: Literal["S", "M", "L", "XL"] | None = None
+    density: Literal["auto", "simple", "instrument"] | None = None
+    number_format: Literal["indian", "international"] | None = None
+    reduce_motion: bool | None = None
+    high_contrast: bool | None = None
+    read_aloud: bool | None = None
+    large_targets: bool | None = None
+
+
+def ensure_demo() -> None:
+    """Seed the shared, credentialed demo business once (README test accounts)."""
+    if query_one("SELECT id FROM business WHERE id = ?", (DEMO_BUSINESS,)) is None:
+        with tx() as conn:
+            seed_business(conn, DEMO_BUSINESS, today())
+    for email, name, role in DEMO_ACCOUNTS:
+        if query_one("SELECT id FROM user WHERE email = ?", (email,)) is None:
+            with tx() as conn:
+                insert(conn, "user", {"id": f"u-{role.lower()}", "business_id": DEMO_BUSINESS, "email": email,
+                                      "password_hash": auth.hash_password(demo_password()), "name": name, "role": role,
+                                      "prefs_json": "{}"})
+
+
+def cleanup_sandboxes() -> int:
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=SANDBOX_TTL_HOURS)).isoformat(timespec="seconds")
+    old = query("SELECT id FROM business WHERE is_sandbox = 1 AND created_at < ?", (cutoff,))
+    for row in old:
+        with tx() as conn:
+            delete_business_data(conn, row["id"])
+            conn.execute("DELETE FROM session WHERE business_id = ?", (row["id"],))
+            conn.execute("DELETE FROM user WHERE business_id = ?", (row["id"],))
+            conn.execute("DELETE FROM business WHERE id = ?", (row["id"],))
+    execute("DELETE FROM session WHERE expires_at < ?", (now_iso(),))
+    return len(old)
+
+
+def me_payload(principal: Principal) -> dict[str, Any]:
+    business = query_one("SELECT * FROM business WHERE id = ?", (principal.business_id,))
+    return {
+        "user": {"id": principal.user_id, "email": principal.email, "name": principal.name, "role": principal.role},
+        "prefs": principal.prefs,
+        "business": {
+            "name": business["name"], "owner_name": business["owner_name"], "udyam_number": business["udyam_number"],
+            "msme_category": business["msme_category"], "safety_buffer_paise": business["safety_buffer_paise"] if principal.role != "SUPERVISOR" else None,
+            "horizon_days": business["horizon_days"], "is_sandbox": bool(business["is_sandbox"]), "gstin": business["gstin"],
+        },
+        "today": today().isoformat(),
+        "demo_accounts": [{"email": e, "role": r} for e, _, r in DEMO_ACCOUNTS],
+    }
+
+
+@router.post("/auth/login")
+def login(body: LoginBody, request: Request, response: Response):
+    limiter.check(f"login:{client_ip(request)}", 10, 60)
+    user = query_one("SELECT * FROM user WHERE email = ?", (body.email.strip().lower(),))
+    if not auth.check_password_or_dummy(body.password, user["password_hash"] if user else None):
+        raise HTTPException(status_code=401, detail={"code": "BAD_CREDENTIALS", "message": "Email or password is wrong"})
+    auth.create_session(response, request, user)
+    business = query_one("SELECT is_sandbox FROM business WHERE id = ?", (user["business_id"],))
+    principal = Principal(user["id"], user["business_id"], user["role"], user["email"], user["name"],
+                          {**auth.DEFAULT_PREFS, **json.loads(user["prefs_json"] or "{}")}, bool(business["is_sandbox"]))
+    return me_payload(principal)
+
+
+@router.post("/auth/demo")
+def demo(request: Request, response: Response):
+    """A private copy of the demo business for this visitor, deleted after 24 hours."""
+    limiter.check(f"demo:{client_ip(request)}", 6, 60)
+    limiter.check("demo:global", 120, 3600)
+    cleanup_sandboxes()
+    count = query_one("SELECT COUNT(*) AS c FROM business WHERE is_sandbox = 1")["c"]
+    if count >= MAX_SANDBOXES:
+        raise HTTPException(status_code=503, detail={"code": "DEMO_CAPACITY", "message": "Too many demo copies right now. Sign in with the demo owner account instead."})
+    business_id = f"sbx-{secrets.token_hex(6)}"
+    user_id = f"u-{secrets.token_hex(6)}"
+    with tx() as conn:
+        seed_business(conn, business_id, today(), is_sandbox=True)
+        insert(conn, "user", {"id": user_id, "business_id": business_id, "email": f"{business_id}@sandbox.ripple",
+                              "password_hash": auth.hash_password(secrets.token_urlsafe(16)), "name": "Meera Sundaram",
+                              "role": "OWNER", "prefs_json": "{}"})
+    user = query_one("SELECT * FROM user WHERE id = ?", (user_id,))
+    auth.create_session(response, request, user)
+    principal = Principal(user_id, business_id, "OWNER", user["email"], user["name"], dict(auth.DEFAULT_PREFS), True)
+    return me_payload(principal)
+
+
+@router.post("/auth/logout")
+def logout(request: Request, response: Response):
+    auth.end_session(request, response)
+    return {"ok": True}
+
+
+@router.post("/auth/logout-all")
+def logout_all(request: Request, response: Response, principal: Principal = Depends(ANYONE)):
+    auth.end_session(request, response, everywhere=True)
+    return {"ok": True}
+
+
+@router.get("/me")
+def me(principal: Principal = Depends(ANYONE)):
+    return me_payload(principal)
+
+
+@router.put("/me/prefs")
+def put_prefs(body: PrefsBody, principal: Principal = Depends(ANYONE)):
+    prefs = {**principal.prefs, **body.model_dump(exclude_none=True)}
+    with tx() as conn:
+        conn.execute("UPDATE user SET prefs_json = ?, updated_at = ? WHERE id = ?", (json.dumps(prefs), now_iso(), principal.user_id))
+    principal.prefs = prefs
+    return me_payload(principal)
+
+
+@router.get("/sessions")
+def sessions(principal: Principal = Depends(ANYONE)):
+    rows = query("SELECT created_at, expires_at, user_agent FROM session WHERE user_id = ? ORDER BY created_at DESC", (principal.user_id,))
+    return {"sessions": rows}
