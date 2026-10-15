@@ -401,7 +401,21 @@ def list_fixes(principal: Principal = Depends(FINANCE)):
         public = _public(evaluation)
         public.pop("series", None)
         out.append({**public, "chance_after": _chance_after(run, fix)})
+    out.sort(key=_fix_priority)
     return {"fixes": out, "run": run_meta(run), "baseline_risk": _risk_brief(risk_for(run))}
+
+
+def _fix_priority(fix: dict[str, Any]) -> tuple[float, float, float, str]:
+    """Sort fixes by best lowest point, then lowest available shortfall chance."""
+    lowest_point = fix.get("dip_after_paise")
+    chance = fix.get("chance_after", {})
+    chances = chance.get("shortfall_chance", {}) if chance.get("status") == "READY" else {}
+    return (
+        -float(lowest_point) if lowest_point is not None else float("inf"),
+        float(chances.get("30", float("inf"))),
+        float(chances.get("60", float("inf"))),
+        str(fix.get("fix", {}).get("id", "")),
+    )
 
 
 @router.post("/fixes/evaluate")

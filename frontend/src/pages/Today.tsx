@@ -214,18 +214,12 @@ function Changes({ changes }: { changes: NonNullable<TodayData['changes']> }) {
 /** One line from the Risk and Finance engine; the detail lives in Book. */
 function GuardStrip({ brief }: { brief: GuardBrief }) {
   const word = { ok: 'All clear', watch: 'Keep an eye on it', act: 'Act this week' }[brief.verdict.level]
-  const safe = brief.safe_30 ? (brief.safe_30.cautious_paise ?? brief.safe_30.plan_paise) : null
   return (
     <Link to="/app/book?tab=risk" className={`guard-strip-link level-${brief.verdict.level}`} aria-label="Open Risk and Finance">
       <span className="guard-light" aria-hidden="true" />
       <span className="grow">
         <strong>Risk &amp; Finance: {word}.</strong>{' '}
         <span className="muted">{brief.verdict.reasons[0]}</span>
-      </span>
-      <span className="guard-strip-facts mono small">
-        {safe !== null && <span>safe to spend 30d {rupees(safe)}</span>}
-        <span>{brief.flags_open} to review</span>
-        <span>books {brief.checks_passed}/{brief.checks_total}</span>
       </span>
       <span aria-hidden="true">›</span>
     </Link>
