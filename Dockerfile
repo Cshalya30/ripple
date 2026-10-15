@@ -15,8 +15,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ backend/
 COPY --from=web /web/dist frontend/dist
-RUN mkdir -p /data && useradd --create-home ripple && chown -R ripple /data /app
-USER ripple
+RUN mkdir -p /data
 EXPOSE 8000
 # One worker: rate limits, caches and intake drafts live in process memory.
-CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
+CMD ["sh", "-c", "mkdir -p /data && chmod 777 /data && exec uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
