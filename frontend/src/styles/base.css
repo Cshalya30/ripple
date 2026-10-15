@@ -120,6 +120,9 @@ html[data-motion="reduce"] * { transition: none !important; animation: none !imp
 .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-secondary { border-color: var(--rule-strong); color: var(--text); }
 .btn-secondary:hover:not(:disabled) { background: var(--hover); }
+.import-cta { border-color: var(--haldi); background: var(--haldi-wash); color: var(--text); box-shadow: 0 1px 0 color-mix(in srgb, var(--haldi) 30%, transparent); }
+.import-cta:hover:not(:disabled) { background: var(--haldi); color: var(--ground); transform: translateY(-1px); }
+.import-cta-badge { padding: 1px 5px; border: 1px solid currentColor; border-radius: 999px; font: 600 9px/13px var(--font-mono); letter-spacing: .04em; }
 .btn-quiet { padding: 0 6px; color: var(--text-2); height: auto; min-height: 24px; }
 .btn-quiet:hover:not(:disabled) { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
 .btn-sm { height: 26px; padding: 0 8px; font-size: var(--t-small); }

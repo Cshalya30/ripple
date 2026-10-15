@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { UploadSimpleIcon as UploadSimple } from '@phosphor-icons/react'
+import { Link } from 'react-router-dom'
 import { DatasheetButton } from '../components/DatasheetButton'
 import { Amount, Dialog, ErrorNote, LastSix, SkeletonRows, Status } from '../components/ui'
 import { api, errorText } from '../lib/api'
@@ -21,6 +23,13 @@ export function Khata({ me }: { me: Me }) {
       <div className="page-head">
         <h1 className="h1">{t('nav.khata')}</h1>
         <span className="spacer" />
+        {me.user.role === 'OWNER' && (
+          <Link className="btn import-cta" to="/setup">
+            <UploadSimple size={17} weight="bold" />
+            <span>Import data</span>
+            <span className="import-cta-badge">CSV</span>
+          </Link>
+        )}
         <button className="btn btn-secondary" onClick={() => setAdding(true)}>Add {tab === 'CUSTOMER' ? 'customer' : 'supplier'}</button>
         <button className="btn btn-primary" onClick={() => ui.openPayment({})}>{t('common.recordPayment')}</button>
       </div>

@@ -22,6 +22,7 @@ from ..intake.drafts import DraftStore
 from ..intake.extractor import GroqExtractor
 from ..intake.schemas import BusinessFacts, IntakeRequest
 from ..records import repo
+from ..records.csv_importer import CsvImportError, parse_csv
 from ..records.importer import import_facts
 from ..records.seed import seed_business
 from ..simulation.comparison import compare_scenarios
@@ -1650,6 +1651,7 @@ def export_all(principal: Principal = Depends(FINANCE)):
 drafts = DraftStore()
 extractor = GroqExtractor()
 _draft_owner: dict[str, str] = {}
+_csv_drafts: dict[str, dict[str, Any]] = {}
 
 
 class SetupDraftBody(Strict):
@@ -1667,10 +1669,65 @@ class SetupApproveBody(Strict):
     approval: str = Field(max_length=20)
 
 
+class SetupCsvApproveBody(Strict):
+    draft_id: str = Field(max_length=60)
+    draft_version: int = Field(strict=True, gt=0)
+    mode: Literal["replace", "merge"]
+    approval: Literal["APPROVE"]
+
+
 def _draft_for(principal: Principal, draft_id: str):
     if _draft_owner.get(draft_id) != principal.business_id:
         raise HTTPException(status_code=404, detail={"code": "UNKNOWN_DRAFT"})
     return drafts.get(draft_id)
+
+
+@router.get("/setup/csv-template", response_class=PlainTextResponse)
+def setup_csv_template(principal: Principal = Depends(OWNER)):
+    del principal
+    return PlainTextResponse(
+        "record_type,business_name,opening_cash,party_name,party_type,item,quantity,unit,amount,paid_amount,date,due_date,reference,description\n"
+        "business,Acme Works,50000,,,,,,,,,,,\n"
+        "inventory,,,,,Cotton,10,kg,,,,,,\n"
+        "receivable,,,Kaveri Textiles,Customer,,,60000,10000,2026-10-14,2026-11-13,INV-101,\n"
+        "purchase,,,Ravi Metals,Supplier,,,25000,0,2026-10-14,2026-11-13,PO-22,\n"
+        "expense,,,,,,,,5000,,2026-10-20,2026-10-20,EXP-1,Electricity\n",
+        headers={"Content-Disposition": 'attachment; filename="ripple-import-template.csv"'},
+    )
+
+
+@router.post("/setup/csv/preview")
+async def setup_csv_preview(request: Request, principal: Principal = Depends(OWNER)):
+    data = await request.body()
+    filename = request.headers.get("x-filename", "import.csv")
+    try:
+        preview = parse_csv(filename, data, today())
+    except (CsvImportError, UnicodeDecodeError) as exc:
+        raise HTTPException(status_code=422, detail={"code": "CSV_INVALID", "message": str(exc)}) from exc
+    draft_id = uuid.uuid4().hex
+    _csv_drafts[draft_id] = {"business_id": principal.business_id, "version": 1, "facts": preview.facts}
+    return {
+        "draft_id": draft_id, "draft_version": 1, "format": preview.format, "rows": preview.rows,
+        "warnings": preview.warnings, "errors": preview.errors,
+        "counts": {
+            "inventory": len(preview.facts.opening_inventory), "purchases": len(preview.facts.supplier_purchases),
+            "orders": len(preview.facts.customer_orders), "receivables": len(preview.facts.existing_receivables),
+            "expenses": len(preview.facts.expenses),
+        },
+    }
+
+
+@router.post("/setup/csv/approve")
+def setup_csv_approve(body: SetupCsvApproveBody, principal: Principal = Depends(OWNER)):
+    draft = _csv_drafts.get(body.draft_id)
+    if not draft or draft["business_id"] != principal.business_id:
+        raise HTTPException(status_code=404, detail={"code": "UNKNOWN_DRAFT"})
+    if body.draft_version != draft["version"]:
+        raise HTTPException(status_code=409, detail={"code": "STALE_DRAFT_VERSION"})
+    counts = import_facts(principal.business_id, draft["facts"], replace=body.mode == "replace")
+    del _csv_drafts[body.draft_id]
+    run = after_write(principal.business_id)
+    return {"imported": counts, "mode": body.mode, "run": run_meta(run)}
 
 
 @router.post("/setup/draft")

@@ -21,6 +21,16 @@ interface Draft {
   source_text: string
 }
 
+interface CsvPreview {
+  draft_id: string
+  draft_version: number
+  format: 'ledger' | 'structured'
+  rows: number
+  warnings: string[]
+  errors: { row: string; message: string }[]
+  counts: { inventory: number; purchases: number; orders: number; receivables: number; expenses: number }
+}
+
 const PLACEHOLDER: Partial<Record<VoiceLang, string>> = {
   en: 'Tell Ripple about your business. Opening cash, who you buy from, who buys from you, what is owed, when.',
   ta: 'உங்கள் தொழிலைப் பற்றிச் சொல்லுங்கள். கையிருப்பு, யாரிடம் வாங்குகிறீர்கள், யார் வாங்குகிறார்கள், யார் யாருக்கு எவ்வளவு, எப்போது.',
@@ -38,7 +48,9 @@ export default function Setup() {
   const [hot, setHot] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
-  const [confirm, setConfirm] = useState<'approve' | 'demo' | null>(null)
+  const [confirm, setConfirm] = useState<'approve' | 'demo' | 'csv' | null>(null)
+  const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null)
+  const [csvMode, setCsvMode] = useState<'replace' | 'merge'>('replace')
   const dictation = useSpeechInput({ lang, continuous: true, maxMs: 180_000, onFinal: (heard) => setText((t) => `${t} ${heard}`.trim().slice(0, 8000)) })
 
   if (me.isError) return <div className="page"><ErrorNote text="Sign in first." /> <Link to="/login">Sign in</Link></div>
@@ -77,6 +89,26 @@ export default function Setup() {
     } catch (err) { setError(err) } finally { setBusy(null) }
   }
 
+  const previewCsv = async (file: File) => {
+    setBusy('csv'); setError(null)
+    try {
+      setCsvPreview(await api.upload<CsvPreview>('/setup/csv/preview', file))
+    } catch (err) { setError(err) } finally { setBusy(null) }
+  }
+
+  const approveCsv = async () => {
+    if (!csvPreview) return
+    setConfirm(null)
+    setBusy('csv-approve'); setError(null)
+    try {
+      await api.post('/setup/csv/approve', {
+        draft_id: csvPreview.draft_id, draft_version: csvPreview.draft_version, mode: csvMode, approval: 'APPROVE',
+      })
+      qc.clear()
+      navigate('/app/today')
+    } catch (err) { setError(err) } finally { setBusy(null) }
+  }
+
   return (
     <div className="density-simple" style={{ minHeight: '100%' }}>
       <div className="page" style={{ maxWidth: 1200 }}>
@@ -104,6 +136,43 @@ export default function Setup() {
               <span className="faint">or</span>
               <button className="btn btn-secondary" disabled={!owner || busy !== null} onClick={() => setConfirm('demo')}>Load the demo business</button>
             </div>
+          <div className="notice" style={{ marginTop: 18 }}>
+            <div className="label">Or import a CSV</div>
+            <p className="small muted" style={{ margin: '4px 0 10px' }}>Upload the ledger columns you already use, or download the Ripple template for inventory, orders, bills and expenses.</p>
+            <div className="row-wrap">
+              <label className="btn btn-secondary">
+                {busy === 'csv' ? 'Checking CSV…' : 'Choose CSV'}
+                <input type="file" accept=".csv,text/csv" hidden disabled={!owner || busy !== null}
+                  onChange={(e) => { const file = e.target.files?.[0]; if (file) void previewCsv(file); e.currentTarget.value = '' }} />
+              </label>
+              <a className="btn btn-quiet" href="/api/setup/csv-template" download="ripple-import-template.csv">Download template</a>
+            </div>
+          </div>
+          </Section>
+        )}
+
+        {csvPreview && (
+          <Section title="CSV review" aside={<button className="btn btn-quiet" onClick={() => setCsvPreview(null)}>Choose another file</button>}>
+          <p className="muted">{csvPreview.rows} rows detected · {csvPreview.format === 'ledger' ? 'ledger format' : 'Ripple template'}</p>
+          <p className="small">{csvPreview.counts.receivables} receivables · {csvPreview.counts.purchases} purchases · {csvPreview.counts.orders} orders · {csvPreview.counts.inventory} stock items · {csvPreview.counts.expenses} expenses</p>
+          {csvPreview.warnings.map((warning) => <p className="small" key={warning} style={{ color: 'var(--haldi)' }}>{warning}</p>)}
+          {csvPreview.errors.length > 0 && (
+            <div className="notice" style={{ color: 'var(--out)' }}>
+              <strong>{csvPreview.errors.length} rows need fixing</strong>
+              {csvPreview.errors.slice(0, 8).map((item) => <div className="small" key={`${item.row}-${item.message}`}>Row {item.row}: {item.message}</div>)}
+              {csvPreview.errors.length > 8 && <div className="small">Only the first 8 errors are shown.</div>}
+            </div>
+          )}
+          <div className="row-wrap" style={{ marginTop: 14 }}>
+            <label className="label" htmlFor="csv-mode">Import mode</label>
+            <select id="csv-mode" className="input" value={csvMode} onChange={(e) => setCsvMode(e.target.value as 'replace' | 'merge')}>
+              <option value="replace">Replace current records</option>
+              <option value="merge">Merge with current records</option>
+            </select>
+          </div>
+          {error !== null && <div style={{ marginTop: 12 }}><ErrorNote text={errorText(error)} /></div>}
+          <button className="btn btn-primary" style={{ marginTop: 12 }} disabled={csvPreview.errors.length > 0 || busy !== null}
+            onClick={() => setConfirm('csv')}>{busy === 'csv-approve' ? 'Importing and building forecast' : `Approve ${csvMode} import`}</button>
           </Section>
         )}
 
@@ -147,12 +216,12 @@ export default function Setup() {
             </Section>
           </>
         )}
-        <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title="Replace this business's records?"
-          description={confirm === 'demo' ? 'Everything you have entered is removed and the demo business is loaded in its place.' : 'Everything you have entered is removed and replaced with what you approved here.'}>
-          <p className="small muted" style={{ margin: 0 }}>This cannot be undone. Export your data from Settings first if you want a copy.</p>
+        <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title={confirm === 'csv' && csvMode === 'merge' ? 'Merge this CSV into your records?' : 'Replace this business\'s records?'}
+          description={confirm === 'demo' ? 'Everything you have entered is removed and the demo business is loaded in its place.' : confirm === 'csv' && csvMode === 'merge' ? 'The reviewed CSV rows will be added to this business. Existing records stay in place.' : 'Everything you have entered is removed and replaced with what you approved here.'}>
+          <p className="small muted" style={{ margin: 0 }}>{confirm === 'csv' && csvMode === 'merge' ? 'Repeated rows are safely ignored. Review the preview before continuing.' : 'This cannot be undone. Export your data from Settings first if you want a copy.'}</p>
           <div className="dialog-actions">
             <button className="btn btn-secondary" onClick={() => setConfirm(null)}>Keep my records</button>
-            <button className="btn btn-primary" onClick={() => (confirm === 'demo' ? loadDemo() : approve())}>{confirm === 'demo' ? 'Replace with the demo' : 'Replace and build'}</button>
+            <button className="btn btn-primary" onClick={() => (confirm === 'demo' ? loadDemo() : confirm === 'csv' ? approveCsv() : approve())}>{confirm === 'demo' ? 'Replace with the demo' : confirm === 'csv' && csvMode === 'merge' ? 'Merge and build' : 'Replace and build'}</button>
           </div>
         </Dialog>
       </div>

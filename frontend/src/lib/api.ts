@@ -41,12 +41,31 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T
 }
 
+async function upload<T>(path: string, file: File): Promise<T> {
+  const response = await fetch(`/api${path}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'X-Ripple': '1', 'X-Filename': file.name },
+    body: file,
+  })
+  const text = await response.text()
+  let data: unknown = null
+  try { data = text ? JSON.parse(text) : null } catch { data = null }
+  if (!response.ok) {
+    const error = (data as { error?: { code?: string; details?: unknown } } | null)?.error
+    if (response.status === 401 && !path.startsWith('/auth/')) unauthorizedListeners.forEach((fn) => fn())
+    throw new ApiError(response.status, error?.code ?? `HTTP_${response.status}`, error?.details)
+  }
+  return data as T
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   del: <T>(path: string) => request<T>('DELETE', path),
+  upload,
 }
 
 /** Pydantic's "loc" -> a field name people recognise. */

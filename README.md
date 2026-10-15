@@ -85,10 +85,20 @@ The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials 
 | `/app/orders` | Sales orders with forecast delivery and Undo (a step back removes exactly the records the step created), purchase orders with Undo received / Undo payment / Reopen, "Can I take this order?" |
 | `/app/inventory` | Raw materials (add, edit, delete when unused; needed, free, cover, reorder point, ABC, filters), finished goods, recipes (editable), movements |
 | `/app/settings` | Business profile (GSTIN and Udyam checked), money rules, team and access, display, language, voice (ten languages), accessibility, data (company datasheet), privacy, account |
-| `/setup` | Describe the business in words, review what was understood against your own quotes, approve (replacing the business's records asks for a confirmation first) |
+| `/setup` | Describe the business in words or upload a CSV, review the parsed data, approve (CSV imports can replace or merge and always ask for confirmation first) |
 | `/privacy`, `/terms`, `/login` | Public pages: what is stored and where text goes, the terms of use, sign-in. Only these are in `/sitemap.xml`; `robots.txt` keeps search engines out of `/app/`, `/api/` and `/setup`. An address that is not a page shows a 404 page and returns status 404 |
 
 Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY KAVERI`, `FIX`), `M` toggles Munim.
+
+### CSV setup import
+
+The owner can upload a UTF-8 CSV at `/setup`. The existing ledger headers
+(`Party name, Type, Bill amount, Received / Paid, Due date`) are supported, as
+is the downloadable Ripple template with `record_type` rows for `business`,
+`inventory`, `receivable`, `purchase`, `order`, and `expense`. Uploads are
+previewed and validated before anything is written. Replace mode resets the
+business records; merge mode keeps existing records and ignores repeated
+deterministic IDs. CSVs are limited to 2 MB and 2,000 rows.
 In the Engine: `Space` play or pause, `←` `→` one step (one day, or the next day with events when "Skip quiet days" is on), `Shift ←` `Shift →` one week, `Home` `End`, `N` next issue.
 
 Datasheets (priority export): `GET /api/export/party/{id}/datasheet.csv` for one customer or supplier and `GET /api/export/company/datasheet.csv` for the business. Sectioned UTF-8 CSV with a byte-order mark, plain-rupee numbers, ISO dates, formula-safe text.
