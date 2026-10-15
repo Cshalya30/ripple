@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
+import type { Guard, GuardBrief } from '../guard/types'
 import type {
   DayLog, DipItem, Evaluation, Me, Network, OpenItem, PartyRow, Position, Risk, RunMeta, RunPayload, SeriesPoint, Summary,
 } from './types'
@@ -22,14 +23,12 @@ export interface TodayData {
   summary: Summary
   do_today: any[]
   week: { day: number; date: string; in_paise: number; out_paise: number; in_items: any[]; out_items: any[]; blocked_items: any[] }[]
-  from_suppliers: { awaited: number; received_today: number }
-  to_customers: { to_deliver: number; delivered_today: number }
-  money_today: { in_count: number; in_paise: number; out_count: number; out_paise: number }
   changes: null | {
     since: string; runway_before: number | null; runway_after: number | null; lowest_before_paise: number | null; lowest_after_paise: number | null
     transactions: { party_name: string | null; direction: string; amount_paise: number; medium: string; reference: string | null; status: string }[]
   }
   risk: { status: string; shortfall_chance?: Record<string, number>; drivers?: any[]; n_samples?: number }
+  guard: GuardBrief
   run: RunMeta
 }
 
@@ -62,6 +61,14 @@ function pollWhileComputing(data: { status?: string } | undefined) {
 
 export const useRisk = () =>
   useQuery({ queryKey: ['risk'], queryFn: () => api.get<Risk>('/risk/forecast'), refetchInterval: (q) => pollWhileComputing(q.state.data) })
+
+export const useGuard = (yieldBp: number) =>
+  useQuery({
+    queryKey: ['guard', yieldBp],
+    queryFn: () => api.get<Guard>(`/guard?yield_bp=${yieldBp}`),
+    placeholderData: (previous) => previous,
+    refetchInterval: (q) => (q.state.data && q.state.data.risk.status !== 'READY' && q.state.data.risk.status !== 'INSUFFICIENT_HISTORY' ? 1500 : false),
+  })
 
 export const useFixes = () =>
   useQuery({

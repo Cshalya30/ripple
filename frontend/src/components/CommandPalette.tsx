@@ -11,6 +11,7 @@ const SCREENS = [
   { mnemonic: 'TODAY', label: 'Today', to: '/app/today', finance: true },
   { mnemonic: 'ENG', label: 'Engine', to: '/app/engine', finance: true },
   { mnemonic: 'BOOK', label: 'Book', to: '/app/book', finance: true },
+  { mnemonic: 'RISK', label: 'Risk and Finance', to: '/app/book?tab=risk', finance: true },
   { mnemonic: 'KHATA', label: 'Khata', to: '/app/khata', finance: true },
   { mnemonic: 'ORD', label: 'Orders', to: '/app/orders', finance: false },
   { mnemonic: 'INV', label: 'Inventory', to: '/app/inventory', finance: false },

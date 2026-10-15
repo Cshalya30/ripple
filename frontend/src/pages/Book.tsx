@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { GuardView } from '../guard/GuardView'
 import { RunwayChart, RunwayTable } from '../components/RunwayChart'
-import { Amount, ErrorNote, Section, Seg, Skeleton, SkeletonRows, Status, StripCell } from '../components/ui'
+import { Amount, ErrorNote, Section, Seg, Skeleton, SkeletonRows, Status } from '../components/ui'
 import { api, errorText } from '../lib/api'
 import { clock, dayDate, percent, rupees, shortDate } from '../lib/format'
 import { useBook, useFixes, useRisk, useTransactions } from '../lib/queries'
@@ -14,12 +15,14 @@ export function Book({ me }: { me: Me }) {
   const book = useBook()
   const risk = useRisk()
   const location = useLocation()
+  const [params, setParams] = useSearchParams()
+  const tab = ['risk', 'ledger'].includes(params.get('tab') ?? '') ? params.get('tab')! : 'position'
   const [window, setWindow] = useState<30 | 60 | 90>(90)
   const [asTable, setAsTable] = useState(false)
 
   useEffect(() => {
-    if (location.hash === '#fixes' && book.data) document.getElementById('fixes')?.scrollIntoView({ behavior: 'smooth' })
-  }, [location.hash, book.data])
+    if (location.hash === '#fixes' && book.data && tab === 'position') document.getElementById('fixes')?.scrollIntoView({ behavior: 'smooth' })
+  }, [location.hash, book.data, tab])
 
   if (book.isLoading) return <div className="page"><Skeleton h={84} /><Skeleton h={240} style={{ marginTop: 24 }} /><div style={{ marginTop: 24 }}><SkeletonRows /></div></div>
   if (book.isError || !book.data) return <div className="page"><ErrorNote text={`Couldn't reach the engine. ${errorText(book.error)}`} retry={() => book.refetch()} /></div>
@@ -33,61 +36,60 @@ export function Book({ me }: { me: Me }) {
         <span className="spacer" />
         <span className="mono micro faint">engine run {clock(run.created_at)} · {run.event_count} events</span>
       </div>
+      <div className="tabs" role="tablist">
+        <button className="tab" role="tab" aria-selected={tab === 'position'} onClick={() => setParams({})}>Position</button>
+        <button className="tab" role="tab" aria-selected={tab === 'risk'} onClick={() => setParams({ tab: 'risk' })}>Risk &amp; Finance</button>
+        <button className="tab" role="tab" aria-selected={tab === 'ledger'} onClick={() => setParams({ tab: 'ledger' })}>Ledger</button>
+      </div>
 
-      <Section title={t('book.position')}>
-        <div className="strip">
-          <StripCell label={t('common.cashNow')} sub={pos.pending_cheques.count ? `${pos.pending_cheques.count} cheque pending, ${rupees(pos.pending_cheques.value_paise)}` : undefined}>{rupees(pos.cash_now_paise)}</StripCell>
-          <StripCell label={t('common.toReceive')}><span className="amt-in">{rupees(pos.to_receive_paise, { sign: true })}</span></StripCell>
-          <StripCell label={t('common.toPay')}><span className="amt-out">{rupees(-pos.to_pay_paise)}</span></StripCell>
-          <StripCell label={t('common.net')} total sub="cash plus receivables minus payables, today">{rupees(pos.net_paise, { sign: true })}</StripCell>
-        </div>
-      </Section>
-      <Section title={t('book.goods')}>
-        <div className="strip compact">
-          <StripCell label="Materials on the way" sub={`${pos.materials_on_the_way.count} lots`}>{rupees(pos.materials_on_the_way.value_paise)}</StripCell>
-          <StripCell label="Goods to deliver" sub={`${pos.goods_to_deliver.count} orders`}>{rupees(pos.goods_to_deliver.value_paise)}</StripCell>
-        </div>
-      </Section>
-
-      <div className="cols-2-1">
-        <Section title={t('common.runway')} aside={
-          <div className="row">
-            <Seg label="Window" value={String(window) as '30' | '60' | '90'} onChange={(v) => setWindow(Number(v) as 30 | 60 | 90)}
-              options={[{ value: '30', label: '30d' }, { value: '60', label: '60d' }, { value: '90', label: '90d' }]} />
-            <button className="btn btn-sm btn-quiet" onClick={() => setAsTable(!asTable)} aria-pressed={asTable}>{asTable ? 'View as chart' : 'View as table'}</button>
-          </div>
-        }>
-          <p className="small muted" style={{ margin: '6px 0 10px' }}>
-            Net position = engine cash balance minus payments due but not yet made. {summary.first_shortfall
-              ? <>First shortfall <strong className="amt-out">{rupees(-summary.first_shortfall.shortfall_paise)}</strong> on {dayDate(summary.first_shortfall.date)} (D{summary.first_shortfall.day}).</>
-              : <>No shortfall in {summary.horizon_days} days.</>}
+      {tab === 'risk' && <GuardView />}
+      {tab === 'ledger' && <Section title={t('book.transactions')}><Transactions /></Section>}
+      {tab === 'position' && (
+        <>
+          <p className="book-line">
+            <strong>Net today {rupees(pos.net_paise, { sign: true })}</strong>
+            <span className="muted"> = cash {rupees(pos.cash_now_paise)} + to receive {rupees(pos.to_receive_paise)} − to pay {rupees(pos.to_pay_paise)}.</span>
+            {pos.pending_cheques.count ? <span className="muted"> {pos.pending_cheques.count} cheque pending, {rupees(pos.pending_cheques.value_paise)}.</span> : null}
+            <span className="muted"> Materials on the way {rupees(pos.materials_on_the_way.value_paise)} ({pos.materials_on_the_way.count} lots). Goods to deliver {rupees(pos.goods_to_deliver.value_paise)} ({pos.goods_to_deliver.count} orders).</span>
           </p>
-          {asTable ? <RunwayTable series={series} fan={fan} window={window} /> : <RunwayChart series={series} fan={fan} buffer={summary.buffer_paise} window={window} />}
-        </Section>
-        <Section title={t('book.risk')}>
-          <RiskPanel risk={risk.data} isError={risk.isError} runHash={run.snapshot_hash} />
-        </Section>
-      </div>
 
-      <div className="cols-2-1">
-        <Section title={t('book.why')}>
-          <Why items={why} />
-        </Section>
-        <div />
-      </div>
+          <div className="cols-2-1">
+            <Section title={t('common.runway')} aside={
+              <div className="row">
+                <Seg label="Window" value={String(window) as '30' | '60' | '90'} onChange={(v) => setWindow(Number(v) as 30 | 60 | 90)}
+                  options={[{ value: '30', label: '30d' }, { value: '60', label: '60d' }, { value: '90', label: '90d' }]} />
+                <button className="btn btn-sm btn-quiet" onClick={() => setAsTable(!asTable)} aria-pressed={asTable}>{asTable ? 'View as chart' : 'View as table'}</button>
+              </div>
+            }>
+              <p className="small muted" style={{ margin: '6px 0 10px' }}>
+                Net position = engine cash balance minus payments due but not yet made. {summary.first_shortfall
+                  ? <>First shortfall <strong className="amt-out">{rupees(-summary.first_shortfall.shortfall_paise)}</strong> on {dayDate(summary.first_shortfall.date)} (D{summary.first_shortfall.day}).</>
+                  : <>No shortfall in {summary.horizon_days} days.</>}
+              </p>
+              {asTable ? <RunwayTable series={series} fan={fan} window={window} /> : <RunwayChart series={series} fan={fan} buffer={summary.buffer_paise} window={window} />}
+            </Section>
+            <Section title={t('book.risk')}>
+              <RiskGlance risk={risk.data} isError={risk.isError} runHash={run.snapshot_hash} />
+            </Section>
+          </div>
 
-      <Section title={t('book.fixes')} id="fixes">
-        <Fixes me={me} />
-      </Section>
+          <div className="cols-2-1">
+            <Section title={t('book.why')}>
+              <Why items={why} />
+            </Section>
+            <div />
+          </div>
 
-      <Section title={t('book.transactions')}>
-        <Transactions />
-      </Section>
+          <Section title={t('book.fixes')} id="fixes">
+            <Fixes me={me} />
+          </Section>
+        </>
+      )}
     </div>
   )
 }
 
-function RiskPanel({ risk, isError, runHash }: { risk?: Risk; isError: boolean; runHash: string }) {
+function RiskGlance({ risk, isError, runHash }: { risk?: Risk; isError: boolean; runHash: string }) {
   if (isError || risk?.status === 'UNAVAILABLE') return <p className="muted">Risk unavailable. The plan above is still the engine's deterministic forecast.</p>
   if (!risk || risk.status === 'COMPUTING' || risk.status === 'MISSING' || (risk.snapshot_hash && risk.snapshot_hash !== runHash)) {
     return <div className="stack"><p className="muted" style={{ margin: 0 }}>Risk is being recalculated…</p><Skeleton h={18} w="60%" /><Skeleton h={18} w="40%" /></div>
@@ -112,26 +114,8 @@ function RiskPanel({ risk, isError, runHash }: { risk?: Risk; isError: boolean; 
           {risk.first_shortfall.p10 && risk.first_shortfall.p90 && <span className="muted"> (range {shortDate(risk.first_shortfall.p10.date)} to {shortDate(risk.first_shortfall.p90.date)})</span>}
         </p>
       )}
-      {!!risk.drivers?.length && (
-        <>
-          <div className="label" style={{ marginTop: 8 }}>Biggest drivers</div>
-          {risk.drivers.filter((d) => d.share > 0).slice(0, 4).map((d) => (
-            <div key={d.party_id} style={{ margin: '6px 0' }}>
-              <div className="row small"><span className="grow">{d.name}{d.no_history ? <span className="faint"> · no history</span> : ''}</span><span className="mono">{percent(d.share)}</span></div>
-              <div className="bar-track"><div className="bar-fill" style={{ width: `${Math.round(d.share * 100)}%`, background: d.share > 0.5 ? 'var(--haldi)' : 'var(--text-2)' }} /></div>
-            </div>
-          ))}
-        </>
-      )}
-      <p className="micro faint" style={{ marginTop: 10 }}>
-        Based on {risk.payments_used} past payments from {risk.customers_with_history} customers, {risk.n_samples} simulated futures (seed {risk.seed}).
-        {risk.customers_without_history?.length ? ` ${risk.customers_without_history.join(', ')} ${risk.customers_without_history.length === 1 ? 'has' : 'have'} no history: average of other customers used.` : ''}
-        {' '}Payment history in the demo is synthetic.
-      </p>
-      <details className="small muted">
-        <summary style={{ cursor: 'pointer' }}>How this is calculated</summary>
-        <p>{risk.method}</p>
-      </details>
+      <p className="micro faint">From {risk.n_samples} simulated futures. The futures themselves, who drives the risk and how far to trust it are in Risk &amp; Finance.</p>
+      <Link className="btn btn-sm btn-secondary" to="/app/book?tab=risk">Open Risk &amp; Finance</Link>
     </div>
   )
 }
