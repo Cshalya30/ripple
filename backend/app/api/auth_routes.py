@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..core import auth
 from ..core.auth import ANYONE, Principal, client_ip, limiter
@@ -37,6 +38,23 @@ class Strict(BaseModel):
 class LoginBody(Strict):
     email: str = Field(min_length=3, max_length=200)
     password: str = Field(min_length=1, max_length=200)
+
+
+class SignupBody(Strict):
+    name: str = Field(min_length=1, max_length=120)
+    email: str = Field(min_length=3, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+    password_confirmation: str = Field(min_length=8, max_length=200)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def tidy_name(cls, value: Any) -> Any:
+        return " ".join(value.split()) if isinstance(value, str) else value
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: Any) -> Any:
+        return value.strip().lower() if isinstance(value, str) else value
 
 
 class PrefsBody(Strict):
@@ -106,6 +124,54 @@ def login(body: LoginBody, request: Request, response: Response):
     business = query_one("SELECT is_sandbox FROM business WHERE id = ?", (user["business_id"],))
     principal = Principal(user["id"], user["business_id"], user["role"], user["email"], user["name"],
                           {**auth.DEFAULT_PREFS, **json.loads(user["prefs_json"] or "{}")}, bool(business["is_sandbox"]))
+    return me_payload(principal)
+
+
+@router.post("/auth/signup")
+def signup(body: SignupBody, request: Request, response: Response):
+    limiter.check(f"signup:{client_ip(request)}", 5, 3600)
+    if body.password != body.password_confirmation:
+        raise HTTPException(status_code=400, detail={"code": "PASSWORD_MISMATCH", "message": "Passwords do not match"})
+    if query_one("SELECT id FROM user WHERE email = ?", (body.email,)) is not None:
+        raise HTTPException(status_code=409, detail={"code": "EMAIL_TAKEN", "message": "That email already has an account"})
+
+    business_id = f"biz-{secrets.token_hex(8)}"
+    user_id = f"u-{secrets.token_hex(8)}"
+    timestamp = now_iso()
+    with tx() as conn:
+        try:
+            insert(conn, "business", {
+                "id": business_id,
+                "name": "My business",
+                "owner_name": body.name,
+                "safety_buffer_paise": 0,
+                "default_customer_terms_days": 30,
+                "default_supplier_terms_days": 30,
+                "horizon_days": 90,
+                "opening_balance_paise": 0,
+                "is_sandbox": False,
+                "created_at": timestamp,
+                "updated_at": timestamp,
+            })
+            insert(conn, "user", {
+                "id": user_id,
+                "business_id": business_id,
+                "email": body.email,
+                "password_hash": auth.hash_password(body.password),
+                "name": body.name,
+                "role": "OWNER",
+                "prefs_json": "{}",
+                "created_at": timestamp,
+                "updated_at": timestamp,
+            })
+        except sqlite3.IntegrityError as exc:
+            if "user.email" in str(exc) or "user.email" in str(exc).lower():
+                raise HTTPException(status_code=409, detail={"code": "EMAIL_TAKEN", "message": "That email already has an account"}) from exc
+            raise
+
+    user = query_one("SELECT * FROM user WHERE id = ?", (user_id,))
+    auth.create_session(response, request, user)
+    principal = Principal(user_id, business_id, "OWNER", body.email, body.name, dict(auth.DEFAULT_PREFS), False)
     return me_payload(principal)
 
 

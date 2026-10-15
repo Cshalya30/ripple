@@ -95,6 +95,7 @@ export function errorText(error: unknown): string {
   const d = (error.details ?? {}) as Record<string, any>
   const map: Record<string, string> = {
     BAD_CREDENTIALS: 'Email or password is wrong',
+    PASSWORD_MISMATCH: 'Passwords do not match.',
     RATE_LIMITED: 'Too many requests. Wait a minute and try again.',
     AMOUNT_EXCEEDS_OUTSTANDING: d.pending_cheques_paise ? 'That is more than is still free on this bill: a pending cheque already covers part of it. Clear or bounce that cheque first.' : 'That is more than is outstanding on this bill.',
     FUTURE_DATE: 'A payment cannot be dated in the future.',

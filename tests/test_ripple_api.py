@@ -213,6 +213,36 @@ class RiskTests(unittest.TestCase):
 
 
 class SecurityTests(unittest.TestCase):
+    def test_signup_creates_owner_session_and_empty_business(self):
+        c = client()
+        c.__enter__()
+        response = c.post("/api/auth/signup", json={
+            "name": "New Owner", "email": "new-owner@example.com",
+            "password": "correct horse battery", "password_confirmation": "correct horse battery",
+        })
+        self.assertEqual(response.status_code, 200, response.text)
+        body = response.json()
+        self.assertEqual(body["user"]["role"], "OWNER")
+        self.assertEqual(body["user"]["email"], "new-owner@example.com")
+        self.assertFalse(body["business"]["is_sandbox"])
+        self.assertEqual(body["business"]["name"], "My business")
+        self.assertEqual(c.get("/api/me").status_code, 200)
+
+    def test_signup_rejects_duplicate_email_and_mismatched_passwords(self):
+        c = client()
+        c.__enter__()
+        payload = {
+            "name": "New Owner", "email": "duplicate@example.com",
+            "password": "correct horse battery", "password_confirmation": "correct horse battery",
+        }
+        self.assertEqual(c.post("/api/auth/signup", json=payload).status_code, 200)
+        duplicate = c.post("/api/auth/signup", json=payload)
+        self.assertEqual(duplicate.status_code, 409)
+        self.assertEqual(duplicate.json()["error"]["code"], "EMAIL_TAKEN")
+        mismatch = c.post("/api/auth/signup", json={**payload, "email": "different@example.com", "password_confirmation": "wrong pass"})
+        self.assertEqual(mismatch.status_code, 400)
+        self.assertEqual(mismatch.json()["error"]["code"], "PASSWORD_MISMATCH")
+
     def test_login_errors_are_generic(self):
         c = client()
         c.__enter__()

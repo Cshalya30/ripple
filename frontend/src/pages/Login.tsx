@@ -14,17 +14,34 @@ export function Login() {
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [passwordConfirmation, setPasswordConfirmation] = useState('')
+  const [name, setName] = useState('')
+  const [signup, setSignup] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<unknown>(null)
-  const [busy, setBusy] = useState<'login' | 'demo' | null>(null)
+  const [busy, setBusy] = useState<'login' | 'signup' | 'demo' | null>(null)
 
-  const done = (me: Me) => {
+  const done = (me: Me, destination?: string) => {
     qc.clear()
     qc.setQueryData(['me'], me)
     // After a session ended mid-use, go back to the page the person was on. Only an internal /app path from router state is accepted.
     const from = (location.state as { from?: unknown } | null)?.from
     const back = typeof from === 'string' && /^\/app\/[a-z]/.test(from) ? from : null
-    navigate(back ?? (me.user.role === 'SUPERVISOR' ? '/app/orders' : '/app/today'))
+    navigate(destination ?? back ?? (me.user.role === 'SUPERVISOR' ? '/app/orders' : '/app/today'))
+  }
+
+  const createAccount = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBusy('signup')
+    setError(null)
+    try {
+      const me = await api.post<Me>('/auth/signup', { name: name.trim(), email: email.trim(), password, password_confirmation: passwordConfirmation })
+      done(me, '/setup')
+    } catch (err) {
+      setError(err)
+    } finally {
+      setBusy(null)
+    }
   }
 
   const login = async (e: React.FormEvent) => {
@@ -57,22 +74,28 @@ export function Login() {
       <LoginRipple />
       <main className="login-content" style={{ width: 'min(360px, 100%)' }}>
         <div className="login-logo" style={{ marginBottom: 28 }}><Logo /></div>
-        <h1 className="h1">Sign in</h1>
-        <p className="muted" style={{ marginTop: 6 }}>See how one late payment travels through your business, before it does.</p>
-        <form className="stack" style={{ gap: 14, marginTop: 20 }} onSubmit={login}>
+        <h1 className="h1">{signup ? 'Create your account' : 'Sign in'}</h1>
+        <p className="muted" style={{ marginTop: 6 }}>{signup ? 'Create your owner account, then tell Ripple about your business.' : 'See how one late payment travels through your business, before it does.'}</p>
+        <form className="stack" style={{ gap: 14, marginTop: 20 }} onSubmit={signup ? createAccount : login}>
+          {signup && (
+            <label className="field">
+              <span className="field-label">Your name</span>
+              <input className="input" type="text" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </label>
+          )}
           <label className="field">
             <span className="field-label">Email</span>
-            <input className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
           <label className="field">
             <span className="field-label">Password</span>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
-                id="current-password"
+                id={signup ? 'new-password' : 'current-password'}
                 name="password"
                 className="input"
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
+                autoComplete={signup ? 'new-password' : 'current-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ paddingRight: 48 }}
@@ -108,10 +131,16 @@ export function Login() {
               </button>
             </div>
           </label>
+          {signup && (
+            <label className="field">
+              <span className="field-label">Confirm password</span>
+              <input className="input" type={showPassword ? 'text' : 'password'} autoComplete="new-password" value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} required />
+            </label>
+          )}
           {error !== null && <ErrorNote text={errorText(error)} />}
-          <button className="btn btn-primary" disabled={busy !== null}>{busy === 'login' ? 'Signing in' : 'Sign in'}</button>
+          <button className="btn btn-primary" disabled={busy !== null}>{busy === 'login' ? 'Signing in' : busy === 'signup' ? 'Creating account' : signup ? 'Create account' : 'Sign in'}</button>
         </form>
-        <hr className="rule" style={{ margin: '24px 0' }} />
+        {!signup && <><hr className="rule" style={{ margin: '24px 0' }} />
         <button className="btn btn-secondary" style={{ width: '100%' }} onClick={demo} disabled={busy !== null}>
           {busy === 'demo' ? 'Opening' : 'Open demo business: Mahalakshmi Fabrics'}
         </button>
@@ -125,7 +154,10 @@ export function Login() {
               <tr><td className="mono small">supervisor@ripple.demo</td><td className="small">Supervisor, orders and stock only, no amounts</td></tr>
             </tbody>
           </table>
-        </div>
+        </div></>}
+        <button className="btn btn-quiet" style={{ width: '100%', marginTop: 20 }} onClick={() => { setSignup((current) => !current); setError(null) }} disabled={busy !== null}>
+          {signup ? 'Already have an account? Sign in' : 'New to Ripple? Create an account'}
+        </button>
         <nav className="small row-wrap" aria-label="Legal" style={{ marginTop: 20 }}>
           <Link to="/privacy">Privacy</Link>
           <Link to="/terms">Terms</Link>

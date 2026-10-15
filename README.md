@@ -86,7 +86,7 @@ The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials 
 | `/app/inventory` | Raw materials (add, edit, delete when unused; needed, free, cover, reorder point, ABC, filters), finished goods, recipes (editable), movements |
 | `/app/settings` | Business profile (GSTIN and Udyam checked), money rules, team and access, display, language, voice (ten languages), accessibility, data (company datasheet), privacy, account |
 | `/setup` | Describe the business in words or upload a CSV, review the parsed data, approve (CSV imports can replace or merge and always ask for confirmation first) |
-| `/privacy`, `/terms`, `/login` | Public pages: what is stored and where text goes, the terms of use, sign-in. Only these are in `/sitemap.xml`; `robots.txt` keeps search engines out of `/app/`, `/api/` and `/setup`. An address that is not a page shows a 404 page and returns status 404 |
+| `/privacy`, `/terms`, `/login` | Public pages: what is stored and where text goes, the terms of use, sign-in, and account creation. New accounts are owners of an empty business and continue to `/setup`. Only these are in `/sitemap.xml`; `robots.txt` keeps search engines out of `/app/`, `/api/` and `/setup`. An address that is not a page shows a 404 page and returns status 404 |
 
 Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY KAVERI`, `FIX`), `M` toggles Munim.
 
