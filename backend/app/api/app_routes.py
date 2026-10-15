@@ -697,8 +697,9 @@ def _qty_label(qty: int, material: dict[str, Any] | None) -> str:
     f = material["unit_factor"] or 1
     if f == 1:
         return f"{qty:,} {material['unit']}"
-    text = f"{qty / f:,.1f}"
-    return f"{text[:-2] if text.endswith('.0') else text} {material['unit']}"
+    decimals = len(str(f)) - 1
+    text = f"{qty / f:,.{decimals}f}".rstrip("0").rstrip(".")
+    return f"{text} {material['unit']}"
 
 
 def _last_stage_change(raw: str | None) -> dict[str, Any] | None:

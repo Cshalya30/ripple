@@ -18,8 +18,9 @@ def _fmt(qty: float, material: dict[str, Any]) -> str:
     if factor == 1:
         return f"{int(qty):,} {material['unit']}"
     value = qty / factor
-    text = f"{value:,.1f}"
-    return f"{text[:-2] if text.endswith('.0') else text} {material['unit']}"
+    decimals = len(str(factor)) - 1
+    text = f"{value:,.{decimals}f}".rstrip("0").rstrip(".")
+    return f"{text} {material['unit']}"
 
 
 def _recently_added(movements: list[dict[str, Any]], material_id: str, as_of: date) -> bool:

@@ -203,6 +203,35 @@ html[data-motion="reduce"] * { transition: none !important; animation: none !imp
 .mark.late { border: 1px solid var(--haldi); color: var(--haldi); }
 .stepper { display: flex; gap: 2px; }
 .stepper span { height: 4px; flex: 1; background: var(--hover); min-width: 10px; }
+
+html[data-targets="large"] .rail-link,
+html[data-targets="large"] .tab,
+html[data-targets="large"] .cmdline,
+html[data-targets="large"] .icon-btn {
+  height: 44px;
+}
+html[data-targets="large"] .btn-sm,
+html[data-targets="large"] .btn-quiet {
+  min-height: 44px;
+  height: 44px;
+}
+html[data-targets="large"] .icon-btn {
+  width: 44px;
+}
+html[data-targets="large"] .scenario-chip {
+  min-height: 44px;
+}
+html[data-targets="large"] .scenario-chip button {
+  min-height: 36px;
+}
+html[data-targets="large"] .seg button {
+  height: 44px;
+  min-height: 44px;
+}
+html[data-targets="large"] .check input {
+  width: 20px;
+  height: 20px;
+}
 .stepper span.done { background: var(--text-2); }
 .stepper span.now { background: var(--haldi); }
 

@@ -143,7 +143,11 @@ def tool_explain_day(ctx: Context, day: int | str = 0, **_: Any) -> dict[str, An
 
 
 def _qty(value: int, factor: int, material: dict[str, Any]) -> str:
-    return f"{value / factor:,.1f} {material.get('unit', '')}".replace(".0 ", " ") if factor != 1 else f"{value:,} {material.get('unit', '')}"
+    if factor == 1:
+        return f"{value:,} {material.get('unit', '')}"
+    decimals = len(str(factor)) - 1
+    text = f"{value / factor:,.{decimals}f}".rstrip("0").rstrip(".")
+    return f"{text} {material.get('unit', '')}"
 
 
 def _parse_day(ctx: Context, value: Any) -> int:

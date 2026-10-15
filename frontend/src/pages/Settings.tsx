@@ -84,7 +84,7 @@ export default function Settings({ me }: { me: Me }) {
       <Section title="Accessibility">
         {([['reduce_motion', 'Reduce motion', 'Scenario changes apply instantly with an outline instead of the ripple.'],
           ['high_contrast', 'High contrast', 'Secondary text at full strength.'],
-          ['large_targets', 'Larger touch targets', '44px rows and buttons everywhere.']] as const).map(([key, label, hint]) => (
+          ['large_targets', 'Larger touch targets', 'At least 44px rows and controls, including compact actions.']] as const).map(([key, label, hint]) => (
           <Row key={key} label={label} hint={hint}>
             <label className="check"><input type="checkbox" checked={me.prefs[key]} onChange={(e) => setPref({ [key]: e.target.checked } as Partial<Prefs>)} /> {me.prefs[key] ? 'On' : 'Off'}</label>
           </Row>
