@@ -1,3 +1,4 @@
+import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -11,6 +12,7 @@ export function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState<'login' | 'demo' | null>(null)
 
@@ -58,7 +60,46 @@ export function Login() {
           </label>
           <label className="field">
             <span className="field-label">Password</span>
-            <input className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                id="current-password"
+                name="password"
+                className="input"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ paddingRight: 36 }}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+                tabIndex={-1}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: 4,
+                  cursor: 'pointer',
+                  color: 'var(--text-3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 'var(--r-1)',
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-3)')}
+              >
+                {showPassword ? <EyeSlashIcon size={18} /> : <EyeIcon size={18} />}
+              </button>
+            </div>
           </label>
           {error !== null && <ErrorNote text={errorText(error)} />}
           <button className="btn btn-primary" disabled={busy !== null}>{busy === 'login' ? 'Signing in' : 'Sign in'}</button>
