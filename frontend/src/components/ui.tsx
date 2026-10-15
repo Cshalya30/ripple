@@ -81,7 +81,7 @@ export function Dialog({ open, onClose, title, children, wide, description }: {
     <RadixDialog.Root open={open} onOpenChange={(o) => !o && onClose()}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="overlay" />
-        <RadixDialog.Content className={`dialog${wide ? ' wide' : ''}`} aria-describedby={undefined}>
+        <RadixDialog.Content className={`dialog${wide ? ' wide' : ''}`} {...(description ? {} : { 'aria-describedby': undefined })}>
           <div className="row" style={{ marginBottom: 14, alignItems: 'flex-start' }}>
             <div className="grow">
               <RadixDialog.Title className="h2">{title}</RadixDialog.Title>

@@ -34,7 +34,8 @@
 .gp-finance .gp-title { color: var(--in); }
 .gp-risk, .gp-finance { padding: 10px; border: 1px dashed var(--rule-strong); border-radius: var(--r-2); }
 .gp-node { position: relative; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "name metric" "sub metric"; align-items: center; gap: 1px 10px; text-align: left; padding: 8px 12px; min-height: 52px;
-  border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--raised); color: var(--text); cursor: pointer; opacity: 0.55; transition: opacity 0.35s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease); }
+  border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--raised); color: var(--text); cursor: pointer; transition: background 0.35s var(--ease), opacity 0.35s var(--ease), border-color 0.35s var(--ease), box-shadow 0.35s var(--ease); }
+.gp-node:not(.lit) { background: var(--surface); } /* dimmed with a plain background, never opacity: faded text fails contrast */
 .gp-node.lit { opacity: 1; }
 .gp-node:hover { border-color: var(--text-2); }
 .gp-name { grid-area: name; font-size: var(--t-small); font-weight: 600; }

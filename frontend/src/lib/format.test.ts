@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, compact, daysBetween, MINUS, percent, rupees, setNumberFormat, shortDate } from './format'
+import { addDays, compact, daysBetween, MINUS, percent, rupees, setNumberFormat, shortDate, whatsappNumber } from './format'
 
 describe('rupees (the only money formatter)', () => {
   it('divides paise by 100 exactly once and uses Indian grouping', () => {
@@ -45,5 +45,24 @@ describe('dates', () => {
     expect(addDays('2026-10-14', 34)).toBe('2026-11-17')
     expect(daysBetween('2026-10-14', '2026-11-24')).toBe(41)
     expect(shortDate('2026-11-17')).toBe('17 Nov')
+  })
+})
+
+describe('whatsappNumber (what wa.me needs: country code first)', () => {
+  it('adds India to a bare mobile number and drops a trunk zero', () => {
+    expect(whatsappNumber('98765 43210')).toBe('919876543210')
+    expect(whatsappNumber('098765-43210')).toBe('919876543210')
+    expect(whatsappNumber('+91 98765-43210')).toBe('919876543210')
+    expect(whatsappNumber('0091 98765 43210')).toBe('919876543210')
+    expect(whatsappNumber('919876543210')).toBe('919876543210')
+  })
+  it('keeps another country code and refuses what it cannot place', () => {
+    expect(whatsappNumber('+1 202 555 0100')).toBe('12025550100')
+    expect(whatsappNumber('12')).toBeNull()
+    expect(whatsappNumber('(044) 2345 6789')).toBeNull()
+    expect(whatsappNumber('044 2345 678')).toBeNull()
+    expect(whatsappNumber('')).toBeNull()
+    expect(whatsappNumber(null)).toBeNull()
+    expect(whatsappNumber('12345678901234567890')).toBeNull()
   })
 })

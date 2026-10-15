@@ -15,6 +15,7 @@ from typing import Any, Callable
 
 from ..core.db import query, today
 from . import fixes as fixes_service
+from . import guard as guard_service
 from . import risk as risk_service
 from .messages import human_date, rupees
 from .position import delay_model, exposures, open_invoices, position
@@ -216,6 +217,38 @@ def tool_get_risk(ctx: Context, **_: Any) -> dict[str, Any]:
     }
 
 
+def tool_get_guard(ctx: Context, **_: Any) -> dict[str, Any]:
+    """Safe-to-spend, suspicious entries and the books check, from the Risk and Finance engine."""
+    risk = risk_service.jobs.get(f"{ctx.run.built.snapshot_hash}:baseline") or {"status": "COMPUTING"}
+    ladder = guard_service.safe_ladder(ctx.run, risk)
+    flags = guard_service.flags(ctx.business_id)
+    checks = guard_service.checks(ctx.business_id, ctx.run)
+    ctx.actions.append({"type": "open_view", "screen": "book", "view": "risk"})
+    return {
+        "safe_to_spend": [{"within_days": r["days"], "plan": rupees(r["plan_paise"]),
+                           "if_customers_pay_late": rupees(r["cautious_paise"]) if r["cautious_paise"] is not None else "risk still being calculated"} for r in ladder],
+        "suspicious_entries": [{"check": f["rule_label"], "what": f["title"]} for f in flags["open"][:5]],
+        "open_flag_count": flags["open_count"],
+        "books_checks": f"{sum(1 for c in checks if c['ok'])} of {len(checks)} pass",
+        "failed_checks": [c["title"] for c in checks if not c["ok"]],
+    }
+
+
+def tool_top_owed(ctx: Context, **_: Any) -> dict[str, Any]:
+    """Customers ranked by what they owe, and how much of it is overdue."""
+    names = {p["id"]: p["name"] for p in query("SELECT id, name FROM party WHERE business_id = ? AND kind = 'CUSTOMER'", (ctx.business_id,))}
+    rows: dict[str, dict[str, int]] = {}
+    for inv in open_invoices(ctx.business_id, "RECEIVABLE"):
+        row = rows.setdefault(inv["party_id"], {"owed": 0, "overdue": 0})
+        row["owed"] += inv["outstanding_paise"]
+        if inv["days_overdue"] > 0:
+            row["overdue"] += inv["outstanding_paise"]
+    ranked = sorted(rows.items(), key=lambda kv: -kv[1]["owed"])[:5]
+    ctx.actions.append({"type": "open_view", "screen": "khata"})
+    return {"customers": [{"customer": names.get(pid, pid), "owes": rupees(v["owed"]), "of_which_overdue": rupees(v["overdue"])} for pid, v in ranked],
+            "total_owed": rupees(sum(v["owed"] for v in rows.values()))}
+
+
 def tool_get_party(ctx: Context, name: str = "", **_: Any) -> dict[str, Any]:
     party = _party_lookup(ctx, name)
     if party is None:
@@ -337,6 +370,8 @@ TOOLS: dict[str, tuple[Callable[..., dict[str, Any]], str, dict[str, Any]]] = {
     "explain_day": (tool_explain_day, "The engine's decisions on one simulated day, in order.", {"day": {"type": "string", "description": "Day number like 34 or D34, or a date YYYY-MM-DD"}}),
     "explain_event": (tool_explain_event, "Why one event (payment, delivery, receipt) happened when it did.", {"query_text": {"type": "string", "description": "Party name, order number or event id"}}),
     "get_risk": (tool_get_risk, "Chance of running short from customers' payment habits, and who drives it.", {}),
+    "get_guard": (tool_get_guard, "How much is safe to spend, suspicious entries in the books, and the books check.", {}),
+    "top_owed": (tool_top_owed, "Which customers owe the most and how much is overdue.", {}),
     "get_party": (tool_get_party, "A supplier or customer: balance, open bills, payment habit.", {"name": {"type": "string"}}),
     "list_due": (tool_list_due, "Bills to pay and money to collect in the next N days, and today's actions.", {"days": {"type": "integer"}}),
     "run_scenario": (tool_run_scenario, "What if a customer pays on a different date.", {"party": {"type": "string"}, "pays_on": {"type": "string", "description": "YYYY-MM-DD"}}),
@@ -346,7 +381,7 @@ TOOLS: dict[str, tuple[Callable[..., dict[str, Any]], str, dict[str, Any]]] = {
     "glossary": (tool_glossary, "Meaning of a term used in Ripple.", {"term": {"type": "string"}}),
     "open_view": (tool_open_view, "Open a screen for the owner.", {"screen": {"type": "string", "enum": ["today", "engine", "book", "khata", "orders", "inventory"]}}),
 }
-FINANCE_TOOLS = {"get_position", "get_runway", "explain_day", "explain_event", "get_risk", "get_party", "list_due", "run_scenario", "list_fixes", "draft_message"}
+FINANCE_TOOLS = {"get_guard", "top_owed", "get_position", "get_runway", "explain_day", "explain_event", "get_risk", "get_party", "list_due", "run_scenario", "list_fixes", "draft_message"}
 
 
 def allowed_tools(role: str) -> list[str]:
@@ -515,8 +550,13 @@ T = {
         "ta": "{party} தர வேண்டிய {amount}, {expected} அன்று வரும் என்று எதிர்பார்க்கப்படுகிறது.",
         "hi": "{party} पर {amount} बाकी है, भुगतान {expected} को अपेक्षित है।",
     },
+    "help": {
+        "en": "I answer from your books. Ask me: why is there a dip, who owes me the most, how much can I safely spend, is anything suspicious, what should I do today, or give a customer's name.",
+        "ta": "I answer from your books. Ask me: why is there a dip, who owes me the most, how much can I safely spend, is anything suspicious, what should I do today, or give a customer's name.",
+        "hi": "I answer from your books. Ask me: why is there a dip, who owes me the most, how much can I safely spend, is anything suspicious, what should I do today, or give a customer's name.",
+    },
     "unknown": {
-        "en": "I can only answer from your books. I can't answer that one. Try: why the dip, ways to fix, who to chase, or a customer's name.",
+        "en": "I can only answer from your books. I can't answer that one. Try: why the dip, ways to fix, who owes me, how much can I safely spend, or a customer's name.",
         "ta": "உங்கள் கணக்குகளிலிருந்து மட்டுமே பதில் சொல்ல முடியும். இதற்குப் பதில் இல்லை. முயற்சிக்கவும்: ஏன் குறைவு, தீர்வுகள், யாரிடம் வசூலிக்க, அல்லது ஒரு வாடிக்கையாளர் பெயர்.",
         "hi": "मैं केवल आपकी किताबों से जवाब दे सकता हूँ। इसका जवाब नहीं दे सकता। आज़माएँ: कमी क्यों, समाधान, किससे वसूलें, या किसी ग्राहक का नाम।",
     },
@@ -567,6 +607,21 @@ def fallback(ctx: Context, message: str, reason: str) -> dict[str, Any]:
             reply = f"Not enough payment history to estimate risk ({r['payments_used']} payments). The plan is shown without percentages."
         else:
             reply = f"Risk is {r['status']}."
+    elif ctx.role != "SUPERVISOR" and re.search(r"(^|[^a-z])(safe|spend|afford|invest|spare|idle|suspici|suspect|flag|duplicate|fraud|mistake|reconcil|books check)", text):
+        r = use("get_guard")
+        thirty = next((x for x in r["safe_to_spend"] if x["within_days"] == 30), None)
+        parts = []
+        if thirty:
+            if thirty["if_customers_pay_late"].startswith("risk still"):
+                parts.append(f"Safe to spend over the next 30 days: {thirty['plan']} by the plan (the late-payment case is still being calculated).")
+            else:
+                parts.append(f"Safe to spend over the next 30 days: {thirty['if_customers_pay_late']} if customers pay late (plan {thirty['plan']}).")
+        parts.append(f"Books check: {r['books_checks']}." + (f" Failed: {', '.join(r['failed_checks'])}." if r["failed_checks"] else ""))
+        parts.append(f"{r['open_flag_count']} suspicious {'entry' if r['open_flag_count'] == 1 else 'entries'} to review." + "".join(f" {e['what']}." for e in r["suspicious_entries"][:3]))
+        reply = " ".join(parts)
+    elif ctx.role != "SUPERVISOR" and re.search(r"(^|[^a-z])(owe|owes|owed|receivable|receivables|outstanding|unpaid|who has not paid)([^a-z]|$)", text):
+        r = use("top_owed")
+        reply = (f"Customers owe {r['total_owed']} in total.\n" + "\n".join(f"- {c['customer']}: {c['owes']} ({c['of_which_overdue']} overdue)" for c in r["customers"])) if r["customers"] else "No customer owes you anything right now."
     elif party and ctx.role != "SUPERVISOR":
         intent = "reminder" if any(w in text for w in ("remind", "message", "draft", "whatsapp", "நினைவூட்ட", "संदेश")) else None
         r = use("get_party", name=party["name"])
@@ -586,7 +641,9 @@ def fallback(ctx: Context, message: str, reason: str) -> dict[str, Any]:
     elif ctx.role != "SUPERVISOR" and any(w in text for w in ("cash", "money", "balance", "position", "பணம்", "पैसा", "नकद")) and not any(w in text for w in ("short", "run out", "dip")):
         r = use("get_position")
         reply = f"Cash now {r['cash_now']}. To receive {r['to_receive']} from {r['customers_owing']} customers. To pay {r['to_pay']} to {r['suppliers_owed']} suppliers."
-    elif ctx.role != "SUPERVISOR":
+    elif ctx.role != "SUPERVISOR" and re.fullmatch(r"\W*(hi|hello|hey|namaste|vanakkam|help|what can you do)\W*", text):
+        reply = T["help"][lang]
+    elif ctx.role != "SUPERVISOR" and any(w in text for w in ("dip", "short", "run out", "runs out", "runway", "why", "when", "gap", "பற்றாக்குறை", "कमी")):
         r = use("get_runway")
         if r["first_shortfall"]:
             blocked = next((c for c in r["causes"] if c["kind"] == "BLOCKED_PAYMENT"), None)

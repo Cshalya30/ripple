@@ -8,13 +8,13 @@ import re
 import threading
 import uuid
 from datetime import date, timedelta
-from datetime import date as Date
+from datetime import date as _date
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..core.auth import ANYONE, FINANCE, OWNER, Principal, for_role, hash_password, limit_ai, limiter
 from ..core.db import delete_business_data, insert, query, query_one, today, tx, update, update_business, bump_data_version
@@ -38,11 +38,25 @@ from ..services.views import cached_views, do_today, event_views, headline, netw
 router = APIRouter()
 
 
+MIN_DATE, MAX_DATE = _date(2000, 1, 1), _date(2100, 12, 31)
+
+
+def _sane_date(value: _date) -> _date:
+    """Every date a user can type sits between 2000 and 2100. Dates far outside crash date arithmetic later (due dates, lead times)
+    or poison the forecast for good once saved."""
+    if not MIN_DATE <= value <= MAX_DATE:
+        raise ValueError("Date must be between 2000 and 2100")
+    return value
+
+
+Date = Annotated[_date, AfterValidator(_sane_date)]
+
+
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-Paise = Field(gt=0, le=MAX_SAFE_INTEGER // 1000)
+Paise = Field(strict=True, gt=0, le=MAX_SAFE_INTEGER // 1000)  # whole numbers only: '100', 1e2 and true are refused, not coerced
 Id = Field(min_length=1, max_length=160)
 
 
@@ -275,8 +289,8 @@ class ScenarioBody(Strict):
     kind: Literal["MOVE_RECEIPT_DATE", "DELAY_ARRIVAL", "SPLIT_CUSTOMER_COLLECTION", "SPLIT_SUPPLIER_PAYMENT", "ADD_CREDIT_BRIDGE", "EXTENSION", "ADD_PAYMENT", "PAY_EARLY"] | None = None
     event_id: str | None = Field(default=None, max_length=160)
     date: Date | None = None
-    days: int | None = Field(default=None, ge=1, le=365)
-    amount_paise: int | None = Field(default=None, gt=0, le=MAX_SAFE_INTEGER // 1000)
+    days: int | None = Field(strict=True, default=None, ge=1, le=365)
+    amount_paise: int | None = Field(strict=True, default=None, gt=0, le=MAX_SAFE_INTEGER // 1000)
     facility_id: str | None = Field(default=None, max_length=80)
     label: str | None = Field(default=None, max_length=60)
 
@@ -421,7 +435,7 @@ def risk_forecast(principal: Principal = Depends(FINANCE)):
 
 class PaymentCheckBody(Strict):
     event_id: str | None = Field(default=None, max_length=160)
-    amount_paise: int | None = Field(default=None, gt=0, le=MAX_SAFE_INTEGER // 1000)
+    amount_paise: int | None = Field(strict=True, default=None, gt=0, le=MAX_SAFE_INTEGER // 1000)
     date: Date | None = None
     label: str | None = Field(default=None, max_length=60)
 
@@ -550,9 +564,10 @@ def export_transactions(principal: Principal = Depends(FINANCE)):
     writer.writerow(["date", "party", "details", "medium", "reference", "in_rupees", "out_rupees", "balance_rupees", "status"])
     for r in reversed(data["rows"]):
         amount = f"{r['amount_paise'] / 100:.2f}"
-        writer.writerow([r["date"], r["party_name"] or "", _csv_safe(r["details"] or ""), r["medium"], _csv_safe(r["reference"] or ""),
+        writer.writerow([r["date"], _csv_safe(r["party_name"] or ""), _csv_safe(r["details"] or ""), r["medium"], _csv_safe(r["reference"] or ""),
                          amount if r["direction"] == "IN" else "", amount if r["direction"] == "OUT" else "", f"{r['balance_paise'] / 100:.2f}", r["status"]])
-    return PlainTextResponse(buffer.getvalue(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=ripple-transactions.csv"})
+    # A byte-order mark so Excel reads Tamil, Hindi and other non-English names correctly (the datasheets already do this).
+    return PlainTextResponse(datasheet.BOM + buffer.getvalue(), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": 'attachment; filename="ripple-transactions.csv"'})
 
 
 def _csv_download(text: str, stem: str) -> PlainTextResponse:
@@ -593,8 +608,8 @@ class PartyBody(Strict):
     udyam_number: str | None = Field(default=None, max_length=30)
     msme_category: Literal["MICRO", "SMALL", "MEDIUM"] | None = None
     terms_type: Literal["ADVANCE", "ON_DELIVERY", "CREDIT"] | None = None
-    terms_days: int = Field(default=30, ge=0, le=365)
-    lead_time_days: int = Field(default=0, ge=0, le=365)
+    terms_days: int = Field(strict=True, default=30, ge=0, le=365)
+    lead_time_days: int = Field(strict=True, default=0, ge=0, le=365)
     tags: list[str] | None = Field(default=None, max_length=8)
 
 
@@ -607,8 +622,8 @@ class PartyPatch(Strict):
     udyam_number: str | None = Field(default=None, max_length=30)
     msme_category: Literal["MICRO", "SMALL", "MEDIUM"] | None = None
     terms_type: Literal["ADVANCE", "ON_DELIVERY", "CREDIT"] | None = None
-    terms_days: int | None = Field(default=None, ge=0, le=365)
-    lead_time_days: int | None = Field(default=None, ge=0, le=365)
+    terms_days: int | None = Field(strict=True, default=None, ge=0, le=365)
+    lead_time_days: int | None = Field(strict=True, default=None, ge=0, le=365)
     tags: list[str] | None = Field(default=None, max_length=8)
 
 
@@ -874,19 +889,19 @@ def patch_purchase_order(po_id: str, body: POStatusBody, principal: Principal = 
 class NewSalesOrder(Strict):
     customer_id: str = Id
     product_id: str = Id
-    qty: int = Field(gt=0, le=100_000)
-    unit_price_paise: int | None = Field(default=None, gt=0, le=10**10)
+    qty: int = Field(strict=True, gt=0, le=100_000)
+    unit_price_paise: int | None = Field(strict=True, default=None, gt=0, le=10**10)
     promised_date: Date
     earliest_start_date: Date | None = None
-    deposit_paise: int = Field(default=0, ge=0, le=10**12)
+    deposit_paise: int = Field(strict=True, default=0, ge=0, le=10**12)
     with_supporting_po: bool = True
 
 
 class NewPurchaseOrder(Strict):
     supplier_id: str = Id
     material_id: str = Id
-    qty: int = Field(gt=0, le=10**9)
-    amount_paise: int | None = Field(default=None, gt=0, le=10**12)
+    qty: int = Field(strict=True, gt=0, le=10**9)
+    amount_paise: int | None = Field(strict=True, default=None, gt=0, le=10**12)
     expected_arrival: Date | None = None
 
 
@@ -1027,7 +1042,7 @@ def stock_movements(principal: Principal = Depends(ANYONE)):
 class MovementBody(Strict):
     item_type: Literal["MATERIAL", "PRODUCT"]
     item_id: str = Id
-    qty_delta: int = Field(ge=-10**9, le=10**9)
+    qty_delta: int = Field(strict=True, ge=-10**9, le=10**9)
     note: str = Field(min_length=1, max_length=200)
     ref: str | None = Field(default=None, max_length=40)
 
@@ -1048,10 +1063,10 @@ class MaterialBody(Strict):
     name: str = Field(min_length=1, max_length=120)
     sku: str | None = Field(default=None, max_length=24, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{1,23}$")
     unit: Literal["kg", "g", "L", "ml", "m", "pc", "box"]
-    cost_paise: int = Field(default=0, ge=0, le=10**9)
+    cost_paise: int = Field(strict=True, default=0, ge=0, le=10**9)
     opening_qty: Decimal = Field(default=Decimal(0), ge=0, le=Decimal(10**7), max_digits=12, decimal_places=3)
     supplier_id: str | None = Field(default=None, max_length=160)
-    reorder_safety_days: int = Field(default=7, ge=0, le=90)
+    reorder_safety_days: int = Field(strict=True, default=7, ge=0, le=90)
 
     @field_validator("name")
     @classmethod
@@ -1065,9 +1080,9 @@ class MaterialBody(Strict):
 class MaterialPatch(Strict):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     sku: str | None = Field(default=None, max_length=24, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{1,23}$")
-    cost_paise: int | None = Field(default=None, ge=0, le=10**9)
+    cost_paise: int | None = Field(strict=True, default=None, ge=0, le=10**9)
     supplier_id: str | None = Field(default=None, max_length=160)
-    reorder_safety_days: int | None = Field(default=None, ge=0, le=90)
+    reorder_safety_days: int | None = Field(strict=True, default=None, ge=0, le=90)
 
     @field_validator("name")
     @classmethod
@@ -1112,14 +1127,14 @@ def remove_material(material_id: str, principal: Principal = Depends(FINANCE)):
 
 class RecipeLine(Strict):
     material_id: str = Id
-    qty_per_piece: int = Field(gt=0, le=10**7)
-    wastage_bp: int = Field(ge=0, le=5000)
+    qty_per_piece: int = Field(strict=True, gt=0, le=10**7)
+    wastage_bp: int = Field(strict=True, ge=0, le=5000)
 
 
 class RecipeBody(Strict):
     lines: list[RecipeLine] = Field(max_length=20)
-    production_cost_paise: int | None = Field(default=None, ge=0, le=10**10)
-    production_days: int | None = Field(default=None, ge=0, le=365)
+    production_cost_paise: int | None = Field(strict=True, default=None, ge=0, le=10**10)
+    production_days: int | None = Field(strict=True, default=None, ge=0, le=365)
 
 
 @router.get("/recipes/{product_id}")
@@ -1239,12 +1254,20 @@ class ChatContext(Strict):
     route: str | None = Field(default=None, max_length=60)
     event_id: str | None = Field(default=None, max_length=160)
     party_id: str | None = Field(default=None, max_length=160)
-    day: int | None = Field(default=None, ge=0, le=730)
+    day: int | None = Field(strict=True, default=None, ge=0, le=730)
     scenario: str | None = Field(default=None, max_length=80)
 
 
 class ChatBody(Strict):
     message: str = Field(min_length=1, max_length=1000)
+
+    @field_validator("message")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Type a question first.")
+        return value.strip()
+
     context: ChatContext | None = None
     history: list[ChatTurn] = Field(default_factory=list, max_length=12)
     language: AssistantLang | None = None
@@ -1345,9 +1368,9 @@ class BusinessBody(Strict):
 
 
 class MoneyBody(Strict):
-    safety_buffer_paise: int | None = Field(default=None, ge=0, le=10**12)
-    default_customer_terms_days: int | None = Field(default=None, ge=0, le=365)
-    default_supplier_terms_days: int | None = Field(default=None, ge=0, le=365)
+    safety_buffer_paise: int | None = Field(strict=True, default=None, ge=0, le=10**12)
+    default_customer_terms_days: int | None = Field(strict=True, default=None, ge=0, le=365)
+    default_supplier_terms_days: int | None = Field(strict=True, default=None, ge=0, le=365)
     horizon_days: Literal[30, 60, 90, 120, 180] | None = None
     msme_alerts: bool | None = None
 
@@ -1355,7 +1378,7 @@ class MoneyBody(Strict):
 class RecurringBody(Strict):
     label: str = Field(min_length=1, max_length=80)
     amount_paise: int = Paise
-    day_of_month: int = Field(ge=1, le=31)
+    day_of_month: int = Field(strict=True, ge=1, le=31)
     active: bool = True
 
     @field_validator("label")
@@ -1370,8 +1393,8 @@ class RecurringBody(Strict):
 class FacilityBody(Strict):
     label: str = Field(min_length=1, max_length=80)
     approved_limit_paise: int = Paise
-    annual_rate_bps: int = Field(ge=0, le=10_000)
-    drawdown_fee_paise: int = Field(default=0, ge=0, le=10**11)
+    annual_rate_bps: int = Field(strict=True, ge=0, le=10_000)
+    drawdown_fee_paise: int = Field(strict=True, default=0, ge=0, le=10**11)
     available_from: Date
     repayment_date: Date
 
@@ -1465,13 +1488,25 @@ class InviteBody(Strict):
     role: Literal["ACCOUNTANT", "SUPERVISOR", "OWNER"]
 
 
+SHARED_DEMO = "mahalakshmi"
+
+
+def _not_shared_demo(principal: Principal) -> None:
+    """The credentialed demo business is shared by everyone who knows the README accounts, so nobody can lock others out of it."""
+    if principal.business_id == SHARED_DEMO and not principal.is_sandbox:
+        raise HTTPException(status_code=403, detail={"code": "SHARED_DEMO_PROTECTED"})
+
+
 @router.post("/team")
 def invite(body: InviteBody, request: Request, principal: Principal = Depends(OWNER)):
     import secrets
+    _not_shared_demo(principal)
     limiter.check(f"invite:{principal.business_id}", 10, 3600)
+    limiter.check(f"invite:u:{principal.user_id}", 5, 3600)
     email = body.email.strip().lower()
+    # One answer for "already in use" wherever the account lives, so this form cannot be used to find out who has an account.
     if query_one("SELECT id FROM user WHERE email = ?", (email,)):
-        raise HTTPException(status_code=409, detail={"code": "EMAIL_TAKEN"})
+        raise HTTPException(status_code=409, detail={"code": "CANNOT_INVITE"})
     password = secrets.token_urlsafe(10)
     with tx() as conn:
         insert(conn, "user", {"id": f"u-{secrets.token_hex(6)}", "business_id": principal.business_id, "email": email,
@@ -1481,6 +1516,7 @@ def invite(body: InviteBody, request: Request, principal: Principal = Depends(OW
 
 @router.delete("/team/{user_id}")
 def remove_member(user_id: str, principal: Principal = Depends(OWNER)):
+    _not_shared_demo(principal)
     if user_id == principal.user_id:
         raise HTTPException(status_code=422, detail={"code": "CANNOT_REMOVE_SELF"})
     with tx() as conn:
@@ -1497,6 +1533,7 @@ class ConfirmBody(Strict):
 
 @router.post("/data/reset")
 def reset_data(body: ConfirmBody, principal: Principal = Depends(OWNER)):
+    _not_shared_demo(principal)
     business = query_one("SELECT * FROM business WHERE id = ?", (principal.business_id,))
     if body.confirm.strip() != business["name"]:
         raise HTTPException(status_code=422, detail={"code": "CONFIRMATION_MISMATCH", "expected": "the business name"})
@@ -1551,7 +1588,7 @@ class SetupPatchBody(Strict):
 
 class SetupApproveBody(Strict):
     draft_id: str = Field(max_length=60)
-    draft_version: int = Field(gt=0)
+    draft_version: int = Field(strict=True, gt=0)
     approval: str = Field(max_length=20)
 
 

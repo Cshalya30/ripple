@@ -97,6 +97,8 @@ def me_payload(principal: Principal) -> dict[str, Any]:
 @router.post("/auth/login")
 def login(body: LoginBody, request: Request, response: Response):
     limiter.check(f"login:{client_ip(request)}", 10, 60)
+    # A second, slower limit per account: one address cannot be the only thing standing between a guesser and a password.
+    limiter.check(f"login:acct:{body.email.strip().lower()[:120]}", 30, 900)
     user = query_one("SELECT * FROM user WHERE email = ?", (body.email.strip().lower(),))
     if not auth.check_password_or_dummy(body.password, user["password_hash"] if user else None):
         raise HTTPException(status_code=401, detail={"code": "BAD_CREDENTIALS", "message": "Email or password is wrong"})

@@ -4,7 +4,7 @@ import { Fragment, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Glyph'
 import { LanguageSelect } from '../components/VoiceSettings'
-import { ErrorNote, Section } from '../components/ui'
+import { Dialog, ErrorNote, Section } from '../components/ui'
 import { api, errorText } from '../lib/api'
 import { useMe } from '../lib/queries'
 import { useSpeechInput } from '../lib/useVoice'
@@ -38,6 +38,7 @@ export default function Setup() {
   const [hot, setHot] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
+  const [confirm, setConfirm] = useState<'approve' | 'demo' | null>(null)
   const dictation = useSpeechInput({ lang, continuous: true, maxMs: 180_000, onFinal: (heard) => setText((t) => `${t} ${heard}`.trim().slice(0, 8000)) })
 
   if (me.isError) return <div className="page"><ErrorNote text="Sign in first." /> <Link to="/login">Sign in</Link></div>
@@ -59,7 +60,7 @@ export default function Setup() {
   }
 
   const approve = async () => {
-    setBusy('approve'); setError(null)
+    setConfirm(null); setBusy('approve'); setError(null)
     try {
       await api.post('/setup/approve', { draft_id: draft!.draft_id, draft_version: draft!.draft_version, approval: 'APPROVE' })
       qc.clear()
@@ -68,7 +69,7 @@ export default function Setup() {
   }
 
   const loadDemo = async () => {
-    setBusy('demo')
+    setConfirm(null); setBusy('demo'); setError(null)
     try {
       await api.post('/data/load-demo')
       qc.clear()
@@ -101,7 +102,7 @@ export default function Setup() {
             <div className="row-wrap" style={{ marginTop: 14 }}>
               <button className="btn btn-primary" disabled={!owner || !text.trim() || busy !== null} onClick={() => submit(text)}>{busy === 'draft' ? 'Reading your description' : 'Read my description'}</button>
               <span className="faint">or</span>
-              <button className="btn btn-secondary" disabled={!owner || busy !== null} onClick={loadDemo}>Load the demo business</button>
+              <button className="btn btn-secondary" disabled={!owner || busy !== null} onClick={() => setConfirm('demo')}>Load the demo business</button>
             </div>
           </Section>
         )}
@@ -138,7 +139,7 @@ export default function Setup() {
               <Counts facts={draft.extracted_facts} />
               {error !== null && <div style={{ marginTop: 12 }}><ErrorNote text={errorText(error)} /></div>}
               <div className="row" style={{ marginTop: 12 }}>
-                <button className="btn btn-primary" disabled={draft.status !== 'READY_FOR_REVIEW' || busy !== null} onClick={approve}>
+                <button className="btn btn-primary" disabled={draft.status !== 'READY_FOR_REVIEW' || busy !== null} onClick={() => setConfirm('approve')}>
                   {busy === 'approve' ? 'Building your forecast' : 'Approve and build my forecast'}
                 </button>
                 {draft.status !== 'READY_FOR_REVIEW' && <span className="small muted">Answer every question first.</span>}
@@ -146,6 +147,14 @@ export default function Setup() {
             </Section>
           </>
         )}
+        <Dialog open={confirm !== null} onClose={() => setConfirm(null)} title="Replace this business's records?"
+          description={confirm === 'demo' ? 'Everything you have entered is removed and the demo business is loaded in its place.' : 'Everything you have entered is removed and replaced with what you approved here.'}>
+          <p className="small muted" style={{ margin: 0 }}>This cannot be undone. Export your data from Settings first if you want a copy.</p>
+          <div className="dialog-actions">
+            <button className="btn btn-secondary" onClick={() => setConfirm(null)}>Keep my records</button>
+            <button className="btn btn-primary" onClick={() => (confirm === 'demo' ? loadDemo() : approve())}>{confirm === 'demo' ? 'Replace with the demo' : 'Replace and build'}</button>
+          </div>
+        </Dialog>
       </div>
     </div>
   )

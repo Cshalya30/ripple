@@ -7,6 +7,7 @@ import { percent, rupees, shortDate } from '../lib/format'
 import { useParties, useWrite } from '../lib/queries'
 import { useUI } from '../lib/store'
 import type { Me, PartyRow } from '../lib/types'
+import { parseWhole } from '../lib/validate'
 
 export function Khata({ me }: { me: Me }) {
   const { t } = useTranslation()
@@ -124,21 +125,33 @@ function Suppliers({ rows, total }: { rows: PartyRow[]; total: number }) {
   )
 }
 
+const EMPTY_PARTY = { name: '', city: '', phone: '', terms_type: 'CREDIT', terms_days: '30', lead_time_days: '0', msme_category: '', tags: '' }
+
 function AddParty({ open, kind, onClose }: { open: boolean; kind: 'CUSTOMER' | 'SUPPLIER'; onClose: () => void }) {
-  const [form, setForm] = useState({ name: '', city: '', phone: '', terms_type: 'CREDIT', terms_days: '30', lead_time_days: '0', msme_category: '', tags: '' })
+  const [form, setForm] = useState(EMPTY_PARTY)
   const write = useWrite((body: unknown) => api.post('/parties', body))
+  const days = parseWhole(form.terms_days, 0, 365, 'Credit days')
+  const lead = parseWhole(form.lead_time_days, 0, 365, 'Lead time')
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value })
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await write.mutateAsync({
-      kind, name: form.name, city: form.city || null, phone: form.phone || null, terms_type: form.terms_type,
-      terms_days: Number(form.terms_days) || 0, lead_time_days: Number(form.lead_time_days) || 0,
-      msme_category: form.msme_category || null, tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8) : [],
-    })
+    if (!days.ok || !lead.ok || write.isPending) return
+    try {
+      await write.mutateAsync({
+        kind, name: form.name.trim(), city: form.city.trim() || null, phone: form.phone.trim() || null, terms_type: form.terms_type,
+        terms_days: days.value, lead_time_days: lead.value,
+        msme_category: form.msme_category || null, tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 8) : [],
+      })
+    } catch {
+      return // the error is shown in the dialog; keep what was typed
+    }
+    setForm(EMPTY_PARTY)
+    write.reset()
     onClose()
   }
+  const close = () => { setForm(EMPTY_PARTY); write.reset(); onClose() }
   return (
-    <Dialog open={open} onClose={onClose} title={`Add ${kind === 'CUSTOMER' ? 'customer' : 'supplier'}`}>
+    <Dialog open={open} onClose={close} title={`Add ${kind === 'CUSTOMER' ? 'customer' : 'supplier'}`}>
       <form onSubmit={submit}>
         <div className="form-grid">
           <label className="field" style={{ gridColumn: '1 / -1' }}><span className="field-label">Name</span><input className="input" required maxLength={120} value={form.name} onChange={set('name')} /></label>
@@ -149,8 +162,8 @@ function AddParty({ open, kind, onClose }: { open: boolean; kind: 'CUSTOMER' | '
               <option value="CREDIT">Credit</option>{kind === 'SUPPLIER' && <option value="ADVANCE">Advance</option>}{kind === 'SUPPLIER' && <option value="ON_DELIVERY">On delivery</option>}
             </select>
           </label>
-          <label className="field"><span className="field-label">Credit days</span><input className="input mono" type="number" min={0} max={365} value={form.terms_days} onChange={set('terms_days')} /></label>
-          {kind === 'SUPPLIER' && <label className="field"><span className="field-label">Lead time, days</span><input className="input mono" type="number" min={0} max={365} value={form.lead_time_days} onChange={set('lead_time_days')} /></label>}
+          <label className="field"><span className="field-label">Credit days</span><input className="input mono" inputMode="numeric" aria-invalid={!days.ok} value={form.terms_days} onChange={set('terms_days')} />{!days.ok && <span className="micro" role="alert" style={{ color: 'var(--out)' }}>{days.error}</span>}</label>
+          {kind === 'SUPPLIER' && <label className="field"><span className="field-label">Lead time, days</span><input className="input mono" inputMode="numeric" aria-invalid={!lead.ok} value={form.lead_time_days} onChange={set('lead_time_days')} />{!lead.ok && <span className="micro" role="alert" style={{ color: 'var(--out)' }}>{lead.error}</span>}</label>}
           {kind === 'SUPPLIER' && (
             <label className="field"><span className="field-label">MSME category</span>
               <select className="select" value={form.msme_category} onChange={set('msme_category')}><option value="">Not registered</option><option value="MICRO">Micro</option><option value="SMALL">Small</option><option value="MEDIUM">Medium</option></select>
@@ -160,8 +173,8 @@ function AddParty({ open, kind, onClose }: { open: boolean; kind: 'CUSTOMER' | '
         </div>
         {write.isError && <div style={{ marginTop: 12 }}><ErrorNote text={errorText(write.error)} /></div>}
         <div className="dialog-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" disabled={write.isPending || !form.name.trim()}>Add</button>
+          <button type="button" className="btn btn-secondary" onClick={close}>Cancel</button>
+          <button className="btn btn-primary" disabled={write.isPending || !form.name.trim() || !days.ok || !lead.ok}>Add</button>
         </div>
       </form>
     </Dialog>

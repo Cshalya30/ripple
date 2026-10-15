@@ -1,7 +1,7 @@
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Glyph'
 import { ErrorNote } from '../components/ui'
 import { api, errorText } from '../lib/api'
@@ -10,6 +10,7 @@ import type { Me } from '../lib/types'
 export function Login() {
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -19,7 +20,10 @@ export function Login() {
   const done = (me: Me) => {
     qc.clear()
     qc.setQueryData(['me'], me)
-    navigate(me.user.role === 'SUPERVISOR' ? '/app/orders' : '/app/today')
+    // After a session ended mid-use, go back to the page the person was on. Only an internal /app path from router state is accepted.
+    const from = (location.state as { from?: unknown } | null)?.from
+    const back = typeof from === 'string' && /^\/app\/[a-z]/.test(from) ? from : null
+    navigate(back ?? (me.user.role === 'SUPERVISOR' ? '/app/orders' : '/app/today'))
   }
 
   const login = async (e: React.FormEvent) => {
@@ -69,7 +73,7 @@ export function Login() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ paddingRight: 36 }}
+                style={{ paddingRight: 48 }}
                 required
               />
               <button
@@ -77,10 +81,11 @@ export function Login() {
                 onClick={() => setShowPassword((prev) => !prev)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 title={showPassword ? 'Hide password' : 'Show password'}
-                tabIndex={-1}
                 style={{
                   position: 'absolute',
-                  right: 8,
+                  right: 0,
+                  minWidth: 44,
+                  minHeight: 44,
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'transparent',
@@ -119,6 +124,10 @@ export function Login() {
             </tbody>
           </table>
         </div>
+        <nav className="small row-wrap" aria-label="Legal" style={{ marginTop: 20 }}>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
+        </nav>
       </main>
     </div>
   )

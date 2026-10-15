@@ -1,6 +1,6 @@
 import '@fontsource-variable/anek-latin/standard.css'
-import '@fontsource-variable/anek-tamil/standard.css'
-import '@fontsource-variable/anek-devanagari/standard.css'
+import '@fontsource-variable/anek-tamil/wght.css'
+import '@fontsource-variable/anek-devanagari/wght.css'
 import '@fontsource/ibm-plex-mono/400.css'
 import '@fontsource/ibm-plex-mono/500.css'
 import '@fontsource/ibm-plex-mono/600.css'

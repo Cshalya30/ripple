@@ -3,6 +3,11 @@
   "private": true,
   "type": "module",
   "description": "Browser smoke test: demo login, every screen, a scenario, Munim, a payment, phone width in Tamil.",
-  "scripts": { "smoke": "node smoke.mjs shots" },
-  "dependencies": { "playwright-core": "^1.48.0" }
+  "scripts": {
+    "smoke": "node smoke.mjs shots"
+  },
+  "dependencies": {
+    "axe-core": "^4.10.2",
+    "playwright-core": "^1.48.0"
+  }
 }

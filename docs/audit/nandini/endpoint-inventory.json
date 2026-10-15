@@ -1,0 +1,1575 @@
+{
+ "generated_by": "docs/audit/chirantan/tools/inventory.py (static analysis). Run with a folder name to write elsewhere.",
+ "counts": {
+  "routes_total": 87,
+  "mounted": 77,
+  "not_mounted": 10,
+  "in_track_a_postman_collection": 70,
+  "by_method": {
+   "GET": 30,
+   "POST": 32,
+   "PUT": 4,
+   "PATCH": 7,
+   "DELETE": 4
+  }
+ },
+ "routes": [
+  {
+   "method": "GET",
+   "path": "/api/alerts",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_alerts",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 166,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "alerts"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/assistant/chat",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:assistant_chat",
+   "auth": "any signed-in user",
+   "request_model": "ChatBody",
+   "line": 1277,
+   "frontend_callers": [
+    "frontend/src/components/Munim.tsx"
+   ],
+   "postman_requests": [
+    "munim needs a session",
+    "ask why there is a dip",
+    "ask who owes the most",
+    "ask how much is safe to spend",
+    "out-of-scope question is declined",
+    "script tag in the question is plain text",
+    "blank question",
+    "empty question",
+    "question over 1000 characters",
+    "unknown language",
+    "extra property is refused",
+    "wrong content type",
+    "supervisor gets no money tools from Munim"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/auth/demo",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:demo",
+   "auth": "none (public)",
+   "request_model": "Request",
+   "line": 113,
+   "frontend_callers": [
+    "frontend/src/pages/Login.tsx"
+   ],
+   "postman_requests": [
+    "open a sandbox business",
+    "open sandbox B"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/auth/login",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:login",
+   "auth": "none (public)",
+   "request_model": "LoginBody",
+   "line": 98,
+   "frontend_callers": [
+    "frontend/src/pages/Login.tsx"
+   ],
+   "postman_requests": [
+    "sign in as the supervisor",
+    "sign in as the supervisor"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/auth/logout",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:logout",
+   "auth": "none (public)",
+   "request_model": "Request",
+   "line": 135,
+   "frontend_callers": [],
+   "postman_requests": [
+    "sign out of A"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/auth/logout-all",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:logout_all",
+   "auth": "any signed-in user",
+   "request_model": "Request",
+   "line": 141,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "GET",
+   "path": "/api/book/summary",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:book_summary",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 381,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "book summary needs a session",
+    "book summary",
+    "supervisor cannot read the book"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/catalogue",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:catalogue",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 1160,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "catalogue (products, materials, suppliers)"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/data/load-demo",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:load_demo",
+   "auth": "owner only",
+   "request_model": null,
+   "line": 1549,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx",
+    "frontend/src/pages/Setup.tsx"
+   ],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/api/data/reset",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:reset_data",
+   "auth": "owner only",
+   "request_model": "ConfirmBody",
+   "line": 1535,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "reset: wrong confirmation",
+    "reset: confirmation missing",
+    "supervisor: cannot reset the business"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/engine/day/{day}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:engine_day",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 264,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "engine day 0",
+    "engine day outside the horizon"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/engine/graph",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:engine_graph",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 256,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "engine network view"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/engine/run",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:engine_run",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 245,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "engine run needs a session",
+    "engine run",
+    "engine run for an unknown scenario key",
+    "supervisor cannot read the engine"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/engine/scenario",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:engine_scenario",
+   "auth": "owner or accountant",
+   "request_model": "ScenarioBody",
+   "line": 355,
+   "frontend_callers": [
+    "frontend/src/components/Munim.tsx",
+    "frontend/src/engine/ScenarioBar.tsx",
+    "frontend/src/guard/PaymentCheck.tsx",
+    "frontend/src/pages/Book.tsx"
+   ],
+   "postman_requests": [
+    "scenario: extension of a supplier bill",
+    "scenario: new payment (ADD_PAYMENT)",
+    "scenario: missing fields",
+    "scenario: date outside the horizon",
+    "scenario: unknown kind",
+    "scenario: extra property is refused",
+    "scenario: negative amount",
+    "scenario: unknown event"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/engine/scenario/chance",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:engine_scenario_chance",
+   "auth": "owner or accountant",
+   "request_model": "ScenarioBody",
+   "line": 371,
+   "frontend_callers": [
+    "frontend/src/engine/ScenarioImpact.tsx",
+    "frontend/src/guard/PaymentCheck.tsx"
+   ],
+   "postman_requests": [
+    "scenario chance (cheap poll)"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/export",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:export_all",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 1563,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "export everything (JSON)",
+    "supervisor: cannot export the business"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/export/company/datasheet.csv",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:export_company_datasheet",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 588,
+   "frontend_callers": [],
+   "postman_requests": [
+    "company datasheet (CSV)"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/export/party/{party_id}/datasheet.csv",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:export_party_datasheet",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 578,
+   "frontend_callers": [],
+   "postman_requests": [
+    "party datasheet (CSV)",
+    "party datasheet: unknown party",
+    "B cannot read A's datasheet"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/export/transactions.csv",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:export_transactions",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 560,
+   "frontend_callers": [
+    "frontend/src/pages/Book.tsx",
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "transactions CSV: formula guard and byte-order mark",
+    "supervisor: cannot read the ledger or export it"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/fixes",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:list_fixes",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 407,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "ways to fix"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/fixes/evaluate",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:evaluate_fix",
+   "auth": "owner or accountant",
+   "request_model": "ScenarioBody",
+   "line": 422,
+   "frontend_callers": [],
+   "postman_requests": [
+    "fix evaluate: unknown fix",
+    "fix evaluate: neither fix nor kind"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/guard",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_guard",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 466,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "guard needs a session",
+    "guard",
+    "guard: yield too high",
+    "guard: yield negative",
+    "the miss is counted (persistence)",
+    "supervisor cannot read the guard"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/guard/flags/review",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:guard_review",
+   "auth": "owner or accountant",
+   "request_model": "FlagReviewBody",
+   "line": 483,
+   "frontend_callers": [
+    "frontend/src/guard/Panels.tsx"
+   ],
+   "postman_requests": [
+    "flag review: unknown check",
+    "flag review: bad verdict"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/guard/missed",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:guard_missed",
+   "auth": "owner or accountant",
+   "request_model": "MissedBody",
+   "line": 491,
+   "frontend_callers": [
+    "frontend/src/guard/Panels.tsx"
+   ],
+   "postman_requests": [
+    "log a missed entry",
+    "log a miss for an unknown check",
+    "supervisor cannot log a miss"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/guard/payment-check",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:guard_payment_check",
+   "auth": "owner or accountant",
+   "request_model": "PaymentCheckBody",
+   "line": 472,
+   "frontend_callers": [
+    "frontend/src/guard/PaymentCheck.tsx"
+   ],
+   "postman_requests": [
+    "write without the CSRF header is refused before anything else",
+    "payment check: a bill",
+    "payment check: a new payment",
+    "payment check: nothing to check",
+    "payment check: date outside the forecast",
+    "payment check: unknown bill",
+    "payment check: negative amount",
+    "payment check: extra property"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/health",
+   "mounted": true,
+   "handler": "backend/app/main.py",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": null,
+   "frontend_callers": [],
+   "postman_requests": [
+    "health"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/inventory",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_inventory",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 1026,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "inventory",
+    "the material is listed with its opening stock (persistence)",
+    "stock: still the same amount (nothing was taken)",
+    "the material is gone (persistence)",
+    "supervisor: inventory carries no money"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/inventory/summary",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:inventory_summary",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 1032,
+   "frontend_callers": [],
+   "postman_requests": [
+    "inventory summary"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/invoices",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_invoice",
+   "auth": "owner or accountant",
+   "request_model": "InvoiceBody",
+   "line": 744,
+   "frontend_callers": [],
+   "postman_requests": [
+    "create an invoice",
+    "invoice: duplicate number for the same party",
+    "invoice: due before invoice date",
+    "invoice: year 9999",
+    "invoice: amount zero",
+    "invoice: amount negative",
+    "invoice: amount with decimals",
+    "invoice: amount as text",
+    "invoice: amount beyond any real figure",
+    "invoice: unknown party",
+    "supervisor: cannot create an invoice"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/invoices/{invoice_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:patch_invoice",
+   "auth": "owner or accountant",
+   "request_model": "PromiseBody",
+   "line": 758,
+   "frontend_callers": [],
+   "postman_requests": [
+    "invoice: promised date",
+    "invoice: promised date unknown invoice"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/materials",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_material",
+   "auth": "owner or accountant",
+   "request_model": "MaterialBody",
+   "line": 1099,
+   "frontend_callers": [
+    "frontend/src/components/MaterialDialog.tsx"
+   ],
+   "postman_requests": [
+    "create a material",
+    "material: same name again",
+    "material: empty name",
+    "material: unknown unit",
+    "material: negative cost",
+    "material: opening stock below zero",
+    "material: opening stock with four decimals",
+    "material: sku with spaces",
+    "material: extra property",
+    "create a scrap material with no history"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/materials/{material_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:remove_material",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 1119,
+   "frontend_callers": [
+    "frontend/src/components/MaterialDialog.tsx"
+   ],
+   "postman_requests": [
+    "a material with stock history cannot be deleted",
+    "delete the scrap material",
+    "delete a material that is in use",
+    "delete an unknown material"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/materials/{material_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:patch_material",
+   "auth": "owner or accountant",
+   "request_model": "MaterialPatch",
+   "line": 1109,
+   "frontend_callers": [
+    "frontend/src/components/MaterialDialog.tsx"
+   ],
+   "postman_requests": [
+    "rename the material",
+    "material: patch unknown id",
+    "B cannot change A's material"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/me",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:me",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 147,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "who am I",
+    "preferences are stored (persistence)"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/me/prefs",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:put_prefs",
+   "auth": "any signed-in user",
+   "request_model": "PrefsBody",
+   "line": 152,
+   "frontend_callers": [
+    "frontend/src/components/Munim.tsx",
+    "frontend/src/components/Shell.tsx",
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "preferences: change the theme",
+    "preferences: unknown theme",
+    "preferences: unknown field",
+    "preferences: text size as number"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/messages/draft",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:draft_message",
+   "auth": "owner or accountant",
+   "request_model": "DraftBody",
+   "line": 1183,
+   "frontend_callers": [
+    "frontend/src/components/Composer.tsx"
+   ],
+   "postman_requests": [
+    "message draft: reminder",
+    "message draft: intent that does not fit",
+    "message draft: unknown language"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/orders/what-if",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:orders_what_if",
+   "auth": "owner or accountant",
+   "request_model": "Request",
+   "line": 995,
+   "frontend_callers": [
+    "frontend/src/pages/Orders.tsx"
+   ],
+   "postman_requests": [
+    "what-if: can I take this order",
+    "what-if: quantity zero",
+    "what-if: price as text",
+    "what-if: date year 9999",
+    "what-if: unknown customer"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/parties",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:list_parties",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 667,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "customers list",
+    "suppliers list",
+    "parties: bad kind",
+    "created customer is in the list (persistence)",
+    "remember business A's ids",
+    "B's own data is untouched and reachable",
+    "supervisor: parties are finance only"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/parties",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:create_party",
+   "auth": "owner or accountant",
+   "request_model": "PartyBody",
+   "line": 673,
+   "frontend_callers": [
+    "frontend/src/pages/Khata.tsx"
+   ],
+   "postman_requests": [
+    "create customer",
+    "create party: missing name",
+    "create party: empty name",
+    "create party: name over 120",
+    "create party: bad kind",
+    "create party: phone with letters",
+    "create party: credit days 366",
+    "create party: credit days as text",
+    "create party: extra property (mass assignment)",
+    "create party: wrong content type",
+    "create party: malformed JSON",
+    "create party: markup in the name is stored as text",
+    "create party: a name that starts like a spreadsheet formula",
+    "body over the limit is refused"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/parties/{party_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_party",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 690,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "party detail",
+    "party detail: unknown id",
+    "party detail: path traversal text",
+    "the update was stored (persistence)",
+    "the note is stored",
+    "the invoice shows on the party (persistence)",
+    "the bill is now paid (persistence)",
+    "B cannot read A's party"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/parties/{party_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:patch_party",
+   "auth": "owner or accountant",
+   "request_model": "PartyPatch",
+   "line": 680,
+   "frontend_callers": [],
+   "postman_requests": [
+    "update party",
+    "update party: unknown id",
+    "update party: extra property",
+    "B cannot edit A's party"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/parties/{party_id}/notes",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_note",
+   "auth": "owner or accountant",
+   "request_model": "NoteBody",
+   "line": 725,
+   "frontend_callers": [
+    "frontend/src/components/PartyDrawer.tsx"
+   ],
+   "postman_requests": [
+    "add a note",
+    "add a note: empty",
+    "add a note: too long"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/purchase-orders",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:purchase_orders",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 829,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "purchase orders",
+    "supervisor: purchase orders carry no money"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/purchase-orders",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_purchase_order",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 909,
+   "frontend_callers": [
+    "frontend/src/pages/Orders.tsx"
+   ],
+   "postman_requests": [
+    "create a purchase order",
+    "purchase order: a customer is not a supplier",
+    "purchase order: quantity zero",
+    "purchase order: unknown material",
+    "purchase order: arrival in year 9999"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/purchase-orders/{po_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:patch_purchase_order",
+   "auth": "any signed-in user",
+   "request_model": "POStatusBody",
+   "line": 878,
+   "frontend_callers": [
+    "frontend/src/pages/Orders.tsx",
+    "frontend/src/pages/Today.tsx"
+   ],
+   "postman_requests": [
+    "mark the purchase order arrived",
+    "arriving twice is refused",
+    "undo the arrival",
+    "purchase order: unknown status",
+    "purchase order: unknown id",
+    "B cannot receive A's purchase order"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/recipes/{product_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_recipe",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 1141,
+   "frontend_callers": [],
+   "postman_requests": [
+    "recipe: read"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/recipes/{product_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:put_recipe",
+   "auth": "owner or accountant",
+   "request_model": "RecipeBody",
+   "line": 1150,
+   "frontend_callers": [
+    "frontend/src/components/RecipeDialog.tsx"
+   ],
+   "postman_requests": [
+    "recipe: duplicate material line",
+    "recipe: unknown material",
+    "recipe: unknown product",
+    "recipe: negative quantity"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/risk/forecast",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:risk_forecast",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 428,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "risk forecast"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/sales-orders",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:sales_orders",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 789,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "sales orders",
+    "the stage was stored (persistence)",
+    "the new order is listed (persistence)",
+    "supervisor: sales orders carry no money"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/sales-orders",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_sales_order",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 1004,
+   "frontend_callers": [
+    "frontend/src/pages/Orders.tsx"
+   ],
+   "postman_requests": [
+    "accept an order (create a sales order)",
+    "order: quantity zero",
+    "order: quantity as text",
+    "order: unknown customer",
+    "order: promised date year 1999"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/sales-orders/{so_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:patch_sales_order",
+   "auth": "any signed-in user",
+   "request_model": "StageBody",
+   "line": 863,
+   "frontend_callers": [
+    "frontend/src/pages/Orders.tsx"
+   ],
+   "postman_requests": [
+    "move an order forward",
+    "order: same stage again",
+    "order: undo back to planned",
+    "order: unknown stage",
+    "order: unknown id",
+    "order: extra property",
+    "B cannot move A's order",
+    "supervisor: cannot move an order back past delivery"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/sessions",
+   "mounted": true,
+   "handler": "backend/app/api/auth_routes.py:sessions",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 161,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "sessions list carries no token"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/settings",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_settings",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 1411,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "settings",
+    "business profile is stored (persistence)",
+    "money rules are stored",
+    "team: the invitee is listed (persistence) and has no password data"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/settings/business",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:put_business",
+   "auth": "owner only",
+   "request_model": "BusinessBody",
+   "line": 1425,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "business profile: change the owner name",
+    "business profile: GSTIN of the wrong length",
+    "business profile: Udyam number of the wrong shape",
+    "business profile: name over 120",
+    "business profile: unknown field"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/settings/facilities",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_facility",
+   "auth": "owner or accountant",
+   "request_model": "FacilityBody",
+   "line": 1464,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "credit facility: repayment before it is available",
+    "credit facility: rate over 100%",
+    "credit facility: add"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/settings/facilities/{row_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:delete_facility",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 1475,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "credit facility: remove"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PUT",
+   "path": "/api/settings/money",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:put_money",
+   "auth": "owner or accountant",
+   "request_model": "MoneyBody",
+   "line": 1435,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "money rules: safety buffer",
+    "money rules: negative buffer",
+    "money rules: credit days 366",
+    "money rules: buffer as text",
+    "supervisor: cannot change money rules"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/settings/recurring",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_recurring",
+   "auth": "owner or accountant",
+   "request_model": "RecurringBody",
+   "line": 1444,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "recurring expense: add",
+    "recurring expense: day 32",
+    "recurring expense: amount zero"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/settings/recurring/{row_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:delete_recurring",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 1453,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "recurring expense: remove",
+    "recurring expense: remove unknown"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/setup/approve",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:setup_approve",
+   "auth": "owner only",
+   "request_model": "SetupApproveBody",
+   "line": 1623,
+   "frontend_callers": [
+    "frontend/src/pages/Setup.tsx"
+   ],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/api/setup/draft",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:setup_draft",
+   "auth": "owner only",
+   "request_model": "SetupDraftBody",
+   "line": 1603,
+   "frontend_callers": [
+    "frontend/src/pages/Setup.tsx"
+   ],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/setup/draft/{draft_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:setup_patch",
+   "auth": "owner only",
+   "request_model": "SetupPatchBody",
+   "line": 1615,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/api/simulation/compare",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:simulation_compare",
+   "auth": "owner or accountant",
+   "request_model": "ComparisonRequest",
+   "line": 1659,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/api/simulation/run",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:simulation_run",
+   "auth": "owner or accountant",
+   "request_model": "SimulationRequest",
+   "line": 1652,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/api/snapshot/approve",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:setup_approve",
+   "auth": "owner only",
+   "request_model": "SetupApproveBody",
+   "line": 1623,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/api/snapshot/draft",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:setup_draft",
+   "auth": "owner only",
+   "request_model": "SetupDraftBody",
+   "line": 1603,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "GET",
+   "path": "/api/stock-movements",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:stock_movements",
+   "auth": "any signed-in user",
+   "request_model": null,
+   "line": 1038,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "stock: the movement is listed",
+    "supervisor: stock movements carry no money"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/stock-movements",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_movement",
+   "auth": "any signed-in user",
+   "request_model": "MovementBody",
+   "line": 1051,
+   "frontend_callers": [
+    "frontend/src/pages/Inventory.tsx"
+   ],
+   "postman_requests": [
+    "stock: add with a note",
+    "stock: zero change",
+    "stock: no note",
+    "stock: taking out more than is there",
+    "stock: unknown item",
+    "stock: bad item type",
+    "B cannot adjust A's stock",
+    "supervisor: can adjust stock only with a note"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/team",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:invite",
+   "auth": "owner only",
+   "request_model": "InviteBody",
+   "line": 1501,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "team: invite",
+    "team: inviting the same email again says only that it cannot be done",
+    "team: an address that belongs to the shared demo gets the same answer",
+    "team: invalid email",
+    "team: unknown role",
+    "supervisor: cannot invite or remove people"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/team/{user_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:remove_member",
+   "auth": "owner only",
+   "request_model": null,
+   "line": 1518,
+   "frontend_callers": [
+    "frontend/src/pages/Settings.tsx"
+   ],
+   "postman_requests": [
+    "team: remove the invitee",
+    "team: remove yourself",
+    "team: remove a person who does not exist",
+    "B cannot remove A's team member"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/today",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:get_today",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 124,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "today needs a session",
+    "today",
+    "supervisor cannot read today"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/api/transactions",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:list_transactions",
+   "auth": "owner or accountant",
+   "request_model": null,
+   "line": 513,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "transactions list",
+    "transactions: bad direction filter",
+    "the payment is in the ledger and the bill went down (persistence)",
+    "ledger: limit 0",
+    "ledger: limit over 1000",
+    "ledger: medium filter"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/api/transactions",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:post_transaction",
+   "auth": "owner or accountant",
+   "request_model": "PaymentBody",
+   "line": 536,
+   "frontend_callers": [
+    "frontend/src/components/PaymentDialog.tsx"
+   ],
+   "postman_requests": [
+    "payment: part payment by UPI",
+    "payment: more than the bill",
+    "payment: dated in the future",
+    "payment: wrong direction for a customer",
+    "payment: another party's bill",
+    "payment: unknown party",
+    "payment: unknown medium",
+    "payment: amount zero",
+    "payment: amount as text",
+    "payment: date as text",
+    "payment: extra property",
+    "cheque for the rest of the bill is pending",
+    "a second cheque for the same money is refused",
+    "the money is free again after the bounce",
+    "a payment from the formula-named customer",
+    "B cannot pay against A's party",
+    "supervisor: cannot record a payment"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "PATCH",
+   "path": "/api/transactions/{txn_id}",
+   "mounted": true,
+   "handler": "backend/app/api/app_routes.py:patch_transaction",
+   "auth": "owner or accountant",
+   "request_model": "TxnStatusBody",
+   "line": 550,
+   "frontend_callers": [
+    "frontend/src/pages/Book.tsx"
+   ],
+   "postman_requests": [
+    "bounce the cheque",
+    "a bounced cheque cannot be changed again",
+    "clear the cheque",
+    "transaction status: invalid value",
+    "transaction status: unknown id"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/business",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:business",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": 85,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/demo/reset",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:reset_demo",
+   "auth": "none (public)",
+   "request_model": "Request",
+   "line": 195,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "GET",
+   "path": "/fixes",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:fixes",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": 207,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "ways to fix"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/forecast",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:forecast",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": 202,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "GET",
+   "path": "/health",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:api_health",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": 80,
+   "frontend_callers": [],
+   "postman_requests": [
+    "health"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/health",
+   "mounted": true,
+   "handler": "backend/app/main.py",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": null,
+   "frontend_callers": [],
+   "postman_requests": [
+    "health"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/parties",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:list_parties",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": 99,
+   "frontend_callers": [
+    "frontend/src/lib/queries.ts"
+   ],
+   "postman_requests": [
+    "customers list",
+    "suppliers list",
+    "parties: bad kind",
+    "created customer is in the list (persistence)",
+    "remember business A's ids",
+    "B's own data is untouched and reachable",
+    "supervisor: parties are finance only"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "POST",
+   "path": "/parties",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:create_party",
+   "auth": "none (public)",
+   "request_model": "Request",
+   "line": 107,
+   "frontend_callers": [
+    "frontend/src/pages/Khata.tsx"
+   ],
+   "postman_requests": [
+    "create customer",
+    "create party: missing name",
+    "create party: empty name",
+    "create party: name over 120",
+    "create party: bad kind",
+    "create party: phone with letters",
+    "create party: credit days 366",
+    "create party: credit days as text",
+    "create party: extra property (mass assignment)",
+    "create party: wrong content type",
+    "create party: malformed JSON",
+    "create party: markup in the name is stored as text",
+    "create party: a name that starts like a spreadsheet formula",
+    "body over the limit is refused"
+   ],
+   "test_status": "covered by the Postman collection (Newman run: pass)"
+  },
+  {
+   "method": "GET",
+   "path": "/parties/export.csv",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:export_parties",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": 158,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "POST",
+   "path": "/parties/import",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:import_parties",
+   "auth": "none (public)",
+   "request_model": "ImportRequest",
+   "line": 118,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "DELETE",
+   "path": "/parties/{party_id}",
+   "mounted": false,
+   "handler": "backend/app/api/routes.py:delete_party",
+   "auth": "none (public)",
+   "request_model": "Request",
+   "line": 188,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "GET",
+   "path": "/robots.txt",
+   "mounted": true,
+   "handler": "backend/app/main.py",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": null,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  },
+  {
+   "method": "GET",
+   "path": "/sitemap.xml",
+   "mounted": true,
+   "handler": "backend/app/main.py",
+   "auth": "none (public)",
+   "request_model": null,
+   "line": null,
+   "frontend_callers": [],
+   "postman_requests": [],
+   "test_status": "not in the Postman collection"
+  }
+ ],
+ "frontend_calls_without_backend_route": [],
+ "mounted_routes_with_no_frontend_caller": [
+  "POST /api/auth/logout",
+  "POST /api/auth/logout-all",
+  "POST /api/fixes/evaluate",
+  "GET /api/export/party/{party_id}/datasheet.csv",
+  "GET /api/export/company/datasheet.csv",
+  "PATCH /api/parties/{party_id}",
+  "POST /api/invoices",
+  "PATCH /api/invoices/{invoice_id}",
+  "GET /api/inventory/summary",
+  "GET /api/recipes/{product_id}",
+  "POST /api/snapshot/draft",
+  "PATCH /api/setup/draft/{draft_id}",
+  "POST /api/snapshot/approve",
+  "POST /api/simulation/run",
+  "POST /api/simulation/compare"
+ ]
+}

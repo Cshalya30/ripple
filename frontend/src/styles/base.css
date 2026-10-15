@@ -283,3 +283,21 @@ html[data-targets="large"] .check input {
 @media (max-width: 1100px) { .today-grid { grid-template-columns: minmax(0, 1fr); } }
 
 @media (max-width: 1500px) { .hide-narrow { display: none !important; } }
+
+.cookie-notice { position: fixed; left: 16px; bottom: 16px; right: 16px; max-width: 420px; z-index: 40; align-items: center; gap: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); }
+.legal ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.legal p, .legal li { line-height: 1.6; color: var(--text-2); }
+.legal b { color: var(--text); }
+
+/* Touch: every control is at least 44 x 44 px on a phone or tablet, and on any touch screen. */
+@media (max-width: 768px), (pointer: coarse) {
+  .btn, .btn-sm, .btn-quiet, .tab, .seg button, .fchip, .rail-link, .cmdline, .icon-btn, .select, .input {
+    min-height: 44px;
+  }
+  .btn-sm, .btn-quiet { height: auto; }
+  .icon-btn { min-width: 44px; }
+  .seg button { min-width: 44px; }
+  .cookie-notice .btn { min-width: 44px; }
+  .btn-quiet { min-width: 44px; }
+  .rail-link { min-width: 44px; justify-content: center; }
+}

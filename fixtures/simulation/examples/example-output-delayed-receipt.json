@@ -622,10 +622,10 @@
       "id": "old-customer-receipt",
       "type": "CASH_RECEIPT",
       "order_id": null,
-      "original_due_date": "2026-01-08",
+      "original_due_date": "2026-01-03",
       "actual_execution_date": "2026-01-08",
       "status": "EXECUTED",
-      "lateness_days": 0,
+      "lateness_days": 5,
       "blocking_history": [],
       "dependency_event_ids": []
     },
@@ -1140,6 +1140,17 @@
       ]
     },
     {
+      "id": "old-customer-receipt",
+      "type": "CASH_RECEIPT",
+      "order_id": null,
+      "original_due_date": "2026-01-03",
+      "actual_execution_date": "2026-01-08",
+      "status": "EXECUTED",
+      "lateness_days": 5,
+      "blocking_history": [],
+      "dependency_event_ids": []
+    },
+    {
       "id": "supplier-payment",
       "type": "SUPPLIER_PAYMENT",
       "order_id": null,
@@ -1217,7 +1228,7 @@
     "facilities": []
   },
   "metrics": {
-    "missed_commitment_count": 2,
+    "missed_commitment_count": 3,
     "unresolved_order_count": 0,
     "minimum_executable_cash_paise": 0,
     "closing_cash_paise": 6000000,
@@ -1237,5 +1248,6 @@
     "paid_interest_paise": 0,
     "inventory_arrivals_quantity": 1,
     "production_consumption_quantity": 1
-  }
+  },
+  "execution_log": null
 }

@@ -1,0 +1,2677 @@
+{
+ "runner": "Newman 6 (Postman's open-source runner); Postman CLI and MCP were not available",
+ "base_url": "http://localhost:8766 (in-memory sandbox)",
+ "runs": [
+  {
+   "file": "newman-run1.json",
+   "stats": {
+    "requests": {
+     "total": 62,
+     "pending": 0,
+     "failed": 0
+    },
+    "assertions": {
+     "total": 111,
+     "pending": 0,
+     "failed": 1
+    }
+   },
+   "failures": [
+    {
+     "at": "sign in as the supervisor",
+     "error": "expected response to have status code 200 but got 401"
+    }
+   ],
+   "executions": [
+    {
+     "request": "health",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "only status ok, nothing else leaks",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "health (short path)",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "today needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      },
+      {
+       "name": "error envelope",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "book summary needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "munim needs a session",
+     "method": "POST",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "write without the CSRF header is refused before anything else",
+     "method": "POST",
+     "status": 403,
+     "assertions": [
+      {
+       "name": "status is 403",
+       "passed": true
+      },
+      {
+       "name": "error code is MISSING_CSRF_HEADER",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "unknown API path is a JSON 404",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "no API documentation is exposed",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "not an interactive docs page",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "open a sandbox business",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a session cookie was set",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "who am I",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "owner role",
+       "passed": true
+      },
+      {
+       "name": "sandbox flag set",
+       "passed": true
+      },
+      {
+       "name": "no password hash or token in the payload",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "today",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "headline and position present",
+       "passed": true
+      },
+      {
+       "name": "money is whole paise",
+       "passed": true
+      },
+      {
+       "name": "guard brief present with a valid level",
+       "passed": true
+      },
+      {
+       "name": "removed count boxes are gone",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "alerts",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "count matches list",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "book summary",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "series covers the horizon",
+       "passed": true
+      },
+      {
+       "name": "every point has integer cash and net",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "transactions list",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "rows and totals",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "transactions: bad direction filter",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "series and events",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine network view",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine day 0",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "day log shape",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine day outside the horizon",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DAY_OUT_OF_RANGE",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run for an unknown scenario key",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "error code is SCENARIO_EXPIRED",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: extension of a supplier bill",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a key and an evaluation come back",
+       "passed": true
+      },
+      {
+       "name": "the moved bill is reported as changed",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: new payment (ADD_PAYMENT)",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "the added payment appears as a new event",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: missing fields",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is MISSING_FIELDS",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: date outside the horizon",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DATE_OUTSIDE_HORIZON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: unknown kind",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: extra property is refused",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: negative amount",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: unknown event",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario chance (cheap poll)",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "status is a known value",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ways to fix",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "each fix has a title and a dip after",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "fix evaluate: unknown fix",
+     "method": "POST",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "error code is UNKNOWN_FIX",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "fix evaluate: neither fix nor kind",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is FIX_OR_KIND_REQUIRED",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "risk forecast",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "known status",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "both halves and a verdict",
+       "passed": true
+      },
+      {
+       "name": "safe amounts are whole thousands and never grow with the window",
+       "passed": true
+      },
+      {
+       "name": "checks passed count is consistent",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard: yield too high",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard: yield negative",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: a bill",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "first option is the baseline and the best is one of the options",
+       "passed": true
+      },
+      {
+       "name": "each option has a verdict and a figure",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: a new payment",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "skipping it is never the recommendation",
+       "passed": true
+      },
+      {
+       "name": "a real payment lowers the forecast low point",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: nothing to check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: date outside the forecast",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DATE_OUTSIDE_HORIZON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: unknown bill",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: negative amount",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: extra property",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "flag review: unknown check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "flag review: bad verdict",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "log a missed entry",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "the miss is counted (persistence)",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "missed count rose by one",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "log a miss for an unknown check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask why there is a dip",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a non-empty reply in a known mode",
+       "passed": true
+      },
+      {
+       "name": "no raw error text in the reply",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask who owes the most",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "answers from the books, not with the runway message",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask how much is safe to spend",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "uses the Risk and Finance tool",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "out-of-scope question is declined",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "declines instead of giving an unrelated answer",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "script tag in the question is plain text",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "the reply does not echo markup",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "blank question",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "empty question",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "question over 1000 characters",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "unknown language",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "extra property is refused",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "wrong content type",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "sign in as the supervisor",
+     "method": "POST",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "file": "newman-run2.json",
+   "stats": {
+    "requests": {
+     "total": 61,
+     "pending": 0,
+     "failed": 0
+    },
+    "assertions": {
+     "total": 110,
+     "pending": 0,
+     "failed": 0
+    }
+   },
+   "failures": [],
+   "executions": [
+    {
+     "request": "health",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "only status ok, nothing else leaks",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "health (short path)",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "today needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      },
+      {
+       "name": "error envelope",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "book summary needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "munim needs a session",
+     "method": "POST",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "write without the CSRF header is refused before anything else",
+     "method": "POST",
+     "status": 403,
+     "assertions": [
+      {
+       "name": "status is 403",
+       "passed": true
+      },
+      {
+       "name": "error code is MISSING_CSRF_HEADER",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "unknown API path is a JSON 404",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "no API documentation is exposed",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "not an interactive docs page",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "open a sandbox business",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a session cookie was set",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "who am I",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "owner role",
+       "passed": true
+      },
+      {
+       "name": "sandbox flag set",
+       "passed": true
+      },
+      {
+       "name": "no password hash or token in the payload",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "today",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "headline and position present",
+       "passed": true
+      },
+      {
+       "name": "money is whole paise",
+       "passed": true
+      },
+      {
+       "name": "guard brief present with a valid level",
+       "passed": true
+      },
+      {
+       "name": "removed count boxes are gone",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "alerts",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "count matches list",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "book summary",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "series covers the horizon",
+       "passed": true
+      },
+      {
+       "name": "every point has integer cash and net",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "transactions list",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "rows and totals",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "transactions: bad direction filter",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "series and events",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine network view",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine day 0",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "day log shape",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine day outside the horizon",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DAY_OUT_OF_RANGE",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run for an unknown scenario key",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "error code is SCENARIO_EXPIRED",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: extension of a supplier bill",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a key and an evaluation come back",
+       "passed": true
+      },
+      {
+       "name": "the moved bill is reported as changed",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: new payment (ADD_PAYMENT)",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "the added payment appears as a new event",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: missing fields",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is MISSING_FIELDS",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: date outside the horizon",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DATE_OUTSIDE_HORIZON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: unknown kind",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: extra property is refused",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: negative amount",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: unknown event",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario chance (cheap poll)",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "status is a known value",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ways to fix",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "each fix has a title and a dip after",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "fix evaluate: unknown fix",
+     "method": "POST",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "error code is UNKNOWN_FIX",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "fix evaluate: neither fix nor kind",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is FIX_OR_KIND_REQUIRED",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "risk forecast",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "known status",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "both halves and a verdict",
+       "passed": true
+      },
+      {
+       "name": "safe amounts are whole thousands and never grow with the window",
+       "passed": true
+      },
+      {
+       "name": "checks passed count is consistent",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard: yield too high",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard: yield negative",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: a bill",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "first option is the baseline and the best is one of the options",
+       "passed": true
+      },
+      {
+       "name": "each option has a verdict and a figure",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: a new payment",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "skipping it is never the recommendation",
+       "passed": true
+      },
+      {
+       "name": "a real payment lowers the forecast low point",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: nothing to check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: date outside the forecast",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DATE_OUTSIDE_HORIZON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: unknown bill",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: negative amount",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: extra property",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "flag review: unknown check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "flag review: bad verdict",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "log a missed entry",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "the miss is counted (persistence)",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "missed count rose by one",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "log a miss for an unknown check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask why there is a dip",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a non-empty reply in a known mode",
+       "passed": true
+      },
+      {
+       "name": "no raw error text in the reply",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask who owes the most",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "answers from the books, not with the runway message",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask how much is safe to spend",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "uses the Risk and Finance tool",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "out-of-scope question is declined",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "declines instead of giving an unrelated answer",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "script tag in the question is plain text",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "the reply does not echo markup",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "blank question",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "empty question",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "question over 1000 characters",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "unknown language",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "extra property is refused",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "wrong content type",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "file": "newman-final.json",
+   "stats": {
+    "requests": {
+     "total": 61,
+     "pending": 0,
+     "failed": 0
+    },
+    "assertions": {
+     "total": 110,
+     "pending": 0,
+     "failed": 0
+    }
+   },
+   "failures": [],
+   "executions": [
+    {
+     "request": "health",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "only status ok, nothing else leaks",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "health (short path)",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "today needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      },
+      {
+       "name": "error envelope",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "book summary needs a session",
+     "method": "GET",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "munim needs a session",
+     "method": "POST",
+     "status": 401,
+     "assertions": [
+      {
+       "name": "status is 401",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "write without the CSRF header is refused before anything else",
+     "method": "POST",
+     "status": 403,
+     "assertions": [
+      {
+       "name": "status is 403",
+       "passed": true
+      },
+      {
+       "name": "error code is MISSING_CSRF_HEADER",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "unknown API path is a JSON 404",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "no API documentation is exposed",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "not an interactive docs page",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "open a sandbox business",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a session cookie was set",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "who am I",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "owner role",
+       "passed": true
+      },
+      {
+       "name": "sandbox flag set",
+       "passed": true
+      },
+      {
+       "name": "no password hash or token in the payload",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "today",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "headline and position present",
+       "passed": true
+      },
+      {
+       "name": "money is whole paise",
+       "passed": true
+      },
+      {
+       "name": "guard brief present with a valid level",
+       "passed": true
+      },
+      {
+       "name": "removed count boxes are gone",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "alerts",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "count matches list",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "book summary",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "series covers the horizon",
+       "passed": true
+      },
+      {
+       "name": "every point has integer cash and net",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "transactions list",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "rows and totals",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "transactions: bad direction filter",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "series and events",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine network view",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine day 0",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "day log shape",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine day outside the horizon",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DAY_OUT_OF_RANGE",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "engine run for an unknown scenario key",
+     "method": "GET",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "error code is SCENARIO_EXPIRED",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: extension of a supplier bill",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a key and an evaluation come back",
+       "passed": true
+      },
+      {
+       "name": "the moved bill is reported as changed",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: new payment (ADD_PAYMENT)",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "the added payment appears as a new event",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: missing fields",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is MISSING_FIELDS",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: date outside the horizon",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DATE_OUTSIDE_HORIZON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: unknown kind",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: extra property is refused",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: negative amount",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario: unknown event",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "scenario chance (cheap poll)",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "status is a known value",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ways to fix",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "each fix has a title and a dip after",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "fix evaluate: unknown fix",
+     "method": "POST",
+     "status": 404,
+     "assertions": [
+      {
+       "name": "status is 404",
+       "passed": true
+      },
+      {
+       "name": "error code is UNKNOWN_FIX",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "fix evaluate: neither fix nor kind",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is FIX_OR_KIND_REQUIRED",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "risk forecast",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "known status",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "content type is JSON",
+       "passed": true
+      },
+      {
+       "name": "both halves and a verdict",
+       "passed": true
+      },
+      {
+       "name": "safe amounts are whole thousands and never grow with the window",
+       "passed": true
+      },
+      {
+       "name": "checks passed count is consistent",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard: yield too high",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "guard: yield negative",
+     "method": "GET",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: a bill",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "first option is the baseline and the best is one of the options",
+       "passed": true
+      },
+      {
+       "name": "each option has a verdict and a figure",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: a new payment",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "skipping it is never the recommendation",
+       "passed": true
+      },
+      {
+       "name": "a real payment lowers the forecast low point",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: nothing to check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: date outside the forecast",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      },
+      {
+       "name": "error code is DATE_OUTSIDE_HORIZON",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: unknown bill",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: negative amount",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "payment check: extra property",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "flag review: unknown check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "flag review: bad verdict",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "log a missed entry",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "the miss is counted (persistence)",
+     "method": "GET",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "missed count rose by one",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "log a miss for an unknown check",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask why there is a dip",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "a non-empty reply in a known mode",
+       "passed": true
+      },
+      {
+       "name": "no raw error text in the reply",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask who owes the most",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "answers from the books, not with the runway message",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "ask how much is safe to spend",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "uses the Risk and Finance tool",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "out-of-scope question is declined",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "declines instead of giving an unrelated answer",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "script tag in the question is plain text",
+     "method": "POST",
+     "status": 200,
+     "assertions": [
+      {
+       "name": "status is 200",
+       "passed": true
+      },
+      {
+       "name": "the reply does not echo markup",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "blank question",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "empty question",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "question over 1000 characters",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "unknown language",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "extra property is refused",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    },
+    {
+     "request": "wrong content type",
+     "method": "POST",
+     "status": 422,
+     "assertions": [
+      {
+       "name": "status is 422",
+       "passed": true
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

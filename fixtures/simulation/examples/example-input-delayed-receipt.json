@@ -181,5 +181,6 @@
   "policy": {
     "name": "GREEDY_DAILY",
     "description": "Eligible resource-adding events execute first. Consuming events are then tried greedily by order priority, event priority, original due date, and stable event ID; infeasible events are skipped without implicit reservation."
-  }
+  },
+  "include_execution_log": false
 }

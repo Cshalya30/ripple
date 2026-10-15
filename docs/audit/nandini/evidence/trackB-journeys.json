@@ -1,0 +1,269 @@
+{
+ "base": "http://localhost:8770",
+ "summary": {
+  "PASS": 65
+ },
+ "results": [
+  {
+   "name": "payment amount \"1e5\" (exponent) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"0x10\" (hex) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"12.345\" (three decimals) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"-5\" (negative) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"abc\" (letters) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"0\" (zero) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"\" (empty) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount \"99999999999999\" (too large) is refused with Save disabled",
+   "status": "PASS"
+  },
+  {
+   "name": "payment amount shows an explanation under the field",
+   "status": "PASS"
+  },
+  {
+   "name": "a valid cheque is saved as pending and the dialog closes after one click even if double-clicked",
+   "status": "PASS"
+  },
+  {
+   "name": "Escape closes the payment dialog and focus returns to the button that opened it",
+   "status": "PASS"
+  },
+  {
+   "name": "Tab stays inside the open dialog (focus trap)",
+   "status": "PASS"
+  },
+  {
+   "name": "first pending cheque for the whole bill is accepted",
+   "status": "PASS"
+  },
+  {
+   "name": "a second cheque for the same bill is refused on screen with a plain sentence",
+   "status": "PASS"
+  },
+  {
+   "name": "ledger shows Cleared and Bounced buttons on the pending cheque",
+   "status": "PASS"
+  },
+  {
+   "name": "Bounced removes the buttons and the cash does not change",
+   "status": "PASS"
+  },
+  {
+   "name": "after a bounce the same bill can be paid again",
+   "status": "PASS"
+  },
+  {
+   "name": "credit days \"abc\" and \"400\" show a message and disable Add",
+   "status": "PASS"
+  },
+  {
+   "name": "a name with markup is stored and shown as text, never run",
+   "status": "PASS"
+  },
+  {
+   "name": "reopening Add customer starts empty (no stale values)",
+   "status": "PASS"
+  },
+  {
+   "name": "the party drawer opens from a row and closes with Escape",
+   "status": "PASS"
+  },
+  {
+   "name": "the reminder composer drafts a message and never sends",
+   "status": "PASS"
+  },
+  {
+   "name": "company and party datasheets download as CSV with a BOM-free readable header",
+   "status": "PASS"
+  },
+  {
+   "name": "stage buttons are disabled while one is working (no double move)",
+   "status": "PASS"
+  },
+  {
+   "name": "Undo asks first; Keep as is changes nothing",
+   "status": "PASS"
+  },
+  {
+   "name": "Undo confirm moves the order back and the books checks still pass",
+   "status": "PASS"
+  },
+  {
+   "name": "\"Can I take this order?\" refuses text in quantity and price with a message",
+   "status": "PASS"
+  },
+  {
+   "name": "a purchase order can be created, received and undone, and stock follows",
+   "status": "PASS"
+  },
+  {
+   "name": "new material: an empty name is refused with a message and nothing is created",
+   "status": "PASS"
+  },
+  {
+   "name": "new material: cost \"1e3\", opening stock with too many decimals are refused",
+   "status": "PASS"
+  },
+  {
+   "name": "search and status filters narrow the list and clearing restores it",
+   "status": "PASS"
+  },
+  {
+   "name": "stock adjustment needs a note",
+   "status": "PASS"
+  },
+  {
+   "name": "Recipes tab opens a recipe and Movements lists entries",
+   "status": "PASS"
+  },
+  {
+   "name": "every settings section renders",
+   "status": "PASS"
+  },
+  {
+   "name": "safety buffer: negative, text and 3 decimals are refused",
+   "status": "PASS"
+  },
+  {
+   "name": "invite: bad email and empty name keep Invite disabled; a good one shows the temporary password once",
+   "status": "PASS"
+  },
+  {
+   "name": "inviting the same email again says it cannot be invited (no account hints)",
+   "status": "PASS"
+  },
+  {
+   "name": "Remove asks twice; waiting disarms it and nothing is removed",
+   "status": "PASS"
+  },
+  {
+   "name": "Reset business stays disabled until the exact name is typed; cancel leaves the data",
+   "status": "PASS"
+  },
+  {
+   "name": "Reset business with the right name empties the sandbox and the app still loads",
+   "status": "PASS"
+  },
+  {
+   "name": "an empty business shows helpful empty states on Khata, Orders, Inventory, Book",
+   "status": "PASS"
+  },
+  {
+   "name": "Load demo data restores it after a confirm click",
+   "status": "PASS"
+  },
+  {
+   "name": "setup: with no AI key, a description gives a plain message and keeps the text",
+   "status": "PASS"
+  },
+  {
+   "name": "setup: Load the demo business asks before replacing records, and Keep stops it",
+   "status": "PASS"
+  },
+  {
+   "name": "cookie notice shows on login, links to privacy and stays dismissed",
+   "status": "PASS"
+  },
+  {
+   "name": "Privacy and Terms are linked from login, have headings and a way back",
+   "status": "PASS"
+  },
+  {
+   "name": "an unknown address shows the 404 page with a way home",
+   "status": "PASS"
+  },
+  {
+   "name": "the sign-in form rejects an empty submit, a wrong password shows one clear message",
+   "status": "PASS"
+  },
+  {
+   "name": "the password eye button is reachable by keyboard",
+   "status": "PASS"
+  },
+  {
+   "name": "UI in hi: no raw translation keys, no horizontal overflow on Today, Khata, Settings at 390 px",
+   "status": "PASS"
+  },
+  {
+   "name": "UI in ta: no raw translation keys, no horizontal overflow on Today, Khata, Settings at 390 px",
+   "status": "PASS"
+  },
+  {
+   "name": "number format and text size preferences do not break Today",
+   "status": "PASS"
+  },
+  {
+   "name": "supervisor: lands on Orders, sees no rupee sign anywhere on Orders and Inventory",
+   "status": "PASS"
+  },
+  {
+   "name": "supervisor typing a finance address gets sent home, not an error",
+   "status": "PASS"
+  },
+  {
+   "name": "supervisor cannot reach the shared demo team or data actions",
+   "status": "PASS"
+  },
+  {
+   "name": "a raw material can be added, edited and deleted from the screen",
+   "status": "PASS"
+  },
+  {
+   "name": "a stock adjustment with a note changes on-hand once and shows in Movements",
+   "status": "PASS"
+  },
+  {
+   "name": "negative stock cannot be created by an adjustment",
+   "status": "PASS"
+  },
+  {
+   "name": "GSTIN: a malformed number is refused, a valid one saves, the profile reloads with it",
+   "status": "PASS"
+  },
+  {
+   "name": "recurring expense: add, shows in the list, remove with the second click",
+   "status": "PASS"
+  },
+  {
+   "name": "forecast horizon change recalculates and Today still renders",
+   "status": "PASS"
+  },
+  {
+   "name": "display preferences (theme, text size) apply to the page and survive a reload",
+   "status": "PASS"
+  },
+  {
+   "name": "Log out ends the session, lands on sign-in and the app is closed to the old cookie",
+   "status": "PASS"
+  },
+  {
+   "name": "Log out everywhere ends every session of the user, not only this one",
+   "status": "PASS"
+  },
+  {
+   "name": "a signed-out visitor who opens an app address is sent to sign-in",
+   "status": "PASS"
+  }
+ ],
+ "console_and_page_errors": []
+}

@@ -1,0 +1,86 @@
+[
+ {
+  "id": "R1a",
+  "name": "a screen crash shows the recovery message instead of a blank app",
+  "status": "FAIL",
+  "detail": ""
+ },
+ {
+  "id": "R1b",
+  "name": "the navigation is still on screen after the crash",
+  "status": "FAIL",
+  "detail": ""
+ },
+ {
+  "id": "R1",
+  "name": "the check could not complete",
+  "status": "FAIL",
+  "detail": "locator.click: Timeout 30000ms exceeded."
+ },
+ {
+  "id": "R2a",
+  "name": "the question is sent to the backend",
+  "status": "PASS",
+  "detail": "{\"message\":\"Who owes me the most?\",\"language\":\"en\",\"history\":[],\"context\":{\"route\":\"/app/today\"}}"
+ },
+ {
+  "id": "R2b",
+  "name": "the answer is rendered, and it is about who owes money",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R3a",
+  "name": "a blank question sends nothing",
+  "status": "PASS",
+  "detail": "calls=0"
+ },
+ {
+  "id": "R3b",
+  "name": "a failed request shows an error message, not a fake answer or a blank panel",
+  "status": "FAIL",
+  "detail": "ix\nWho to chase?\nHow did the engine decide day 34?\nsimulation-engine.v1.0.0\n·\nschema simulation.contract.v1\n·\nlast run 15:19:04\n·\n52 events\n·\nbaseline\n·\nrisk computing\n·\nAPI ok\n· horizon 90d to 11 Jan"
+ },
+ {
+  "id": "R3c",
+  "name": "retrying after the failure works and does not duplicate the question",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R4",
+  "name": "a 401 mid-session returns to the sign-in page",
+  "status": "PASS",
+  "detail": "http://localhost:8767/login"
+ },
+ {
+  "id": "R5a",
+  "name": "a recommended option is marked",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R5b",
+  "name": "the option opens as a what-if in the Engine",
+  "status": "FAIL",
+  "detail": ""
+ },
+ {
+  "id": "R6a",
+  "name": "the RISK command opens Book, Risk & Finance",
+  "status": "FAIL",
+  "detail": "http://localhost:8767/app/today"
+ },
+ {
+  "id": "R6b",
+  "name": "the M key toggles Munim",
+  "status": "FAIL",
+  "detail": ""
+ },
+ {
+  "id": "R7",
+  "name": "the check could not complete",
+  "status": "FAIL",
+  "detail": "page.waitForSelector: Timeout 20000ms exceeded."
+ }
+]

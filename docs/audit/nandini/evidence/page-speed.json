@@ -1,0 +1,49 @@
+{
+ "profile": "390x844 phone, 4x CPU slowdown, 1.6 Mbps, 150 ms latency, cold cache, localhost server",
+ "targets": {
+  "lcp_ms": 2500,
+  "cls": 0.1
+ },
+ "rows": [
+  {
+   "page": "Login (not signed in)",
+   "path": "/login",
+   "fcp_ms": 2500,
+   "lcp_ms": 2500,
+   "cls": 0.001,
+   "transferred_kb_on_the_wire": 340
+  },
+  {
+   "page": "Today (signed in, cold cache)",
+   "path": "/app/today",
+   "fcp_ms": 2360,
+   "lcp_ms": 2728,
+   "cls": 0.1008,
+   "transferred_kb_on_the_wire": 462
+  },
+  {
+   "page": "Khata (signed in, cold cache)",
+   "path": "/app/khata",
+   "fcp_ms": 2264,
+   "lcp_ms": 2564,
+   "cls": 0.0022,
+   "transferred_kb_on_the_wire": 398
+  },
+  {
+   "page": "Settings (signed in, cold cache)",
+   "path": "/app/settings",
+   "fcp_ms": 2248,
+   "lcp_ms": 3312,
+   "cls": 0.0002,
+   "transferred_kb_on_the_wire": 759
+  },
+  {
+   "page": "Orders (signed in, cold cache)",
+   "path": "/app/orders",
+   "fcp_ms": 2276,
+   "lcp_ms": 2912,
+   "cls": 0.0002,
+   "transferred_kb_on_the_wire": 390
+  }
+ ]
+}

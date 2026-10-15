@@ -26,8 +26,9 @@ from ..core.db import get_conn, insert, query, today
 from ..records.repo import STAGES
 from ..snapshot.builder import cleared_paid_by_invoice, on_hand, opening_cash
 from . import fixes as fixes_service
-from .fixes import _human, _rupees
+from .fixes import _human
 from .inventory import inventory_rows
+from .messages import rupees
 from .position import delay_history, exposures, open_invoices, position
 from .runs import Run, business_row
 from .views import cached_views
@@ -49,9 +50,8 @@ RULES = {
 
 
 def rs(paise: int) -> str:
-    """Rupees with Indian grouping; a loss gets a proper minus sign instead of a stray hyphen."""
-    value = int(paise)
-    return ("−" if value < 0 else "") + _rupees(abs(value))
+    """Rupees in server-written text (the shared formatter: exact paise, Indian grouping, a real minus sign)."""
+    return rupees(int(paise))
 
 
 def _floor_k(paise: int) -> int:
@@ -175,11 +175,11 @@ def signals(business_id: str, run: Run, risk: dict[str, Any]) -> list[dict[str, 
         age = (today() - date.fromisoformat(inv["invoice_date"])).days
         if age > 45:
             add(f"msme-{inv['id']}", "out", f"{party['name']} is owed past the 45-day limit",
-                f"{inv['number']}, {rs(inv['outstanding_paise'])}, {age} days old. Bills to micro and small suppliers carry interest after 45 days (MSMED Act).",
+                f"{inv['number']}, {rs(inv['outstanding_paise'])}, {age} days old. Bills to micro and small suppliers carry interest after 45 days (MSMED Act). Check with your CA.",
                 "/app/khata", f"{age}d")
         elif age > 35:
             add(f"msme-soon-{inv['id']}", "attention", f"{party['name']}: 45-day limit in {45 - age} days",
-                f"{inv['number']}, {rs(inv['outstanding_paise'])}. Pay or agree terms in writing before day 45.", "/app/khata", f"{45 - age}d")
+                f"{inv['number']}, {rs(inv['outstanding_paise'])}. Pay or agree terms in writing before day 45. Check with your CA.", "/app/khata", f"{45 - age}d")
 
     inv_rows = inventory_rows(business_id, run)["materials"]
     short = [m for m in inv_rows if m["status"] == "SHORT"]
@@ -316,7 +316,7 @@ def flags(business_id: str) -> dict[str, Any]:
                 party_id=t["party_id"], party_name=name_of(t["party_id"]), amount_paise=t["amount_paise"], date=t["date"], txn_id=t["id"], link="/app/book?tab=ledger")
         elif t["direction"] == "OUT" and t["amount_paise"] > 1_000_000:
             add("CASH", t["id"], "low", "Low", f"{rs(t['amount_paise'])} paid in cash to {name_of(t['party_id'])}",
-                "Cash payments above ₹10,000 to one party in a day may be disallowed as a business expense (s.40A(3)). Bank transfer is safer.",
+                "Cash payments above ₹10,000 to one party in a day may be disallowed as a business expense (s.40A(3)). A bank transfer is safer; check with your CA.",
                 party_id=t["party_id"], party_name=name_of(t["party_id"]), amount_paise=t["amount_paise"], date=t["date"], txn_id=t["id"], link="/app/book?tab=ledger")
 
     for t in txns:

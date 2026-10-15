@@ -1,0 +1,472 @@
+{
+ "base": "http://localhost:8766",
+ "viewport": [
+  390,
+  844
+ ],
+ "summary": {
+  "NOT APPLICABLE": 5,
+  "PASS": 15
+ },
+ "results": [
+  {
+   "route": "today",
+   "path": "/app/today",
+   "kind": "page-load",
+   "controls": 20,
+   "issues": [],
+   "bad_text": null
+  },
+  {
+   "route": "today",
+   "index": 0,
+   "tag": "a",
+   "role": "link",
+   "name": "Ripple home",
+   "href": "/app/today",
+   "type": null,
+   "status": "NOT APPLICABLE",
+   "note": "not visible in this state"
+  },
+  {
+   "route": "today",
+   "index": 1,
+   "tag": "a",
+   "role": "link",
+   "name": "Today",
+   "href": "/app/today",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/alerts 200",
+    "GET /api/engine/run 200",
+    "GET /api/today 200",
+    "GET /api/risk/forecast 200"
+   ],
+   "effect": {
+    "url_changed": false,
+    "dom_changed": false,
+    "dialog_delta": 0,
+    "requests": 6,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 2,
+   "tag": "a",
+   "role": "link",
+   "name": "Engine",
+   "href": "/app/engine",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/engine/graph 200",
+    "GET /api/risk/forecast 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 7,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 3,
+   "tag": "a",
+   "role": "link",
+   "name": "Book",
+   "href": "/app/book",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/book/summary 200",
+    "GET /api/fixes 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 7,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 4,
+   "tag": "a",
+   "role": "link",
+   "name": "Khata",
+   "href": "/app/khata",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/parties 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 6,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 5,
+   "tag": "a",
+   "role": "link",
+   "name": "Orders",
+   "href": "/app/orders",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/sales-orders 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 6,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 6,
+   "tag": "a",
+   "role": "link",
+   "name": "Inventory",
+   "href": "/app/inventory",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/inventory 200",
+    "GET /api/catalogue 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 7,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 7,
+   "tag": "a",
+   "role": "link",
+   "name": "Settings",
+   "href": "/app/settings",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/settings 200",
+    "GET /api/sessions 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 7,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 8,
+   "tag": "a",
+   "role": "link",
+   "name": "Settings",
+   "href": "/app/settings",
+   "type": null,
+   "status": "NOT APPLICABLE",
+   "note": "not visible in this state"
+  },
+  {
+   "route": "today",
+   "index": 9,
+   "tag": "button",
+   "role": "button",
+   "name": "Theme: night. Switch to day",
+   "href": null,
+   "type": null,
+   "status": "NOT APPLICABLE",
+   "note": "not visible in this state"
+  },
+  {
+   "route": "today",
+   "index": 10,
+   "tag": "button",
+   "role": "button",
+   "name": "Collapse menu",
+   "href": null,
+   "type": null,
+   "status": "NOT APPLICABLE",
+   "note": "not visible in this state"
+  },
+  {
+   "route": "today",
+   "index": 11,
+   "tag": "button",
+   "role": "button",
+   "name": "Open command line",
+   "href": null,
+   "type": null,
+   "status": "NOT APPLICABLE",
+   "note": "not visible in this state"
+  },
+  {
+   "route": "today",
+   "index": 12,
+   "tag": "button",
+   "role": "button",
+   "name": "5 alerts",
+   "href": null,
+   "type": "button",
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200"
+   ],
+   "effect": {
+    "url_changed": false,
+    "dom_changed": true,
+    "dialog_delta": 1,
+    "requests": 5,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 13,
+   "tag": "button",
+   "role": "button",
+   "name": "",
+   "href": null,
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200"
+   ],
+   "effect": {
+    "url_changed": false,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 5,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 14,
+   "tag": "a",
+   "role": "link",
+   "name": "See why ›",
+   "href": "/app/book",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/engine/run 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/book/summary 200",
+    "GET /api/fixes 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 7,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 15,
+   "tag": "button",
+   "role": "button",
+   "name": "Remind",
+   "href": null,
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "POST /api/messages/draft 200"
+   ],
+   "effect": {
+    "url_changed": false,
+    "dom_changed": true,
+    "dialog_delta": 1,
+    "requests": 6,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 16,
+   "tag": "button",
+   "role": "button",
+   "name": "Mark paid",
+   "href": null,
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/engine/run 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/parties 200",
+    "GET /api/parties 200",
+    "GET /api/parties/sbx-3f6adf1e509d%3Ap%3Arajdhani 200"
+   ],
+   "effect": {
+    "url_changed": false,
+    "dom_changed": true,
+    "dialog_delta": 1,
+    "requests": 8,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 17,
+   "tag": "button",
+   "role": "button",
+   "name": "Show in Engine",
+   "href": null,
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/alerts 200",
+    "GET /api/engine/run 200",
+    "GET /api/today 200",
+    "GET /api/engine/graph 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 6,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 18,
+   "tag": "a",
+   "role": "link",
+   "name": "Open Risk and Finance",
+   "href": "/app/book?tab=risk",
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/engine/run 200",
+    "GET /api/alerts 200",
+    "GET /api/today 200",
+    "GET /api/book/summary 200",
+    "GET /api/guard 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 7,
+    "download": null
+   },
+   "status": "PASS"
+  },
+  {
+   "route": "today",
+   "index": 19,
+   "tag": "button",
+   "role": "button",
+   "name": "Open the engine",
+   "href": null,
+   "type": null,
+   "action": "click",
+   "requests": [
+    "GET /api/me 200",
+    "GET /api/risk/forecast 200",
+    "GET /api/alerts 200",
+    "GET /api/engine/run 200",
+    "GET /api/today 200",
+    "GET /api/engine/graph 200"
+   ],
+   "effect": {
+    "url_changed": true,
+    "dom_changed": true,
+    "dialog_delta": 0,
+    "requests": 6,
+    "download": null
+   },
+   "status": "PASS"
+  }
+ ]
+}

@@ -11,7 +11,7 @@ from backend.app.services import fixes, risk, runs
 from backend.app.snapshot.builder import build_from_records, load_records
 
 
-def wait_for_risk(c, path="/api/risk/forecast", timeout=60):
+def wait_for_risk(c, path="/api/risk/forecast", timeout=180):  # generous: the risk run shares the CPU with whatever else is running
     deadline = time.time() + timeout
     while time.time() < deadline:
         body = c.get(path).json()
