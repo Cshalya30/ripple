@@ -4,6 +4,7 @@ import os
 os.environ["DATABASE_URL"] = ":memory:"
 os.environ["RIPPLE_TODAY"] = "2026-10-14"
 os.environ.pop("GROQ_API_KEY", None)
+os.environ["ASSISTANT_PROVIDER"] = "none"  # Munim also reads .env; keep it on templates in tests
 os.environ.setdefault("RISK_SAMPLES", "40")
 os.environ.setdefault("RISK_DRIVER_SAMPLES", "10")
 os.environ.setdefault("RISK_FIX_SAMPLES", "20")

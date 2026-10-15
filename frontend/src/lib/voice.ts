@@ -233,6 +233,14 @@ const ERROR_TEXT: Record<string, string> = {
   'bad-grammar': 'The browser could not process that.',
 }
 
+// Brave ships the SpeechRecognition API but not the Google speech service behind it, so every attempt
+// ends in a "network" error even when the connection is fine.
+const isBrave = () => typeof navigator !== 'undefined' && !!(navigator as any).brave
+const BRAVE_TEXT = "Brave does not include the speech service that voice input needs. Use Chrome or Edge to talk to Munim, or type instead."
+
+const errorText = (code: string) =>
+  code === 'network' && isBrave() ? BRAVE_TEXT : ERROR_TEXT[code] ?? `Voice input stopped (${code}).`
+
 export function listen(opts: ListenOptions, handlers: ListenHandlers): Listener | null {
   const Ctor = recognitionCtor()
   if (!Ctor) { handlers.onError?.('Voice input works in Chrome, Edge and Safari. Type instead in this browser.', 'unsupported'); return null }
@@ -270,7 +278,7 @@ export function listen(opts: ListenOptions, handlers: ListenHandlers): Listener 
       if (code === 'no-speech' && opts.continuous) { failed = true; return }
       failed = true
       stopped = true
-      handlers.onError?.(ERROR_TEXT[code] ?? `Voice input stopped (${code}).`, code)
+      handlers.onError?.(errorText(code), code)
     }
     recognition.onend = () => {
       handlers.onInterim?.('')
