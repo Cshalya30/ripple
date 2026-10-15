@@ -92,6 +92,8 @@ In the Engine: `←` `→` one day, `Shift ←` `Shift →` one week, `N` next i
 
 ## Architecture
 
+> 🌐 **Interactive Blueprint:** Open [docs/architecture.html](docs/architecture.html) in your browser for the full interactive visual topology, engine specifications, and tech stack map.
+
 ```
 Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, same origin)
                                                  ├─ records (SQLite, every row scoped by business_id)
@@ -102,6 +104,7 @@ Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, s
                                                  ├─ Munim: read-only tools, Groq tool calling, number grounding, templates
                                                  └─ intake: text → facts with quotes → approval → records
 ```
+
 
 Recompute pipeline: every write bumps the business's data version, which invalidates the cached run. The next read
 rebuilds the snapshot and runs the engine (about 10 ms), and a risk run is queued two seconds later in a worker process.
