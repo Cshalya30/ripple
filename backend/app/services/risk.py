@@ -290,7 +290,10 @@ class RiskJobs:
     """One worker, de-duplicated by key, results cached by snapshot hash + scenario."""
 
     def __init__(self) -> None:
-        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="risk")
+        self._executor = ThreadPoolExecutor(
+            max_workers=max(1, int(os.getenv("RISK_WORKERS", "1"))),
+            thread_name_prefix="risk",
+        )
         self._results: dict[str, dict[str, Any]] = {}
         self._pending: set[str] = set()
         self._errors: dict[str, str] = {}
