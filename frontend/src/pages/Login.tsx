@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Glyph'
+import { LoginRipple } from '../components/LoginRipple'
 import { ErrorNote } from '../components/ui'
 import { api, errorText } from '../lib/api'
 import type { Me } from '../lib/types'
@@ -52,9 +53,10 @@ export function Login() {
   }
 
   return (
-    <div className="density-simple" style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 16 }}>
-      <main style={{ width: 'min(360px, 100%)' }}>
-        <div style={{ marginBottom: 28 }}><Logo /></div>
+    <div className="density-simple login-page" style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 16 }}>
+      <LoginRipple />
+      <main className="login-content" style={{ width: 'min(360px, 100%)' }}>
+        <div className="login-logo" style={{ marginBottom: 28 }}><Logo /></div>
         <h1 className="h1">Sign in</h1>
         <p className="muted" style={{ marginTop: 6 }}>See how one late payment travels through your business, before it does.</p>
         <form className="stack" style={{ gap: 14, marginTop: 20 }} onSubmit={login}>
@@ -129,6 +131,65 @@ export function Login() {
           <Link to="/terms">Terms</Link>
         </nav>
       </main>
+      <style>{`
+        .login-page { position: relative; isolation: isolate; overflow: hidden; }
+        .login-ripple { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .login-ripple-glow {
+          position: absolute;
+          left: -22vw;
+          bottom: -25vw;
+          width: 64vw;
+          aspect-ratio: 1;
+          border-radius: 50%;
+          background: radial-gradient(circle, var(--haldi-wash), transparent 64%);
+        }
+        .login-ripple-wave {
+          position: absolute;
+          left: -28vw;
+          bottom: -31vw;
+          width: 72vw;
+          aspect-ratio: 1;
+          border: 1px solid var(--rule-strong);
+          opacity: 0.36;
+          border-radius: 50%;
+          transform: scale(0.35);
+          transform-origin: 50% 50%;
+          animation: login-ripple-expand 16s cubic-bezier(0.25, 0.1, 0.2, 1) infinite;
+        }
+        .login-ripple-wave-1 { animation-delay: -1s; }
+        .login-ripple-wave-2 { animation-delay: -4.2s; }
+        .login-ripple-wave-3 { animation-delay: -7.4s; }
+        .login-ripple-wave-4 { animation-delay: -10.6s; }
+        .login-ripple-wave-5 { animation-delay: -13.8s; }
+        .login-ripple-logo {
+          position: absolute;
+          left: 13px;
+          bottom: 13px;
+          transform: rotate(-45deg);
+          transform-origin: center;
+          filter: drop-shadow(0 0 10px var(--haldi-wash));
+        }
+        .login-content { position: relative; z-index: 1; animation: login-content-settle 900ms var(--ease) both; }
+        @keyframes login-ripple-expand {
+          0% { opacity: 0; transform: scale(0.35); }
+          12% { opacity: 0.5; }
+          68% { opacity: 0.2; }
+          100% { opacity: 0; transform: scale(1.55); }
+        }
+        @keyframes login-content-settle {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 600px) {
+          .login-ripple-glow { left: -42vw; bottom: -35vw; width: 105vw; }
+          .login-ripple-wave { left: -48vw; bottom: -40vw; width: 118vw; }
+          .login-ripple-logo { left: 7px; bottom: 7px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .login-ripple-wave { animation: none; opacity: 0.2; transform: scale(0.88); }
+          .login-content { animation: none; }
+        }
+      `}</style>
     </div>
   )
 }

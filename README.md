@@ -124,6 +124,11 @@ Voice: Munim listens and speaks English, Hindi, Tamil, Telugu, Kannada, Malayala
 
 > 🌐 **Interactive Blueprint:** Open [docs/architecture.html](docs/architecture.html) in your browser for the full interactive visual topology, engine specifications, and tech stack map.
 
+For the complete engine behavior, snapshot mapping, scheduling policy, result
+contract, scenarios, risk flow, and endpoint reference, see
+[docs/ENGINE.md](docs/ENGINE.md). The lower-level wire contract remains in
+[docs/SIMULATION_CONTRACT.md](docs/SIMULATION_CONTRACT.md).
+
 ```
 Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, same origin)
                                                  ├─ records (SQLite, every row scoped by business_id)

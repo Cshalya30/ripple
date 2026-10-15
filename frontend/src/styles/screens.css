@@ -174,6 +174,8 @@ html[data-motion="reduce"] .enode.rippled, .reduce-motion .enode.rippled { anima
 .decisions > div:first-child { border-left: 0; }
 .dec-row { padding: 8px 0; border-bottom: 1px solid var(--rule); }
 .dec-key { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); }
+.dec-serial { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 20px; padding: 0 5px; border: 1px solid var(--rule); border-radius: 999px; color: var(--haldi); font: 600 var(--t-micro)/1 var(--font-mono); flex: none; }
+.dec-serial-blocked { color: var(--out); border-color: color-mix(in srgb, var(--out) 45%, var(--rule)); }
 @media (max-width: 1100px) { .decisions { grid-template-columns: 1fr; } .decisions > div { border-left: 0; border-top: 1px solid var(--rule); } }
 
 /* setup */
