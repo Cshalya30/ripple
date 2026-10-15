@@ -612,12 +612,43 @@ def _csv_safe(value: str) -> str:
 
 # ---------------------------------------------------------------- khata
 
+def _party_name(value: str) -> str:
+    value = value.strip()
+    letters = [char for char in value if char.isalpha()]
+    if not letters:
+        raise ValueError("Name must contain letters")
+    if len(letters) < 2:
+        raise ValueError("Name must contain at least two letters")
+    if all(char.isascii() for char in letters) and not any(char.lower() in "aeiouy" for char in letters) and len(letters) > 3:
+        raise ValueError("Name must look like a real name or business name")
+    return value
+
+
+def _party_place(value: str | None, label: str) -> str | None:
+    if value is None:
+        return None
+    value = value.strip()
+    if not value or not any(char.isalpha() for char in value):
+        raise ValueError(f"{label} must contain letters")
+    if not all(char.isalpha() or char in " .'-" for char in value):
+        raise ValueError(f"{label} contains invalid characters")
+    return value
+
+
+def _party_phone(value: str | None) -> str | None:
+    if value is None:
+        return None
+    if not re.fullmatch(r"[0-9]{10}", value):
+        raise ValueError("Phone must contain exactly 10 digits")
+    return value
+
+
 class PartyBody(Strict):
     kind: Literal["SUPPLIER", "CUSTOMER"]
     name: str = Field(min_length=1, max_length=120)
     city: str | None = Field(default=None, max_length=80)
     description: str | None = Field(default=None, max_length=200)
-    phone: str | None = Field(default=None, max_length=24, pattern=r"^[0-9+ ()-]*$")
+    phone: str | None = Field(default=None, min_length=10, max_length=10, pattern=r"^[0-9]{10}$")
     gstin: str | None = Field(default=None, max_length=15)
     udyam_number: str | None = Field(default=None, max_length=30)
     msme_category: Literal["MICRO", "SMALL", "MEDIUM"] | None = None
@@ -626,12 +657,27 @@ class PartyBody(Strict):
     lead_time_days: int = Field(strict=True, default=0, ge=0, le=365)
     tags: list[str] | None = Field(default=None, max_length=8)
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        return _party_name(value)
+
+    @field_validator("city")
+    @classmethod
+    def validate_city(cls, value: str | None) -> str | None:
+        return _party_place(value, "City")
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return _party_phone(value)
+
 
 class PartyPatch(Strict):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     city: str | None = Field(default=None, max_length=80)
     description: str | None = Field(default=None, max_length=200)
-    phone: str | None = Field(default=None, max_length=24, pattern=r"^[0-9+ ()-]*$")
+    phone: str | None = Field(default=None, min_length=10, max_length=10, pattern=r"^[0-9]{10}$")
     gstin: str | None = Field(default=None, max_length=15)
     udyam_number: str | None = Field(default=None, max_length=30)
     msme_category: Literal["MICRO", "SMALL", "MEDIUM"] | None = None
@@ -639,6 +685,21 @@ class PartyPatch(Strict):
     terms_days: int | None = Field(strict=True, default=None, ge=0, le=365)
     lead_time_days: int | None = Field(strict=True, default=None, ge=0, le=365)
     tags: list[str] | None = Field(default=None, max_length=8)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        return _party_name(value)
+
+    @field_validator("city")
+    @classmethod
+    def validate_city(cls, value: str | None) -> str | None:
+        return _party_place(value, "City")
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return _party_phone(value)
 
 
 def _party_rows(principal: Principal, kind: str | None) -> list[dict[str, Any]]:

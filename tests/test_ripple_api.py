@@ -289,6 +289,26 @@ class SecurityTests(unittest.TestCase):
                                                        "date": "2026-10-14", "medium": "UPI"})
         self.assertEqual(fractional.status_code, 422)
 
+    def test_party_contact_fields_require_realistic_formats(self):
+        c = sandbox()
+        before = len(c.get("/api/parties?kind=CUSTOMER").json()["parties"])
+        base = {"kind": "CUSTOMER", "name": "Valid Trading Co", "city": "Chennai", "phone": "9876543210"}
+
+        for field, value in (("city", "219992"), ("phone", "123456789"), ("phone", "12345678901"), ("name", "hhgfg")):
+            payload = {**base, field: value}
+            response = c.post("/api/parties", json=payload)
+            self.assertEqual(response.status_code, 422, field)
+
+        after = len(c.get("/api/parties?kind=CUSTOMER").json()["parties"])
+        self.assertEqual(after, before)
+
+        party = c.post("/api/parties", json=base)
+        self.assertEqual(party.status_code, 200, party.text)
+        party_id = party.json()["party"]["id"]
+        for field, value in (("city", "219992"), ("phone", "123456789"), ("phone", "12345678901"), ("name", "hhgfg")):
+            response = c.patch(f"/api/parties/{party_id}", json={field: value})
+            self.assertEqual(response.status_code, 422, field)
+
     def test_pending_cheque_not_in_cash_until_cleared(self):
         c = sandbox()
         before = c.get("/api/book/summary").json()["position"]["cash_now_paise"]
@@ -375,7 +395,12 @@ class HardeningTests(unittest.TestCase):
     def test_logout_ends_the_session(self):
         c = signed_in()
         self.assertEqual(c.get("/api/me").status_code, 200)
-        c.post("/api/auth/logout")
+        c.headers.update({"X-Forwarded-Proto": "https"})
+        response = c.post("/api/auth/logout")
+        cookie = response.headers["set-cookie"].lower()
+        self.assertIn("httponly", cookie)
+        self.assertIn("samesite=lax", cookie)
+        self.assertIn("secure", cookie)
         self.assertEqual(c.get("/api/me").status_code, 401)
 
     def test_prompt_injection_in_party_note_stays_data(self):

@@ -156,7 +156,7 @@ function AddParty({ open, kind, onClose }: { open: boolean; kind: 'CUSTOMER' | '
         <div className="form-grid">
           <label className="field" style={{ gridColumn: '1 / -1' }}><span className="field-label">Name</span><input className="input" required maxLength={120} value={form.name} onChange={set('name')} /></label>
           <label className="field"><span className="field-label">City</span><input className="input" maxLength={80} value={form.city} onChange={set('city')} /></label>
-          <label className="field"><span className="field-label">WhatsApp number</span><input className="input mono" maxLength={24} pattern="[0-9+ ()-]*" value={form.phone} onChange={set('phone')} /></label>
+          <label className="field"><span className="field-label">WhatsApp number</span><input className="input mono" inputMode="numeric" maxLength={10} pattern="[0-9]{10}" value={form.phone} onChange={set('phone')} /></label>
           <label className="field"><span className="field-label">Terms</span>
             <select className="select" value={form.terms_type} onChange={set('terms_type')}>
               <option value="CREDIT">Credit</option>{kind === 'SUPPLIER' && <option value="ADVANCE">Advance</option>}{kind === 'SUPPLIER' && <option value="ON_DELIVERY">On delivery</option>}
