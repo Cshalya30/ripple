@@ -33,7 +33,7 @@ export function ScenarioImpact({ baseline }: { baseline: RunPayload }) {
   const scenario = useUI((s) => s.scenario)!
   const { selectEvent, setDay, setEngineView, setScenario, setPlaying } = useUI.getState()
   const risk = useRisk()
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const [showMoves, setShowMoves] = useState(false)
   const e: Evaluation = scenario.evaluation
   const run = scenario.run

@@ -16,7 +16,7 @@ export function DayBrief({ run, baseline, rows, loading, playing }: { run: RunPa
   const day = useUI((s) => s.day)
   const selected = useUI((s) => s.selectedEventId)
   const { selectEvent, setDay, setPlaying } = useUI.getState()
-  const [open, setOpen] = useState(() => typeof window === 'undefined' || window.innerWidth >= 1100)
+  const [open, setOpen] = useState(false)
   const point = run.series[Math.min(day, run.series.length - 1)]
   const basePoint = baseline?.series[Math.min(day, baseline.series.length - 1)]
   const byId = new Map(run.events.map((e) => [e.id, e]))

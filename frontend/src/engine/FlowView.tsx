@@ -72,7 +72,10 @@ const Links = memo(({ data }: NodeProps<Node<{ paths: LinkPath[]; width: number;
     {data.paths.map((p) => (
       <g key={p.id} className={`fl ${p.kind}`}>
         <path d={p.d} fill="none" />
-        {(p.kind === 'live' || p.kind === 'chain' || p.kind === 'hover') && <path className="fl-arrow" d={`M${p.end[0] - 7},${p.end[1] - 4} L${p.end[0]},${p.end[1]} L${p.end[0] - 7},${p.end[1] + 4} Z`} />}
+        <path className="fl-arrow" d={`M${p.end[0] - 8},${p.end[1] - 4.5} L${p.end[0]},${p.end[1]} L${p.end[0] - 8},${p.end[1] + 4.5} Z`} />
+        {(p.kind === 'live' || p.kind === 'chain' || p.kind === 'hover') && (
+          <circle r="3.4" className="fl-pulse"><animateMotion dur={p.kind === 'live' ? '1.4s' : '2.2s'} repeatCount="indefinite" path={p.d} /></circle>
+        )}
         {(p.kind === 'chain' || p.kind === 'hover') && p.lag > 0 && <text x={p.start[0] + 10} y={p.start[1] - 5} className="fl-lag">+{p.lag}d</text>}
       </g>
     ))}
@@ -363,6 +366,16 @@ export function FlowView({ run, baseline }: { run: RunPayload; baseline?: RunPay
 
   return (
     <div className="flow-wrap">
+      <div className="flow-legend" role="group" aria-label="Flow display">
+        <label className="check micro"><input type="checkbox" checked={spotlight} onChange={(e) => setSpotlight(e.target.checked)} /> Spotlight the chosen day</label>
+        {spotlight && (
+          <span className="legend-keys">
+            <span><i className="k active" /> happening now</span><span><i className="k done" /> already happened</span><span><i className="k waiting" /> held up</span><span><i className="k upcoming" /> still to come</span>
+          </span>
+        )}
+        {showDiff && <span className="legend-keys"><span><i className="k changed" /> moved by this what-if</span><span><i className="k ghost" /> where it was</span></span>}
+      </div>
+      <div className="flow-canvas">
       <ReactFlow
         nodes={nodes} edges={[]} nodeTypes={nodeTypes}
         defaultViewport={{ x: 20 - Math.max(0, day - 10) * PX_PER_DAY * 0.85, y: 30, zoom: 0.85 }} minZoom={0.2} maxZoom={1.6}
@@ -387,14 +400,6 @@ export function FlowView({ run, baseline }: { run: RunPayload; baseline?: RunPay
         <Controls showInteractive={false} position="bottom-right" />
       </ReactFlow>
       <DayBrief run={run} baseline={showDiff ? baseline ?? null : null} rows={rows} loading={log.isLoading} playing={playing} />
-      <div className="flow-legend" role="group" aria-label="Flow display">
-        <label className="check micro"><input type="checkbox" checked={spotlight} onChange={(e) => setSpotlight(e.target.checked)} /> Spotlight the chosen day</label>
-        {spotlight && (
-          <span className="legend-keys">
-            <span><i className="k active" /> happening now</span><span><i className="k done" /> already happened</span><span><i className="k waiting" /> held up</span><span><i className="k upcoming" /> still to come</span>
-          </span>
-        )}
-        {showDiff && <span className="legend-keys"><span><i className="k changed" /> moved by this what-if</span><span><i className="k ghost" /> where it was</span></span>}
       </div>
     </div>
   )

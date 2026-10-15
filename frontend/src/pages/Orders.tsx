@@ -43,7 +43,7 @@ function Sales({ finance }: { finance: boolean }) {
     <>
       {advance.isError && <ErrorNote text={errorText(advance.error)} />}
       <div className="table-wrap">
-        <table className="table">
+        <table className="table tight">
           <thead>
             <tr><th>Order</th><th>Customer</th><th>Product × qty</th>{finance && <th className="money">Value</th>}<th>Promised</th><th>Forecast delivery</th><th>Stage</th><th>Materials</th><th /></tr>
           </thead>
@@ -78,7 +78,7 @@ function Sales({ finance }: { finance: boolean }) {
                       </button>
                       : o.materials?.status === 'READY' ? <Status tone="in">Ready</Status> : <span className="faint">·</span>}
                   </td>
-                  <td className="right nowrap">
+                  <td className="right"><div className="row-actions">
                     {previous && (
                       <button className="btn btn-sm btn-quiet" disabled={advance.isPending} onClick={() => setUndo({ order: o, to: previous })} title={`Move back to ${STAGE_LABEL[previous]}`}>
                         <ArrowCounterClockwiseIcon size={14} /> Undo
@@ -91,7 +91,7 @@ function Sales({ finance }: { finance: boolean }) {
                       </button>
                     )}
                     {o.stage === 'PAID' && <span className="small faint">Paid</span>}
-                  </td>
+                  </div></td>
                 </tr>
               )
             })}
@@ -123,7 +123,7 @@ function Purchases({ finance, preset }: { finance: boolean; preset: string | nul
       {creating && <NewPO initialMaterial={preset} onDone={() => setCreating(false)} />}
       {mark.isError && <ErrorNote text={errorText(mark.error)} />}
       <div className="table-wrap">
-        <table className="table">
+        <table className="table tight">
           <thead><tr><th>Order</th><th>Supplier</th><th>Material × qty</th>{finance && <th className="money">Value</th>}<th>Terms</th><th>Expected arrival</th><th>Payment</th><th>Status</th><th /></tr></thead>
           <tbody>
             {orders.data!.orders.map((o) => (
@@ -139,7 +139,7 @@ function Purchases({ finance, preset }: { finance: boolean; preset: string | nul
                 </td>
                 <td className="small">{o.forecast_payment ? <span className="mono">{shortDate(o.forecast_payment)}</span> : <span className="faint">·</span>}</td>
                 <td>{o.status === 'ARRIVED' || o.status === 'CLOSED' ? <Status tone="in">Arrived</Status> : o.status === 'PAID' ? <Status tone="wait">Paid, awaited</Status> : o.status === 'CANCELLED' ? <Status tone="wait">Cancelled</Status> : <Status tone="wait">Ordered</Status>}</td>
-                <td className="right nowrap">
+                <td className="right"><div className="row-actions">
                   {(o.status === 'ARRIVED' || (finance && (o.status === 'PAID' || o.status === 'CANCELLED'))) && (
                     <button className="btn btn-sm btn-quiet" disabled={mark.isPending} onClick={() => setUndo(o)}>
                       <ArrowCounterClockwiseIcon size={14} /> {o.status === 'ARRIVED' ? 'Undo received' : o.status === 'PAID' ? 'Undo payment' : 'Reopen'}
@@ -148,7 +148,7 @@ function Purchases({ finance, preset }: { finance: boolean; preset: string | nul
                   {finance && o.status === 'ORDERED' && <button className="btn btn-sm btn-quiet" disabled={mark.isPending} onClick={() => mark.mutate({ id: o.id, status: 'CANCELLED' }, { onSuccess: () => ui.toast(`${o.number} cancelled.`) })}>Cancel</button>}
                   {finance && o.status === 'ORDERED' && o.terms_type !== 'CREDIT' && <button className="btn btn-sm btn-quiet" onClick={() => mark.mutate({ id: o.id, status: 'PAID' })}>Mark paid</button>}{' '}
                   {(o.status === 'ORDERED' || o.status === 'PAID') && <button className="btn btn-sm btn-secondary" onClick={() => mark.mutate({ id: o.id, status: 'ARRIVED' }, { onSuccess: () => ui.toast(`${o.number} received. Stock updated.`) })}>Received</button>}
-                </td>
+                </div></td>
               </tr>
             ))}
           </tbody>
@@ -289,7 +289,7 @@ function WhatIf() {
       {error !== null && <div style={{ marginTop: 12 }}><ErrorNote text={errorText(error)} /></div>}
       {result && (
         <Section title="If you accept">
-          <table className="table">
+          <table className="table tight">
             <tbody>
               <tr>
                 <td className="muted" style={{ width: 160 }}>Materials</td>
