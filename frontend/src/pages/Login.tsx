@@ -145,16 +145,7 @@ export function Login() {
           {busy === 'demo' ? 'Opening' : 'Open demo business: Mahalakshmi Fabrics'}
         </button>
         <p className="micro faint" style={{ marginTop: 8 }}>Opens your own private copy of the demo. It is deleted after 24 hours.</p>
-        <div className="small muted" style={{ marginTop: 20 }}>
-          <div className="label" style={{ marginBottom: 6 }}>Demo accounts (shared business), password <span className="mono">ripple-demo-2026</span></div>
-          <table className="table dense">
-            <tbody>
-              <tr><td className="mono small">owner@ripple.demo</td><td className="small">Owner, sees everything</td></tr>
-              <tr><td className="mono small">accountant@ripple.demo</td><td className="small">Accountant, everything except team</td></tr>
-              <tr><td className="mono small">supervisor@ripple.demo</td><td className="small">Supervisor, orders and stock only, no amounts</td></tr>
-            </tbody>
-          </table>
-        </div></>}
+        </>}
         <button className="btn btn-quiet" style={{ width: '100%', marginTop: 20 }} onClick={() => { setSignup((current) => !current); setError(null) }} disabled={busy !== null}>
           {signup ? 'Already have an account? Sign in' : 'New to Ripple? Create an account'}
         </button>
