@@ -113,26 +113,27 @@ function Raw({ rows, finance, onAdjust, onEdit, onNew }: { rows: any[]; finance:
         </label>
       </div>
       <div className="table-wrap">
-        <table className="table">
+        <table className="table tight">
           <thead>
             <tr>
-              <th>Material</th><th className="money">On hand</th><th className="money">Needed for orders</th><th className="money">Free</th><th>On the way</th>
-              <th className="money">Cover</th><th>Status</th><th>Main supplier</th>{finance && <th className="money">Stock value</th>}<th />
+              <th>Material</th><th className="money">On hand</th><th className="money">Needed · free</th><th>On the way</th>
+              <th className="money">Cover</th><th>Status</th>{finance && <th className="money">Stock value</th>}<th />
             </tr>
           </thead>
           <tbody>
-            {shown.length === 0 && <tr><td colSpan={finance ? 10 : 9} className="small muted" style={{ padding: 20 }}>Nothing matches. <button className="btn-quiet small" style={{ border: 0, background: 'none', cursor: 'pointer', textDecoration: 'underline', color: 'inherit' }} onClick={() => { setStatus('ALL'); setSearch('') }}>Clear the filter</button></td></tr>}
+            {shown.length === 0 && <tr><td colSpan={finance ? 8 : 7} className="small muted" style={{ padding: 20 }}>Nothing matches. <button className="btn-quiet small" style={{ border: 0, background: 'none', cursor: 'pointer', textDecoration: 'underline', color: 'inherit' }} onClick={() => { setStatus('ALL'); setSearch('') }}>Clear the filter</button></td></tr>}
             {shown.map((m) => (
               <tr key={m.id}>
-                <td className="wrap" style={{ minWidth: 200 }}>
+                <td className="wrap" style={{ minWidth: 150 }}>
                   {m.name}
-                  <span className="sub"><span className="mono">{m.sku}</span> · class {m.abc} · {m.avg_daily_use_label}/day {m.avg_use_basis === 'LAST_30_DAYS' ? '(last 30 days)' : '(planned use)'}</span>
+                  <span className="sub"><span className="mono">{m.sku}</span> · class {m.abc}{m.main_supplier ? ` · ${m.main_supplier.name}` : ''}</span>
+                  <span className="sub">{m.avg_daily_use_label}/day {m.avg_use_basis === 'LAST_30_DAYS' ? '(last 30 days)' : '(planned use)'}</span>
                 </td>
                 <td className="money">{m.on_hand_label}<StockBar m={m} /></td>
                 <td className="money" title={m.needed_by_order.map((n: any) => `${n.order} ${n.qty_label}`).join('\n')}>{m.needed_label}</td>
                 <td className={`money ${m.free < 0 ? 'amt-out' : ''}`}>{m.free < 0 ? `Short ${m.free_label.replace('−', '')}` : m.free_label}</td>
                 <td className="small wrap">{m.on_the_way ? <>{m.on_the_way_label}{m.incoming.map((i: any) => <span key={i.po_number} className="sub">{i.po_number} {i.expected_arrival ? shortDate(i.expected_arrival) : i.held ? 'held until bill paid' : 'after payment'}</span>)}</> : <span className="faint">·</span>}</td>
-                <td className="money">{m.days_of_cover !== null ? `${m.days_of_cover} d` : '·'}<span className="sub">reorder at {m.reorder_point_label}</span></td>
+                <td className="money" title={`Reorder at ${m.reorder_point_label}`}>{m.days_of_cover !== null ? `${m.days_of_cover} d` : '·'}</td>
                 <td className="wrap">
                   <Status tone={statusTone(m.status)}>{STATUS_LABEL[m.status] ?? m.status}</Status>
                   {m.blocked.map((b: any) => (
@@ -142,13 +143,12 @@ function Raw({ rows, finance, onAdjust, onEdit, onNew }: { rows: any[]; finance:
                     </button>
                   ))}
                 </td>
-                <td className="small">{m.main_supplier?.name ?? <span className="faint">·</span>}</td>
                 {finance && <td className="money"><Amount paise={m.stock_value_paise} /></td>}
-                <td className="right nowrap">
+                <td className="right"><div className="row-actions">
                   {finance && (m.status === 'SHORT' || m.status === 'REORDER') && <button className="btn btn-sm btn-secondary" onClick={() => navigate(`/app/orders?tab=purchase&new=1&material=${encodeURIComponent(m.id)}`)}>Order</button>}{' '}
                   <button className="btn btn-sm btn-quiet" onClick={() => onAdjust({ item_type: 'MATERIAL', id: m.id, name: m.name, unit: m.unit, factor: m.unit_factor })}>Adjust</button>
                   {finance && <button className="icon-btn" aria-label={`Edit ${m.name}`} title="Edit material" onClick={() => onEdit(m)}><PencilSimpleIcon size={16} /></button>}
-                </td>
+                </div></td>
               </tr>
             ))}
           </tbody>
@@ -166,7 +166,7 @@ function Raw({ rows, finance, onAdjust, onEdit, onNew }: { rows: any[]; finance:
 function Finished({ rows, finance, onAdjust }: { rows: any[]; finance: boolean; onAdjust: (item: any) => void }) {
   return (
     <div className="table-wrap">
-      <table className="table">
+      <table className="table tight">
         <thead><tr><th>SKU</th><th>Product</th><th>Variant</th><th className="money">On hand</th><th className="money">Committed</th><th className="money">In production</th><th className="money">Planned</th><th className="money">Free</th><th>Next delivery</th>{finance && <th className="money">Value</th>}<th /></tr></thead>
         <tbody>
           {rows.map((p) => (

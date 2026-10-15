@@ -41,7 +41,7 @@ function Customers({ rows, total, msme }: { rows: PartyRow[]; total: number; msm
   const ui = useUI()
   return (
     <div className="table-wrap">
-      <table className="table">
+      <table className="table tight">
         <thead>
           <tr>
             <th>#</th><th>Customer</th><th className="hide-narrow">Buys</th><th>Terms</th><th className="money money-first">Outstanding</th>
@@ -71,11 +71,11 @@ function Customers({ rows, total, msme }: { rows: PartyRow[]; total: number; msm
                       : <Status tone={p.msme_clock_days_left <= 7 ? 'attn' : 'wait'}>{p.msme_clock_days_left} days left</Status>}
                 </td>
               )}
-              <td className="right nowrap" onClick={(e) => e.stopPropagation()}>
+              <td className="right" onClick={(e) => e.stopPropagation()}><div className="row-actions">
                 {p.outstanding_paise > 0 && <button className="btn btn-sm btn-secondary" onClick={() => ui.openComposer({ partyId: p.id, intent: 'reminder' })}>Remind</button>}{' '}
                 <button className="btn btn-sm btn-quiet" onClick={() => ui.openPayment({ partyId: p.id, direction: 'IN' })}>Record</button>{' '}
                 <DatasheetButton compact className="btn btn-sm btn-quiet" label="Download customer datasheet (CSV)" target={{ kind: 'party', id: p.id, name: p.name }} />
-              </td>
+              </div></td>
             </tr>
           ))}
         </tbody>
@@ -92,7 +92,7 @@ function Suppliers({ rows, total }: { rows: PartyRow[]; total: number }) {
   const terms = (p: PartyRow) => (p.terms_type === 'ADVANCE' ? 'Advance' : p.terms_type === 'ON_DELIVERY' ? 'On delivery' : `${p.terms_days} days credit`)
   return (
     <div className="table-wrap">
-      <table className="table">
+      <table className="table tight">
         <thead>
           <tr><th>#</th><th>Supplier</th><th className="hide-mobile">Supplies</th><th>Terms</th><th className="money money-first">You owe</th><th>Next due</th><th className="hide-mobile">Lead time</th><th className="hide-mobile">MSME status</th><th /></tr>
         </thead>
@@ -109,10 +109,10 @@ function Suppliers({ rows, total }: { rows: PartyRow[]; total: number }) {
               <td className="small wrap hide-mobile">
                 {p.msme_category ? (p.msme_category === 'MEDIUM' ? 'Medium' : <>{p.msme_category === 'MICRO' ? 'Micro' : 'Small'}<span className="sub">Pay within 45 days. Late payment delays your tax deduction (43B(h)).</span></>) : <span className="faint">Not registered</span>}
               </td>
-              <td className="right nowrap" onClick={(e) => e.stopPropagation()}>
+              <td className="right" onClick={(e) => e.stopPropagation()}><div className="row-actions">
                 <button className="btn btn-sm btn-secondary" onClick={() => ui.openPayment({ partyId: p.id, direction: 'OUT' })}>Pay</button>{' '}
                 <DatasheetButton compact className="btn btn-sm btn-quiet" label="Download supplier datasheet (CSV)" target={{ kind: 'party', id: p.id, name: p.name }} />
-              </td>
+              </div></td>
             </tr>
           ))}
         </tbody>

@@ -15,7 +15,7 @@ import json
 from datetime import date, timedelta
 from typing import Any
 
-from ..simulation.schemas import BusinessSnapshot, EventType, Scenario
+from ..simulation.schemas import BusinessSnapshot, Event, EventType, Scenario
 from ..simulation.validation import SimulationValidationError
 from .position import round_up
 from .runs import Run, run_variant
@@ -232,6 +232,22 @@ def build_variant(run: Run, fix: dict[str, Any]) -> tuple[BusinessSnapshot, Scen
         if target.due_date:
             target.due_date = target.due_date + timedelta(days=days)
         assumptions.append(f"Snapshot edit: {target.id} due date moved by {days} days, as agreed with the supplier.")
+    elif kind == "ADD_PAYMENT":
+        when = date.fromisoformat(params["date"])
+        amount = int(params["amount_paise"])
+        label = str(params.get("label") or "a new payment")[:60]
+        snapshot.events.append(Event(id=f"adhoc-{when.isoformat()}-{amount}", type=EventType.OTHER_EXPENSE, earliest_date=when, due_date=when,
+                                     amount_paise=amount, assumptions=[f"Owner what-if: {label}, {_rupees(amount)} on {_human(when)}."]))
+        assumptions.append(f"Snapshot edit: adds {label}, {_rupees(amount)} on {_human(when)}, which is not in the books yet.")
+    elif kind == "PAY_EARLY":
+        target = event(params["event_id"])
+        if target.type != EventType.SUPPLIER_PAYMENT:
+            raise FixError("NOT_A_SUPPLIER_PAYMENT", {"event_id": target.id})
+        when = date.fromisoformat(params["date"])
+        if when >= target.earliest_date:
+            raise FixError("NOT_EARLIER", {"event_id": target.id})
+        target.earliest_date = when
+        assumptions.append(f"Snapshot edit: {target.id} is paid from {_human(when)}, as soon as cash allows, instead of on its due date.")
     elif kind == "INVOICE_FINANCE":
         target = event(params["event_id"])
         target.amount_paise = (target.amount_paise or 0) - params["fee_paise"]

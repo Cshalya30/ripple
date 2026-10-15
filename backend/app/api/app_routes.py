@@ -29,7 +29,7 @@ from ..simulation.engine import simulate
 from ..simulation.schemas import MAX_SAFE_INTEGER, ComparisonRequest, SimulationRequest
 from ..snapshot.builder import build_from_records, load_records, OPEN_ORDER_STAGES
 from ..services import fixes as fixes_service
-from ..services import datasheet, munim, risk as risk_service, runs
+from ..services import datasheet, guard, munim, risk as risk_service, runs
 from ..services.inventory import inventory_rows, movement_rows
 from ..services.messages import CUSTOMER_INTENTS, INTENTS, human_date, render, rupees, wa_link
 from ..services.position import delay_model, exposures, open_invoices, position
@@ -115,11 +115,6 @@ def get_today(principal: Principal = Depends(FINANCE)):
     dip = why_the_dip(run)
     bid = principal.business_id
     t = today().isoformat()
-    awaited = query("SELECT COUNT(*) c FROM purchase_order WHERE business_id = ? AND status IN ('ORDERED','PAID')", (bid,))[0]["c"]
-    received = query("SELECT COUNT(*) c FROM stock_movement WHERE business_id = ? AND reason = 'PURCHASE_ARRIVAL' AND date = ?", (bid, t))[0]["c"]
-    to_deliver = query("SELECT COUNT(*) c FROM sales_order WHERE business_id = ? AND stage IN ('PLANNED','MATERIALS_READY','IN_PRODUCTION','READY')", (bid,))[0]["c"]
-    delivered = query("SELECT COUNT(*) c FROM stock_movement WHERE business_id = ? AND reason = 'DISPATCH' AND date = ?", (bid, t))[0]["c"]
-    day0 = week[0]
     changes = None
     previous = runs.previous_baseline(bid, run)
     if previous and previous["meta"].get("summary"):
@@ -140,13 +135,9 @@ def get_today(principal: Principal = Depends(FINANCE)):
         "summary": summary,
         "do_today": do_today(bid, run, risk if risk.get("status") == "READY" else None),
         "week": week[1:],
-        "from_suppliers": {"awaited": awaited, "received_today": received},
-        "to_customers": {"to_deliver": to_deliver, "delivered_today": delivered},
-        "money_today": {"in_count": len(day0["in_items"]), "in_paise": day0["in_paise"],
-                        "out_count": len(day0["out_items"]) + len(day0["blocked_items"]),
-                        "out_paise": day0["out_paise"] + sum(i["amount_paise"] or 0 for i in day0["blocked_items"])},
         "changes": changes,
         "risk": _risk_brief(risk),
+        "guard": guard.brief(bid, run, risk),
         "run": run_meta(run),
     }
 
@@ -186,7 +177,7 @@ def get_alerts(principal: Principal = Depends(ANYONE)):
             chance = risk["shortfall_chance"]["30"]
             if chance >= 0.25:
                 alerts.append({"id": "risk", "kind": "RISK", "severity": "out" if chance >= 0.5 else "attention",
-                               "chance": chance, "link": "/app/book"})
+                               "chance": chance, "link": "/app/book?tab=risk"})
     else:
         run = current_run(principal)
     inv = inventory_rows(bid, run)
@@ -281,12 +272,13 @@ def engine_day(day: int, scenario: str | None = Query(default=None, max_length=8
 
 class ScenarioBody(Strict):
     fix_id: str | None = Field(default=None, max_length=80)
-    kind: Literal["MOVE_RECEIPT_DATE", "DELAY_ARRIVAL", "SPLIT_CUSTOMER_COLLECTION", "SPLIT_SUPPLIER_PAYMENT", "ADD_CREDIT_BRIDGE", "EXTENSION"] | None = None
+    kind: Literal["MOVE_RECEIPT_DATE", "DELAY_ARRIVAL", "SPLIT_CUSTOMER_COLLECTION", "SPLIT_SUPPLIER_PAYMENT", "ADD_CREDIT_BRIDGE", "EXTENSION", "ADD_PAYMENT", "PAY_EARLY"] | None = None
     event_id: str | None = Field(default=None, max_length=160)
     date: Date | None = None
     days: int | None = Field(default=None, ge=1, le=365)
     amount_paise: int | None = Field(default=None, gt=0, le=MAX_SAFE_INTEGER // 1000)
     facility_id: str | None = Field(default=None, max_length=80)
+    label: str | None = Field(default=None, max_length=60)
 
 
 def resolve_fix(run: runs.Run, body: ScenarioBody) -> dict[str, Any]:
@@ -319,6 +311,10 @@ def resolve_fix(run: runs.Run, body: ScenarioBody) -> dict[str, Any]:
         if event is None:
             raise HTTPException(status_code=422, detail={"code": "UNKNOWN_EVENT"})
         p.update(first_paise=body.amount_paise, first_date=max(start, event.due_date or event.earliest_date).isoformat(), second_after_days=body.days)
+    elif body.kind == "ADD_PAYMENT":
+        need("amount_paise", "date"); p = {"date": body.date.isoformat(), "amount_paise": body.amount_paise, "label": body.label}
+    elif body.kind == "PAY_EARLY":
+        need("event_id", "date"); p["date"] = body.date.isoformat()
     elif body.kind == "ADD_CREDIT_BRIDGE":
         need("facility_id", "amount_paise", "date"); p = {"facility_id": body.facility_id, "principal_paise": body.amount_paise, "drawdown_date": body.date.isoformat()}
     return {"id": f"custom-{body.kind.lower()}", "kind": body.kind, "params": p, "title": "Your what-if", "cost_paise": 0}
@@ -419,6 +415,70 @@ def risk_forecast(principal: Principal = Depends(FINANCE)):
     run = current_run(principal)
     result = risk_for(run)
     return {**result, "run_id": run.id, "snapshot_hash": run.built.snapshot_hash}
+
+
+# ---------------------------------------------------------------- risk and finance guard
+
+class PaymentCheckBody(Strict):
+    event_id: str | None = Field(default=None, max_length=160)
+    amount_paise: int | None = Field(default=None, gt=0, le=MAX_SAFE_INTEGER // 1000)
+    date: Date | None = None
+    label: str | None = Field(default=None, max_length=60)
+
+    @field_validator("label")
+    @classmethod
+    def _label(cls, value: str | None) -> str | None:
+        return (value or "").strip() or None
+
+    @model_validator(mode="after")
+    def _either(self) -> "PaymentCheckBody":
+        if not self.event_id and (self.amount_paise is None or self.date is None):
+            raise ValueError("Give a bill to check, or an amount and a date.")
+        return self
+
+
+class FlagReviewBody(Strict):
+    flag_key: str = Field(min_length=3, max_length=200)
+    verdict: Literal["CONFIRMED", "DISMISSED", "OPEN"]
+    note: str | None = Field(default=None, max_length=200)
+
+
+class MissedBody(Strict):
+    rule: str = Field(min_length=3, max_length=20)
+    note: str = Field(min_length=3, max_length=200)
+
+
+@router.get("/guard")
+def get_guard(yield_bp: int = Query(default=guard.DEFAULT_YIELD_BP, ge=0, le=3000), principal: Principal = Depends(FINANCE)):
+    run = current_run(principal)
+    return guard.build(principal.business_id, run, risk_for(run), yield_bp)
+
+
+@router.post("/guard/payment-check")
+def guard_payment_check(body: PaymentCheckBody, principal: Principal = Depends(FINANCE)):
+    run = current_run(principal)
+    if body.date is not None and not (run.as_of <= body.date < run.as_of + timedelta(days=run.built.snapshot.horizon_days)):
+        raise HTTPException(status_code=422, detail={"code": "DATE_OUTSIDE_HORIZON"})
+    try:
+        return guard.payment_options(run, body.event_id, body.amount_paise, body.date, body.label)
+    except fixes_service.FixError as exc:
+        raise _error(exc) from exc
+
+
+@router.post("/guard/flags/review")
+def guard_review(body: FlagReviewBody, principal: Principal = Depends(FINANCE)):
+    result = guard.review_flag(principal.business_id, principal.user_id, body.flag_key, body.verdict, body.note)
+    if not result["ok"]:
+        raise HTTPException(status_code=422, detail={"code": result["code"]})
+    return {"ok": True}
+
+
+@router.post("/guard/missed")
+def guard_missed(body: MissedBody, principal: Principal = Depends(FINANCE)):
+    result = guard.report_missed(principal.business_id, principal.user_id, body.rule, body.note)
+    if not result["ok"]:
+        raise HTTPException(status_code=422, detail={"code": result["code"]})
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------- transactions

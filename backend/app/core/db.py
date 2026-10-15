@@ -270,6 +270,17 @@ CREATE TABLE IF NOT EXISTS assistant_turn (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS guard_review (
+  id TEXT PRIMARY KEY,
+  business_id TEXT NOT NULL,
+  flag_key TEXT NOT NULL,
+  rule TEXT NOT NULL,
+  verdict TEXT NOT NULL,
+  note TEXT,
+  user_id TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS ix_party_b ON party(business_id);
 CREATE INDEX IF NOT EXISTS ix_invoice_b ON invoice(business_id, party_id);
 CREATE INDEX IF NOT EXISTS ix_txn_b ON txn(business_id, date);
@@ -284,7 +295,7 @@ CREATE INDEX IF NOT EXISTS ix_session_user ON session(user_id);
 BUSINESS_TABLES = [
     "party", "material", "product", "recipe_line", "stock_movement", "sales_order", "purchase_order",
     "invoice", "txn", "recurring_expense", "scheduled_expense", "credit_facility", "sim_run", "risk_run",
-    "assistant_turn",
+    "assistant_turn", "guard_review",
 ]
 
 _lock = threading.RLock()

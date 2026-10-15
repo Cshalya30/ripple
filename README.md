@@ -78,9 +78,9 @@ The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials 
 
 | Route | Purpose |
 |---|---|
-| `/app/today` | Morning view: headline sentence, position strip, ranked actions, this week, what changed |
+| `/app/today` | Morning view: headline sentence, position strip, ranked actions, this week, one line from the Risk and Finance engine, what changed |
 | `/app/engine` | Network (suppliers left, customers right, by exposure), Flow (the event graph the engine runs, with waiting bars and the cash and stock pools; the chosen day is lit, with numbered events and a day brief), Decisions (one day of the engine's loop), Timeline with play, pause and step, Inspector, Table, what-if scenarios with an impact panel and a baseline overlay |
-| `/app/book` | Position, goods, runway fan chart, risk and drivers, why the dip, ways to fix, transactions ledger |
+| `/app/book` | Three tabs. **Position**: net today in one line, runway fan chart, risk at a glance, why the dip, ways to fix. **Risk & Finance**: the Risk and Finance engine (below). **Ledger**: transactions |
 | `/app/khata` | Customers and suppliers, party drawer, reminders, 45-day MSME clock, one-click CSV datasheet per customer or supplier |
 | `/app/orders` | Sales orders with forecast delivery and Undo (a step back removes exactly the records the step created), purchase orders with Undo received / Undo payment / Reopen, "Can I take this order?" |
 | `/app/inventory` | Raw materials (add, edit, delete when unused; needed, free, cover, reorder point, ABC, filters), finished goods, recipes (editable), movements |
@@ -91,6 +91,31 @@ Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY 
 In the Engine: `Space` play or pause, `←` `→` one step (one day, or the next day with events when "Skip quiet days" is on), `Shift ←` `Shift →` one week, `Home` `End`, `N` next issue.
 
 Datasheets (priority export): `GET /api/export/party/{id}/datasheet.csv` for one customer or supplier and `GET /api/export/company/datasheet.csv` for the business. Sectioned UTF-8 CSV with a byte-order mark, plain-rupee numbers, ISO dates, formula-safe text.
+
+## Risk and Finance engine (Book > Risk & Finance)
+
+One engine with two halves that check each other. It reads records and the deterministic engine run; it never writes to the books.
+
+| Half | Part | What it does | Where it comes from |
+|---|---|---|---|
+| Risk | Predict | Chance of a shortfall in 30, 60 and 90 days, the likely day, who drives it; 36 of the simulated futures are drawn | `risk.py`: each customer's delay is drawn from their own history, the engine re-runs per sample |
+| Risk | Calculate | "Safe to spend": the most that can leave today with the buffer kept on every day up to 7, 14, 30, 45 and 60 days, from the plan and from the 1-in-10 worse future. Each payment coming due is judged: fine, tight, late or blocked | Minimum of the engine's net position (and of the risk fan's P10) minus the buffer |
+| Risk | If I make this payment | A bill: pay on the due date, now, half then the rest, ask for 14 days. A new spend: on the date, a week later, two weeks later. Each option is a real engine run, with the shortfall chance re-run per option, ranked, and openable in the Engine | `guard.payment_options`, fix kinds `PAY_EARLY` and `ADD_PAYMENT` |
+| Risk | Other signals | Customer concentration, overdue pile-up, customers paying later than before, 45-day MSME clock, stock gaps, credit backstop | Records and inventory measures |
+| Finance | Flag | Duplicate payment, paid above the bill, payment not linked to its bill, unusual amount, cash rules (s.269ST, s.40A(3)), bounced and stale cheques. The owner marks each "Looks fine" or "It's real"; false alarms, confirmed issues and misses are counted per check, and the amount check loosens after repeated "fine" | `guard.flags`, table `guard_review` |
+| Finance | Verify | Eight reconciliation checks on every load: no overpaid bill, bill status matches payments, no negative stock, received purchases have stock-in, delivered orders have stock-out and a bill, no dangling links, nothing cleared in the future, the forecast matches the current books | `guard.checks` |
+| Finance | Grow | Spare cash for N days (capital), an early-payment discount to ask a supplier for, a restock that fits (resource). Offered only inside the cautious safe amount; with the assumed yearly return editable | `guard.opportunities` |
+| Both | Trust | Back-test: how often a past payment landed inside the range predicted from earlier ones, against the 80% a 10-90 range should hit; what history the model learned from | `guard.calibration` |
+
+`GET /api/guard` returns all of it, `POST /api/guard/payment-check` runs the dynamic check, `POST /api/guard/flags/review` and `POST /api/guard/missed` record the owner's verdicts. Owner and accountant only.
+
+Product decisions made while adding it (the site had repeated itself and had too many boxes):
+- It lives in **Book** as a tab, not a new page. Book already held the risk and the fixes; the engine completes it.
+- Today lost its three count boxes (from suppliers, to customers, money today): each repeated something in Do today, This week or Orders. It gained one line from this engine.
+- Book's position and goods strips became one sentence: Today already shows cash, receivables, payables and runway.
+- Book's risk panel became a glance with a link; the drivers and the fuller figures moved into the engine.
+- The transactions ledger got its own tab instead of sitting at the bottom of a long page.
+- Offers are never shown beyond the safe amount, so Finance cannot suggest spending cash that Risk needs.
 
 Voice: Munim listens and speaks English, Hindi, Tamil, Telugu, Kannada, Malayalam, Punjabi, German, Spanish and Chinese through the browser's own speech services (Chrome, Edge and Safari for listening; any browser with an installed voice for reading aloud). Replies in the languages beyond English, Hindi and Tamil are written by the AI service; the template fallback exists for those three only.
 
@@ -182,7 +207,7 @@ shared demo business is seeded on first start; owners can restore it from Settin
 ## Tests
 
 ```
-python -m unittest discover -s tests -v        # 64 backend tests: engine, intake, builder, risk, fixes, API, security
+python -m unittest discover -s tests -v        # 125 backend tests: engine, intake, builder, risk, fixes, API, security
 cd frontend && npx vitest run                  # money and date formatting, input checks, voice helpers, flow line routing
                                                # (a repo path containing '#' breaks Vite: run from a copy at a plain path)
 cd e2e && npm install && node smoke.mjs shots  # browser smoke against a running server (RIPPLE_URL, BROWSER_PATH)

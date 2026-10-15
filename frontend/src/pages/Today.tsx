@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { Glyph } from '../components/Glyph'
 import { Amount, ErrorNote, Section, Skeleton, SkeletonRows, StripCell } from '../components/ui'
+import type { GuardBrief } from '../guard/types'
 import { api, errorText } from '../lib/api'
 import { clock, compact, dayDate, percent, rupees, shortDate, weekday } from '../lib/format'
 import { useToday, useWrite, type TodayData } from '../lib/queries'
@@ -70,20 +71,7 @@ export function Today() {
         </Section>
       </div>
 
-      <div className="cols" style={{ marginTop: 4 }}>
-        <Section title={t('today.fromSuppliers')}>
-          <Pair label={t('today.awaited')} value={t('today.lots', { count: d.from_suppliers.awaited })} />
-          <Pair label={t('today.receivedToday')} value={t('today.lots', { count: d.from_suppliers.received_today })} />
-        </Section>
-        <Section title={t('today.toCustomers')}>
-          <Pair label={t('today.toDeliver')} value={t('today.ordersCount', { count: d.to_customers.to_deliver })} />
-          <Pair label={t('today.deliveredToday')} value={t('today.ordersCount', { count: d.to_customers.delivered_today })} />
-        </Section>
-        <Section title={t('today.moneyToday')}>
-          <Pair label={t('today.dueIn')} value={<>{d.money_today.in_count} · <Amount paise={d.money_today.in_paise} direction="IN" /></>} />
-          <Pair label={t('today.dueOut')} value={<>{d.money_today.out_count} · <Amount paise={d.money_today.out_paise} direction="OUT" /></>} />
-        </Section>
-      </div>
+      <GuardStrip brief={d.guard} />
 
       {d.changes && (
         <Section title={t('today.changed')} aside={<span className="micro faint mono">since {clock(d.changes.since)}</span>}>
@@ -204,10 +192,6 @@ function Week({ days }: { days: TodayData['week'] }) {
   )
 }
 
-function Pair({ label, value }: { label: string; value: React.ReactNode }) {
-  return <div className="list-row"><span className="grow muted">{label}</span><span>{value}</span></div>
-}
-
 function Changes({ changes }: { changes: NonNullable<TodayData['changes']> }) {
   const runwayDelta = changes.runway_before !== null && changes.runway_after !== null ? changes.runway_after - changes.runway_before : null
   const runwayText = changes.runway_before === changes.runway_after ? 'Runway unchanged.'
@@ -224,5 +208,26 @@ function Changes({ changes }: { changes: NonNullable<TodayData['changes']> }) {
       <p style={{ margin: 0 }} className="muted">{runwayText}{changes.lowest_before_paise !== null && changes.lowest_after_paise !== null && changes.lowest_before_paise !== changes.lowest_after_paise
         ? ` Lowest point ${rupees(changes.lowest_before_paise)} → ${rupees(changes.lowest_after_paise)}.` : ''}</p>
     </div>
+  )
+}
+
+/** One line from the Risk and Finance engine; the detail lives in Book. */
+function GuardStrip({ brief }: { brief: GuardBrief }) {
+  const word = { ok: 'All clear', watch: 'Keep an eye on it', act: 'Act this week' }[brief.verdict.level]
+  const safe = brief.safe_30 ? (brief.safe_30.cautious_paise ?? brief.safe_30.plan_paise) : null
+  return (
+    <Link to="/app/book?tab=risk" className={`guard-strip-link level-${brief.verdict.level}`} aria-label="Open Risk and Finance">
+      <span className="guard-light" aria-hidden="true" />
+      <span className="grow">
+        <strong>Risk &amp; Finance: {word}.</strong>{' '}
+        <span className="muted">{brief.verdict.reasons[0]}</span>
+      </span>
+      <span className="guard-strip-facts mono small">
+        {safe !== null && <span>safe to spend 30d {rupees(safe)}</span>}
+        <span>{brief.flags_open} to review</span>
+        <span>books {brief.checks_passed}/{brief.checks_total}</span>
+      </span>
+      <span aria-hidden="true">›</span>
+    </Link>
   )
 }

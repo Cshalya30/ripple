@@ -26,6 +26,10 @@ from .runs import derive
 WINDOWS = (30, 60, 90)
 
 
+PATHS = 36  # futures drawn on the Risk and Finance chart
+PATH_STEP = 2
+
+
 def n_samples() -> int:
     return int(os.getenv("RISK_SAMPLES", "200"))
 
@@ -154,6 +158,11 @@ def summarise(outcomes: list[dict[str, Any]], start: date) -> dict[str, Any]:
         fan.append({"day": day, "date": (start + timedelta(days=day)).isoformat(),
                     "p10_paise": _percentile(values, 0.1), "p50_paise": _percentile(values, 0.5), "p90_paise": _percentile(values, 0.9)})
     lows = [o["lowest_net"] for o in outcomes if o["first_short_day"] is not None]
+    # A few of the simulated futures, evenly spread from the worst to the best, so the shape of the risk can be drawn.
+    ranked = sorted(outcomes, key=lambda o: o["lowest_net"])
+    picks = sorted({round(i * (len(ranked) - 1) / (PATHS - 1)) for i in range(PATHS)}) if len(ranked) > PATHS else range(len(ranked))
+    keep = sorted({*range(0, horizon, PATH_STEP), horizon - 1}) if horizon else []
+    paths = [{"net": [ranked[i]["net"][d] for d in keep], "short": ranked[i]["first_short_day"]} for i in picks]
 
     def day_info(value: int | None) -> dict[str, Any] | None:
         return None if value is None else {"day": value, "date": (start + timedelta(days=value)).isoformat()}
@@ -165,6 +174,7 @@ def summarise(outcomes: list[dict[str, Any]], start: date) -> dict[str, Any]:
                             "p90": day_info(_percentile(short_days, 0.9)), "samples_with_shortfall": len(short_days)},
         "expected_shortfall_paise": round(sum(lows) / len(lows)) if lows else None,
         "fan": fan,
+        "paths": paths, "path_days": keep,
     }
 
 
@@ -186,7 +196,7 @@ def compute(
         insert(get_conn(), "risk_run", {
             "id": f"risk-{uuid.uuid4().hex[:16]}", "business_id": business_id, "snapshot_hash": built.snapshot_hash,
             "scenario_hash": scenario_key, "seed": result["seed"], "n_samples": result["n_samples"], "m_samples": result["m_samples"],
-            "summary_json": {k: v for k, v in result.items() if k != "fan"}, "duration_ms": result["duration_ms"],
+            "summary_json": {k: v for k, v in result.items() if k not in ("fan", "paths", "path_days")}, "duration_ms": result["duration_ms"],
         })
     return result
 
