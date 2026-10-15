@@ -182,7 +182,7 @@ shared demo business is seeded on first start; owners can restore it from Settin
 ## Tests
 
 ```
-python -m unittest discover -s tests -v        # 64 backend tests: engine, intake, builder, risk, fixes, API, security
+python -m unittest discover -s tests -v        # 100 backend tests: engine, intake, builder, risk, fixes, API, security
 cd frontend && npx vitest run                  # money and date formatting, input checks, voice helpers, flow line routing
                                                # (a repo path containing '#' breaks Vite: run from a copy at a plain path)
 cd e2e && npm install && node smoke.mjs shots  # browser smoke against a running server (RIPPLE_URL, BROWSER_PATH)

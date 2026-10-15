@@ -117,7 +117,7 @@ export const useUI = create<UIState>((set) => ({
   setScenario: (scenario) => set({ scenario }),
   scenarioBarOpen: false,
   setScenarioBarOpen: (scenarioBarOpen) => set({ scenarioBarOpen }),
-  munimOpen: typeof window !== 'undefined' && window.innerWidth >= 1280,
+  munimOpen: typeof window !== 'undefined' && window.innerWidth >= 1700,
   setMunimOpen: (munimOpen) => set({ munimOpen }),
   munimSeed: null,
   askMunim: (text, context = {}) => set({ munimOpen: true, munimSeed: { text, context, nonce: Date.now() } }),
