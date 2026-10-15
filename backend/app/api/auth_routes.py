@@ -41,7 +41,7 @@ class LoginBody(Strict):
 
 class PrefsBody(Strict):
     language_ui: Literal["en", "ta", "hi"] | None = None
-    language_assistant: Literal["en", "ta", "hi"] | None = None
+    language_assistant: Literal["en", "ta", "hi", "te", "kn", "ml", "pa", "de", "es", "zh"] | None = None
     language_messages: Literal["en", "ta", "hi"] | None = None
     theme: Literal["night", "day", "lamp"] | None = None
     text_size: Literal["S", "M", "L", "XL"] | None = None

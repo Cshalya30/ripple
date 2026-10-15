@@ -7,7 +7,7 @@ import uuid
 from datetime import date, timedelta
 from typing import Any
 
-from ..core.db import bump_data_version, insert, query, query_one, today, tx, update
+from ..core.db import bump_data_version, insert, now_iso, query, query_one, today, tx, update
 from ..snapshot.builder import cleared_paid_by_invoice, order_requirements
 
 
@@ -93,10 +93,39 @@ def set_txn_status(business_id: str, txn_id: str, status: str) -> dict[str, Any]
     return owned("txn", txn_id, business_id)
 
 
-def mark_po(business_id: str, user_id: str, po_id: str, status: str) -> dict[str, Any]:
+def _stock_of(business_id: str, item_id: str) -> int:
+    from ..snapshot.builder import on_hand
+    return on_hand(query("SELECT * FROM stock_movement WHERE business_id = ? AND item_id = ?", (business_id, item_id)), today()).get(item_id, 0)
+
+
+def _invoice_payments(invoice_id: str) -> int:
+    return query_one("SELECT COUNT(*) AS c FROM txn WHERE invoice_id = ?", (invoice_id,))["c"]
+
+
+def _remove_one_movement(conn, business_id: str, item_id: str, reason: str, ref: str, note: str | None = None) -> dict[str, Any] | None:
+    """Delete the newest stock movement that a forward step created; the books end up exactly as they were."""
+    sql = "SELECT * FROM stock_movement WHERE business_id = ? AND item_id = ? AND reason = ? AND ref = ?"
+    params: list[Any] = [business_id, item_id, reason, ref]
+    if note is not None:
+        sql += " AND note = ?"
+        params.append(note)
+    row = query_one(sql + " ORDER BY created_at DESC, id DESC LIMIT 1", params)
+    if row:
+        conn.execute("DELETE FROM stock_movement WHERE id = ?", (row["id"],))
+    return row
+
+
+def mark_po(business_id: str, user_id: str, po_id: str, status: str, role: str = "OWNER") -> dict[str, Any]:
+    """PAID, ARRIVED and CANCELLED move a purchase order forward. UNDO steps it back exactly one step and
+    takes out the records that step created (stock arrival, supplier bill, advance payment)."""
     po = owned("purchase_order", po_id, business_id)
     supplier = owned("party", po["supplier_id"], business_id)
     with tx() as conn:
+        if status == "UNDO":
+            new_status = _undo_po(conn, business_id, po, supplier, role)
+            update(conn, "purchase_order", po_id, business_id, {"status": new_status})
+            bump_data_version(conn, business_id)
+            return owned("purchase_order", po_id, business_id)
         if status == "PAID":
             if po["status"] != "ORDERED" or po["terms_type"] == "CREDIT":
                 raise RecordError("INVALID_TRANSITION", {"from": po["status"], "to": status})
@@ -125,13 +154,58 @@ def mark_po(business_id: str, user_id: str, po_id: str, status: str) -> dict[str
     return owned("purchase_order", po_id, business_id)
 
 
+def _undo_po(conn, business_id: str, po: dict[str, Any], supplier: dict[str, Any], role: str) -> str:
+    advance_note = f"{po['number']} advance"
+    advance = query_one("SELECT id FROM txn WHERE business_id = ? AND party_id = ? AND details = ? AND direction = 'OUT' ORDER BY created_at DESC LIMIT 1",
+                        (business_id, supplier["id"], advance_note))
+    if po["status"] == "ARRIVED":
+        bill = query_one("SELECT * FROM invoice WHERE business_id = ? AND party_id = ? AND kind = 'PAYABLE' AND number = ?",
+                         (business_id, supplier["id"], f"{po['number']}-BILL"))
+        if bill and role == "SUPERVISOR":
+            raise RecordError("FORBIDDEN_FOR_ROLE", {}, status=403)
+        if bill and _invoice_payments(bill["id"]):
+            raise RecordError("INVOICE_HAS_PAYMENTS", {"invoice": bill["number"]})
+        if po["material_id"]:
+            on_hand_now = _stock_of(business_id, po["material_id"])
+            if on_hand_now < po["qty"]:
+                raise RecordError("NOT_ENOUGH_MATERIAL_TO_REVERSE", {"material_id": po["material_id"], "needed": po["qty"], "on_hand": on_hand_now})
+            _remove_one_movement(conn, business_id, po["material_id"], "PURCHASE_ARRIVAL", po["number"])
+        if bill:
+            conn.execute("DELETE FROM invoice WHERE id = ?", (bill["id"],))
+        return "PAID" if advance else "ORDERED"
+    if po["status"] == "PAID":
+        if role == "SUPERVISOR":
+            raise RecordError("FORBIDDEN_FOR_ROLE", {}, status=403)
+        if advance:
+            conn.execute("DELETE FROM txn WHERE id = ?", (advance["id"],))
+        return "ORDERED"
+    if po["status"] == "CANCELLED":
+        if role == "SUPERVISOR":
+            raise RecordError("FORBIDDEN_FOR_ROLE", {}, status=403)  # reopening puts a commitment back in the forecast
+        return "ORDERED"
+    raise RecordError("INVALID_TRANSITION", {"from": po["status"], "to": "UNDO"})
+
+
 STAGES = ["PLANNED", "MATERIALS_READY", "IN_PRODUCTION", "READY", "DELIVERED", "PAID"]
+PRODUCTION_NOTE = "Production complete"
 
 
-def advance_stage(business_id: str, user_id: str, so_id: str, stage: str) -> dict[str, Any]:
+def _history(so: dict[str, Any], entry: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    try:
+        log = json.loads(so.get("stage_history_json") or "[]")
+    except ValueError:
+        log = []
+    return (log + [entry] if entry else log)[-60:]
+
+
+def advance_stage(business_id: str, user_id: str, so_id: str, stage: str, role: str = "OWNER") -> dict[str, Any]:
+    """Move a sales order to another stage, forward or back. Each forward step writes records (stock, cost,
+    invoice); stepping back removes exactly those records so stock, cash and the forecast return to where they were."""
     so = owned("sales_order", so_id, business_id)
-    if stage not in STAGES[:5] or STAGES.index(stage) <= STAGES.index(so["stage"]):
+    if stage not in STAGES[:5] or stage == so["stage"]:
         raise RecordError("INVALID_TRANSITION", {"from": so["stage"], "to": stage})
+    if STAGES.index(stage) < STAGES.index(so["stage"]):
+        return _reverse_stage(business_id, user_id, so, stage, role)
     customer = owned("party", so["customer_id"], business_id)
     product = query_one("SELECT * FROM product WHERE id = ?", (so["product_id"],)) if so["product_id"] else None
     recipes: dict[str, list[dict]] = {}
@@ -143,6 +217,7 @@ def advance_stage(business_id: str, user_id: str, so_id: str, stage: str) -> dic
     target = STAGES.index(stage)
     with tx() as conn:
         changes: dict[str, Any] = {"stage": stage}
+        entry: dict[str, Any] = {"at": now_iso(), "by": user_id, "from": so["stage"], "to": stage, "direction": "FORWARD"}
         if current < 2 <= target:
             for material_id, qty in order_requirements(so, recipes):
                 if stock.get(material_id, 0) < qty:
@@ -155,11 +230,12 @@ def advance_stage(business_id: str, user_id: str, so_id: str, stage: str) -> dic
                 insert(conn, "txn", {"id": new_id(business_id, "t"), "business_id": business_id, "party_id": None, "direction": "OUT",
                                      "amount_paise": cost, "date": today().isoformat(), "medium": "CASH", "reference": None, "invoice_id": None,
                                      "details": f"Production cost {so['number']}", "status": "CLEARED"})
+            entry["prev_earliest_start_date"] = so["earliest_start_date"]
             changes["earliest_start_date"] = today().isoformat()
         if current < 3 <= target and so["product_id"]:
             insert(conn, "stock_movement", {"id": new_id(business_id, "mv"), "business_id": business_id, "item_type": "PRODUCT",
                                             "item_id": so["product_id"], "qty_delta": so["qty"], "reason": "ADJUSTMENT", "ref": so["number"],
-                                            "note": "Production complete", "user_id": user_id, "date": today().isoformat()})
+                                            "note": PRODUCTION_NOTE, "user_id": user_id, "date": today().isoformat()})
         if target == 4:
             if so["product_id"]:
                 insert(conn, "stock_movement", {"id": new_id(business_id, "mv"), "business_id": business_id, "item_type": "PRODUCT",
@@ -172,9 +248,45 @@ def advance_stage(business_id: str, user_id: str, so_id: str, stage: str) -> dic
                                          "order_id": so["id"], "number": f"{so['number']}-INV", "description": f"{so['qty']} x {product['name'] if product else 'goods'}",
                                          "amount_paise": value, "invoice_date": today().isoformat(),
                                          "due_date": (today() + timedelta(days=terms)).isoformat(), "status": "OPEN"})
+        changes["stage_history_json"] = _history(so, entry)
         update(conn, "sales_order", so_id, business_id, changes)
         bump_data_version(conn, business_id)
     return owned("sales_order", so_id, business_id)
+
+
+def _reverse_stage(business_id: str, user_id: str, so: dict[str, Any], stage: str, role: str) -> dict[str, Any]:
+    current, target = STAGES.index(so["stage"]), STAGES.index(stage)
+    if so["stage"] == "PAID":
+        invoice = query_one("SELECT number FROM invoice WHERE business_id = ? AND order_id = ? AND kind = 'RECEIVABLE'", (business_id, so["id"]))
+        raise RecordError("ORDER_ALREADY_PAID", {"invoice": invoice["number"] if invoice else None})
+    if current >= 4 > target and role == "SUPERVISOR":
+        raise RecordError("FORBIDDEN_FOR_ROLE", {}, status=403)  # undoing a delivery removes an invoice
+    with tx() as conn:
+        entry: dict[str, Any] = {"at": now_iso(), "by": user_id, "from": so["stage"], "to": stage, "direction": "BACK"}
+        changes: dict[str, Any] = {"stage": stage}
+        if current >= 4 > target:
+            invoice = query_one("SELECT * FROM invoice WHERE business_id = ? AND order_id = ? AND kind = 'RECEIVABLE'", (business_id, so["id"]))
+            if invoice and _invoice_payments(invoice["id"]):
+                raise RecordError("INVOICE_HAS_PAYMENTS", {"invoice": invoice["number"]})
+            if so["product_id"]:
+                _remove_one_movement(conn, business_id, so["product_id"], "DISPATCH", so["number"])
+            if invoice:
+                conn.execute("DELETE FROM invoice WHERE id = ?", (invoice["id"],))
+        if current >= 3 > target and so["product_id"]:
+            on_hand_now = _stock_of(business_id, so["product_id"])
+            if on_hand_now < so["qty"]:
+                raise RecordError("NOT_ENOUGH_FINISHED_STOCK", {"item_id": so["product_id"], "needed": so["qty"], "on_hand": on_hand_now})
+            _remove_one_movement(conn, business_id, so["product_id"], "ADJUSTMENT", so["number"], PRODUCTION_NOTE)
+        if current >= 2 > target:
+            conn.execute("DELETE FROM stock_movement WHERE business_id = ? AND item_type = 'MATERIAL' AND reason = 'PRODUCTION_USE' AND ref = ?", (business_id, so["number"]))
+            conn.execute("DELETE FROM txn WHERE business_id = ? AND party_id IS NULL AND direction = 'OUT' AND details = ?", (business_id, f"Production cost {so['number']}"))
+            started = next((e for e in reversed(_history(so)) if e.get("direction") == "FORWARD" and "prev_earliest_start_date" in e), None)
+            if started:
+                changes["earliest_start_date"] = started["prev_earliest_start_date"]
+        changes["stage_history_json"] = _history(so, entry)
+        update(conn, "sales_order", so["id"], business_id, changes)
+        bump_data_version(conn, business_id)
+    return owned("sales_order", so["id"], business_id)
 
 
 def create_party(business_id: str, data: dict[str, Any]) -> dict[str, Any]:
@@ -294,6 +406,8 @@ def stock_adjustment(business_id: str, user_id: str, data: dict[str, Any]) -> di
 
 def put_recipe(business_id: str, product_id: str, lines: list[dict[str, Any]], production_cost_paise: int | None, production_days: int | None) -> None:
     owned("product", product_id, business_id)
+    if len({line["material_id"] for line in lines}) != len(lines):
+        raise RecordError("DUPLICATE_MATERIAL", {})
     for line in lines:
         owned("material", line["material_id"], business_id)
     with tx() as conn:
@@ -308,4 +422,111 @@ def put_recipe(business_id: str, product_id: str, lines: list[dict[str, Any]], p
             changes["production_days"] = production_days
         if changes:
             update(conn, "product", product_id, business_id, changes)
+        bump_data_version(conn, business_id)
+
+
+# ---------------------------------------------------------------- raw materials
+
+# key -> (display unit, base unit, base units per display unit). Quantities are stored in the base unit.
+MATERIAL_UNITS: dict[str, tuple[str, str, int]] = {
+    "kg": ("kg", "g", 1000), "g": ("g", "g", 1), "L": ("L", "ml", 1000), "ml": ("ml", "ml", 1),
+    "m": ("m", "cm", 100), "pc": ("pc", "pc", 1), "box": ("box", "box", 1),
+}
+OPENING_NOTE = "Opening stock"
+
+
+def _sku_for(business_id: str, name: str) -> str:
+    letters = "".join(ch for ch in name.upper() if ch.isalnum())
+    stem = f"RM-{letters[:3] or 'MAT'}"
+    taken = {r["sku"] for r in query("SELECT sku FROM material WHERE business_id = ?", (business_id,))}
+    sku, n = stem, 1
+    while sku in taken:
+        n += 1
+        sku = f"{stem}-{n}"
+    return sku
+
+
+def _tag_supplier(conn, business_id: str, supplier_id: str, name: str) -> None:
+    """The supplier's 'Supplies' list in Khata names what they supply."""
+    supplier = query_one("SELECT tags_json FROM party WHERE id = ? AND business_id = ?", (supplier_id, business_id))
+    tags = json.loads((supplier or {}).get("tags_json") or "[]")
+    if name.lower() not in {t.lower() for t in tags} and len(tags) < 8:
+        update(conn, "party", supplier_id, business_id, {"tags_json": tags + [name]})
+
+
+def _check_material_fields(business_id: str, name: str, sku: str, supplier_id: str | None, own_id: str | None = None) -> None:
+    if query_one("SELECT id FROM material WHERE business_id = ? AND lower(name) = lower(?) AND id != ?", (business_id, name, own_id or "")):
+        raise RecordError("MATERIAL_EXISTS", {"field": "name", "name": name})
+    if query_one("SELECT id FROM material WHERE business_id = ? AND upper(sku) = upper(?) AND id != ?", (business_id, sku, own_id or "")):
+        raise RecordError("SKU_EXISTS", {"field": "sku", "sku": sku})
+    if supplier_id:
+        supplier = owned("party", supplier_id, business_id)
+        if supplier["kind"] != "SUPPLIER":
+            raise RecordError("NOT_A_SUPPLIER", {})
+
+
+def create_material(business_id: str, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    """A new raw material, with optional opening stock and a main supplier. Everything that reads stock
+    (inventory, reorder alerts, purchase orders, recipes, the engine) picks it up from the same rows."""
+    name = " ".join(data["name"].split())
+    sku = (data.get("sku") or "").strip().upper() or _sku_for(business_id, name)
+    unit, base, factor = MATERIAL_UNITS[data["unit"]]
+    supplier_id = data.get("supplier_id") or None
+    _check_material_fields(business_id, name, sku, supplier_id)
+    scaled = (data.get("opening_qty") or 0) * factor
+    if scaled != int(scaled):
+        raise RecordError("QUANTITY_TOO_PRECISE", {"field": "opening_qty", "unit": unit})
+    opening = int(scaled)
+    material_id = new_id(business_id, "m")
+    with tx() as conn:
+        insert(conn, "material", {
+            "id": material_id, "business_id": business_id, "sku": sku, "name": name, "unit": unit, "base_unit": base, "unit_factor": factor,
+            "reorder_safety_days": data.get("reorder_safety_days", 7), "primary_supplier_id": supplier_id, "avg_cost_paise": data.get("cost_paise", 0),
+        })
+        if opening > 0:
+            insert(conn, "stock_movement", {"id": new_id(business_id, "mv"), "business_id": business_id, "item_type": "MATERIAL", "item_id": material_id,
+                                            "qty_delta": opening, "reason": "ADJUSTMENT", "ref": sku, "note": OPENING_NOTE, "user_id": user_id,
+                                            "date": today().isoformat()})
+        if supplier_id:
+            _tag_supplier(conn, business_id, supplier_id, name)
+        bump_data_version(conn, business_id)
+    return owned("material", material_id, business_id)
+
+
+def update_material(business_id: str, material_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    """Rename, re-price, change the main supplier or the safety days. The unit is fixed once created
+    because every quantity on record is stored in it."""
+    material = owned("material", material_id, business_id)
+    name = " ".join(data["name"].split()) if data.get("name") else material["name"]
+    sku = (data.get("sku") or "").strip().upper() if data.get("sku") else material["sku"]
+    supplier_id = data["supplier_id"] if "supplier_id" in data else material["primary_supplier_id"]
+    _check_material_fields(business_id, name, sku, supplier_id or None, material_id)
+    changes: dict[str, Any] = {"name": name, "sku": sku, "primary_supplier_id": supplier_id or None}
+    if data.get("cost_paise") is not None:
+        changes["avg_cost_paise"] = data["cost_paise"]
+    if data.get("reorder_safety_days") is not None:
+        changes["reorder_safety_days"] = data["reorder_safety_days"]
+    with tx() as conn:
+        update(conn, "material", material_id, business_id, changes)
+        if supplier_id:
+            _tag_supplier(conn, business_id, supplier_id, name)
+        bump_data_version(conn, business_id)
+    return owned("material", material_id, business_id)
+
+
+def delete_material(business_id: str, material_id: str) -> None:
+    """Only a material nothing depends on can go. Its opening-stock entry goes with it; any other movement keeps it."""
+    owned("material", material_id, business_id)
+    uses = {
+        "recipes": query_one("SELECT COUNT(*) AS c FROM recipe_line WHERE business_id = ? AND material_id = ?", (business_id, material_id))["c"],
+        "purchase_orders": query_one("SELECT COUNT(*) AS c FROM purchase_order WHERE business_id = ? AND material_id = ?", (business_id, material_id))["c"],
+        "stock_movements": query_one("SELECT COUNT(*) AS c FROM stock_movement WHERE business_id = ? AND item_id = ? AND NOT (reason = 'ADJUSTMENT' AND note = ?)",
+                                     (business_id, material_id, OPENING_NOTE))["c"],
+        "orders": query_one("SELECT COUNT(*) AS c FROM sales_order WHERE business_id = ? AND materials_json LIKE ?", (business_id, f'%"{material_id}"%'))["c"],
+    }
+    if any(uses.values()):
+        raise RecordError("MATERIAL_IN_USE", {k: v for k, v in uses.items() if v})
+    with tx() as conn:
+        conn.execute("DELETE FROM stock_movement WHERE business_id = ? AND item_id = ?", (business_id, material_id))
+        conn.execute("DELETE FROM material WHERE id = ? AND business_id = ?", (material_id, business_id))
         bump_data_version(conn, business_id)

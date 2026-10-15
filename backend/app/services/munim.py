@@ -21,7 +21,9 @@ from .runs import Run
 from .views import cached_views, do_today, why_the_dip
 
 MAX_TOOL_CALLS = 5
-LANG_NAMES = {"en": "English", "ta": "Tamil", "hi": "Hindi"}
+LANG_NAMES = {"en": "English", "ta": "Tamil", "hi": "Hindi", "te": "Telugu", "kn": "Kannada", "ml": "Malayalam", "pa": "Punjabi (Gurmukhi script)",
+              "de": "German", "es": "Spanish", "zh": "Chinese (Simplified)"}
+TEMPLATE_LANGS = ("en", "ta", "hi")  # languages with a written fallback answer; the AI service can answer in all of LANG_NAMES
 
 GLOSSARY = {
     "blocked": "Blocked means the engine could not run an event on a day because cash or material was short. The engine tries again the next day.",
@@ -439,7 +441,7 @@ def chat(ctx: Context, message: str, screen: dict[str, Any], business_name: str,
             fb = fallback(ctx, message, reason="reply failed the number check")
             fb["tools"] = tool_log + fb["tools"]
             return fb
-        return {"reply": reply.strip(), "mode": "AI", "grounded": True, "tools": tool_log, "actions": ctx.actions}
+        return {"reply": reply.strip(), "mode": "AI", "grounded": True, "tools": tool_log, "actions": ctx.actions, "language": ctx.lang}
     except Exception as exc:  # noqa: BLE001 - provider errors become a labelled template answer
         return fallback(ctx, message, reason=f"AI service unavailable ({type(exc).__name__})")
 
@@ -496,7 +498,7 @@ T = {
 
 def fallback(ctx: Context, message: str, reason: str) -> dict[str, Any]:
     text = message.lower()
-    lang = ctx.lang if ctx.lang in ("en", "ta", "hi") else "en"
+    lang = ctx.lang if ctx.lang in TEMPLATE_LANGS else "en"
     tool_log: list[dict[str, Any]] = []
 
     def use(tool: str, **args: Any) -> dict[str, Any]:
@@ -570,4 +572,4 @@ def fallback(ctx: Context, message: str, reason: str) -> dict[str, Any]:
             reply = T["safe"][lang].format(days=r["horizon_days"], low=low["amount"], date=low["date"])
     else:
         reply = T["unknown"][lang]
-    return {"reply": reply, "mode": "TEMPLATE", "reason": reason, "grounded": True, "tools": tool_log, "actions": ctx.actions}
+    return {"reply": reply, "mode": "TEMPLATE", "reason": reason, "grounded": True, "tools": tool_log, "actions": ctx.actions, "language": lang}

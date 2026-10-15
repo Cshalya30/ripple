@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS sales_order (
   production_cost_paise INTEGER,
   production_days INTEGER,
   collection_terms_days INTEGER,
+  stage_history_json TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -308,7 +309,15 @@ def _connect() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL" if path != ":memory:" else "PRAGMA journal_mode=MEMORY")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add columns that older database files do not have yet (CREATE TABLE IF NOT EXISTS never alters a table)."""
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(sales_order)").fetchall()}
+    if "stage_history_json" not in columns:
+        conn.execute("ALTER TABLE sales_order ADD COLUMN stage_history_json TEXT NOT NULL DEFAULT '[]'")
 
 
 def get_conn() -> sqlite3.Connection:
@@ -384,6 +393,17 @@ def update(conn: sqlite3.Connection, table: str, row_id: str, business_id: str, 
             f"UPDATE {table} SET {sets} WHERE id = ? AND business_id = ?",
             [_sql_value(v) for v in changes.values()] + [row_id, business_id],
         )
+        return cursor.rowcount
+
+
+def update_business(conn: sqlite3.Connection, business_id: str, changes: dict[str, Any]) -> int:
+    """The business table is keyed by its own id and has no business_id column, so update() does not fit it."""
+    if not changes:
+        return 0
+    changes = {**changes, "updated_at": now_iso()}
+    sets = ", ".join(f"{key} = ?" for key in changes)
+    with _lock:
+        cursor = conn.execute(f"UPDATE business SET {sets} WHERE id = ?", [_sql_value(v) for v in changes.values()] + [business_id])
         return cursor.rowcount
 
 

@@ -7,9 +7,9 @@ import { FlowView } from '../engine/FlowView'
 import { EventTable, Inspector } from '../engine/Inspector'
 import { NetworkView, sortParties, type SortKey } from '../engine/NetworkView'
 import { ScenarioBar } from '../engine/ScenarioBar'
+import { ScenarioImpact } from '../engine/ScenarioImpact'
 import { Timeline } from '../engine/Timeline'
 import { errorText } from '../lib/api'
-import { rupees } from '../lib/format'
 import { useMe, useNetwork, useRisk, useRun } from '../lib/queries'
 import { useUI, type EngineView } from '../lib/store'
 
@@ -105,10 +105,9 @@ export default function Engine() {
           <span className="spacer" />
           {ui.scenario ? (
             <>
-              <span className="small"><span className="faint">Scenario:</span> {ui.scenario.label}</span>
-              <ScenarioSummary />
-              <label className="check small"><input type="checkbox" checked={ui.diff} onChange={(e) => ui.setDiff(e.target.checked)} /> Diff</label>
-              <button className="btn btn-sm btn-secondary" onClick={() => ui.setScenario(null)}>Back to baseline</button>
+              <span className="small truncate" style={{ maxWidth: 320 }}><span className="faint">What-if:</span> {ui.scenario.label}</span>
+              <label className="check small" title="Mark everything this what-if moves, and where it was"><input type="checkbox" checked={ui.diff} onChange={(e) => ui.setDiff(e.target.checked)} /> Show changes</label>
+              <button className="btn btn-sm btn-secondary" onClick={() => { ui.setPlaying(false); ui.setScenario(null) }}>Back to baseline</button>
             </>
           ) : (
             <span className="small faint">Baseline</span>
@@ -125,6 +124,7 @@ export default function Engine() {
 
         <div className="engine-canvas" style={{ display: 'flex', flexDirection: 'column' }}>
           {ui.scenarioBarOpen && <ScenarioBar run={baseline.data!} facilities={baseline.data!.facilities ?? []} />}
+          {ui.scenario && baseline.data && !ui.tableView && ui.engineView !== 'network' && <ScenarioImpact baseline={baseline.data} />}
           <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
             {ui.tableView && ui.engineView !== 'decisions' ? <EventTable run={run} />
               : ui.engineView === 'network' ? (
@@ -146,21 +146,9 @@ export default function Engine() {
         )}
 
         <div className="engine-timeline">
-          <Timeline run={run} fan={fan} />
+          <Timeline run={run} fan={fan} baseline={ui.scenario ? baseline.data : null} />
         </div>
       </div>
     </div>
-  )
-}
-
-function ScenarioSummary() {
-  const scenario = useUI((s) => s.scenario)
-  if (!scenario) return null
-  const e = scenario.evaluation
-  return (
-    <span className="small mono" title="Lowest net position before → after, from the engine">
-      {rupees(e.dip_before_paise)} → <span className={e.dip_after_paise !== null && e.dip_after_paise < 0 ? 'amt-out' : 'amt-in'}>{rupees(e.dip_after_paise)}</span>
-      {' · '}{e.changed_events.length} events move
-    </span>
   )
 }

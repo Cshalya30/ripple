@@ -127,7 +127,7 @@ def seed_business(
         "name": name,
         "owner_name": "Meera Sundaram",
         "address": "14 Weavers Street, Erode, Tamil Nadu 638001",
-        "gstin": "33AAJFM4721K1Z8",
+        "gstin": "33AAJFM4721K1Z9",
         "udyam_number": "UDYAM-TN-08-0012345",
         "msme_category": "MICRO",
         "safety_buffer_paise": 50_000 * R,

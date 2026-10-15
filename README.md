@@ -79,16 +79,20 @@ The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials 
 | Route | Purpose |
 |---|---|
 | `/app/today` | Morning view: headline sentence, position strip, ranked actions, this week, what changed |
-| `/app/engine` | Network (suppliers left, customers right, by exposure), Flow (the event graph the engine runs, with waiting bars and the cash and stock pools), Decisions (one day of the engine's loop), Timeline, Inspector, Table, what-if scenarios with diff |
+| `/app/engine` | Network (suppliers left, customers right, by exposure), Flow (the event graph the engine runs, with waiting bars and the cash and stock pools; the chosen day is lit, with numbered events and a day brief), Decisions (one day of the engine's loop), Timeline with play, pause and step, Inspector, Table, what-if scenarios with an impact panel and a baseline overlay |
 | `/app/book` | Position, goods, runway fan chart, risk and drivers, why the dip, ways to fix, transactions ledger |
-| `/app/khata` | Customers and suppliers, party drawer, reminders, 45-day MSME clock |
-| `/app/orders` | Sales orders with forecast delivery, purchase orders, "Can I take this order?" |
-| `/app/inventory` | Raw materials (needed, free, cover, reorder point, ABC), finished goods, recipes, movements |
-| `/app/settings` | Business profile, money rules, team and access, display, language, accessibility, data, privacy, account |
+| `/app/khata` | Customers and suppliers, party drawer, reminders, 45-day MSME clock, one-click CSV datasheet per customer or supplier |
+| `/app/orders` | Sales orders with forecast delivery and Undo (a step back removes exactly the records the step created), purchase orders with Undo received / Undo payment / Reopen, "Can I take this order?" |
+| `/app/inventory` | Raw materials (add, edit, delete when unused; needed, free, cover, reorder point, ABC, filters), finished goods, recipes (editable), movements |
+| `/app/settings` | Business profile (GSTIN and Udyam checked), money rules, team and access, display, language, voice (ten languages), accessibility, data (company datasheet), privacy, account |
 | `/setup` | Describe the business in words, review what was understood against your own quotes, approve |
 
 Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY KAVERI`, `FIX`), `M` toggles Munim.
-In the Engine: `←` `→` one day, `Shift ←` `Shift →` one week, `N` next issue, `Space` play.
+In the Engine: `Space` play or pause, `←` `→` one step (one day, or the next day with events when "Skip quiet days" is on), `Shift ←` `Shift →` one week, `Home` `End`, `N` next issue.
+
+Datasheets (priority export): `GET /api/export/party/{id}/datasheet.csv` for one customer or supplier and `GET /api/export/company/datasheet.csv` for the business. Sectioned UTF-8 CSV with a byte-order mark, plain-rupee numbers, ISO dates, formula-safe text.
+
+Voice: Munim listens and speaks English, Hindi, Tamil, Telugu, Kannada, Malayalam, Punjabi, German, Spanish and Chinese through the browser's own speech services (Chrome, Edge and Safari for listening; any browser with an installed voice for reading aloud). Replies in the languages beyond English, Hindi and Tamil are written by the AI service; the template fallback exists for those three only.
 
 ## Architecture
 
@@ -182,7 +186,8 @@ shared demo business is seeded on first start; owners can restore it from Settin
 
 ```
 python -m unittest discover -s tests -v        # 64 backend tests: engine, intake, builder, risk, fixes, API, security
-cd frontend && npx vitest run                  # money and date formatting
+cd frontend && npx vitest run                  # money and date formatting, input checks, voice helpers, flow line routing
+                                               # (a repo path containing '#' breaks Vite: run from a copy at a plain path)
 cd e2e && npm install && node smoke.mjs shots  # browser smoke against a running server (RIPPLE_URL, BROWSER_PATH)
 python -m scripts.bench_engine                 # E-5: one engine run and one risk refresh on the demo data
 ```
@@ -209,7 +214,9 @@ under 200 ms while it runs.
 - The engine is a documented greedy daily policy, not an optimiser. "Optimal funding" stays unsupported.
 - The risk engine samples customer payment timing only; supplier-side dates are not sampled in v1.
 - The demo's payment history is synthetic. Risk numbers show the method working, not predictive accuracy.
-- Tamil and Hindi UI strings and message templates were written by the build team and need review by a fluent speaker.
+- Tamil and Hindi UI strings and message templates were written by the build team and need review by a fluent speaker. Screens and message drafts exist in English, Tamil and Hindi only; Munim's voice and replies cover ten languages.
+- Voice quality depends on the device: a language with no installed voice cannot be read aloud (Settings > Voice says so), and listening needs a network connection because the browser's speech service does the recognition.
+- Undoing a delivery is refused once a payment is recorded against its invoice, and undoing a stage is refused when the stock it created has since been used.
 - Excel import, receipt image upload, WhatsApp and SMS notifications, and bank feeds are not built.
 - One business shape only: buy materials, produce, deliver, collect on credit.
 

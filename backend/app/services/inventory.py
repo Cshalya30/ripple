@@ -22,6 +22,12 @@ def _fmt(qty: float, material: dict[str, Any]) -> str:
     return f"{text[:-2] if text.endswith('.0') else text} {material['unit']}"
 
 
+def _recently_added(movements: list[dict[str, Any]], material_id: str, as_of: date) -> bool:
+    """Added through "New raw material" in the last 60 days (its opening-stock entry), as opposed to old stock nobody uses."""
+    since = (as_of - timedelta(days=60)).isoformat()
+    return any(mv["item_id"] == material_id and mv["note"] == "Opening stock" and mv["date"] > since for mv in movements)
+
+
 def inventory_rows(business_id: str, run=None) -> dict[str, Any]:
     as_of = today()
     materials = query("SELECT * FROM material WHERE business_id = ? ORDER BY sku", (business_id,))
@@ -78,6 +84,8 @@ def inventory_rows(business_id: str, run=None) -> dict[str, Any]:
         last_move = max((mv["date"] for mv in movements if mv["item_id"] == m["id"] and mv["qty_delta"] < 0), default=None)
         if free < 0 or blocked_orders.get(m["id"]):
             status = "SHORT"
+        elif avg_use <= 0 and ((have <= 0 and not on_way) or (last_move is None and _recently_added(movements, m["id"], as_of))):
+            status = "UNUSED"  # a material just added: nothing uses it yet
         elif free + on_way <= rop:
             status = "REORDER"
         elif last_move is None or last_move < (as_of - timedelta(days=60)).isoformat():
@@ -93,7 +101,7 @@ def inventory_rows(business_id: str, run=None) -> dict[str, Any]:
                 if running < 0:
                     short_orders.append(number)
         rows.append({
-            "id": m["id"], "sku": m["sku"], "name": m["name"], "unit": m["unit"], "unit_factor": m["unit_factor"],
+            "id": m["id"], "sku": m["sku"], "name": m["name"], "unit": m["unit"], "base_unit": m["base_unit"], "unit_factor": m["unit_factor"],
             "on_hand": have, "needed": need, "free": free, "on_the_way": on_way,
             "on_hand_label": _fmt(have, m), "needed_label": _fmt(need, m), "free_label": _fmt(free, m) if free >= 0 else "−" + _fmt(-free, m),
             "on_the_way_label": _fmt(on_way, m),
@@ -101,7 +109,7 @@ def inventory_rows(business_id: str, run=None) -> dict[str, Any]:
             "incoming": [{"po_number": po["number"], "qty_label": _fmt(po["qty"], m), "expected_arrival": po["expected_arrival"],
                           "held": bool(po["release_after_invoice_id"])} for po in incoming],
             "avg_daily_use_label": _fmt(avg_use, m), "avg_use_basis": basis, "days_of_cover": cover,
-            "reorder_point_label": _fmt(rop, m), "safety_days": m["reorder_safety_days"], "lead_time_days": lead,
+            "reorder_point": rop, "reorder_point_label": _fmt(rop, m), "safety_days": m["reorder_safety_days"], "lead_time_days": lead,
             "status": status, "stock_value_paise": value, "avg_cost_paise": m["avg_cost_paise"],
             "main_supplier": supplier and {"id": supplier["id"], "name": supplier["name"]},
             "short_orders": sorted(set(short_orders)), "blocked": blocked_orders.get(m["id"], []),

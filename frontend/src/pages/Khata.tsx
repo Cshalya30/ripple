@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DatasheetButton } from '../components/DatasheetButton'
 import { Amount, Dialog, ErrorNote, LastSix, SkeletonRows, Status } from '../components/ui'
 import { api, errorText } from '../lib/api'
 import { percent, rupees, shortDate } from '../lib/format'
@@ -72,7 +73,8 @@ function Customers({ rows, total, msme }: { rows: PartyRow[]; total: number; msm
               )}
               <td className="right nowrap" onClick={(e) => e.stopPropagation()}>
                 {p.outstanding_paise > 0 && <button className="btn btn-sm btn-secondary" onClick={() => ui.openComposer({ partyId: p.id, intent: 'reminder' })}>Remind</button>}{' '}
-                <button className="btn btn-sm btn-quiet" onClick={() => ui.openPayment({ partyId: p.id, direction: 'IN' })}>Record</button>
+                <button className="btn btn-sm btn-quiet" onClick={() => ui.openPayment({ partyId: p.id, direction: 'IN' })}>Record</button>{' '}
+                <DatasheetButton compact className="btn btn-sm btn-quiet" label="Download customer datasheet (CSV)" target={{ kind: 'party', id: p.id, name: p.name }} />
               </td>
             </tr>
           ))}
@@ -108,7 +110,8 @@ function Suppliers({ rows, total }: { rows: PartyRow[]; total: number }) {
                 {p.msme_category ? (p.msme_category === 'MEDIUM' ? 'Medium' : <>{p.msme_category === 'MICRO' ? 'Micro' : 'Small'}<span className="sub">Pay within 45 days. Late payment delays your tax deduction (43B(h)).</span></>) : <span className="faint">Not registered</span>}
               </td>
               <td className="right nowrap" onClick={(e) => e.stopPropagation()}>
-                <button className="btn btn-sm btn-secondary" onClick={() => ui.openPayment({ partyId: p.id, direction: 'OUT' })}>Pay</button>
+                <button className="btn btn-sm btn-secondary" onClick={() => ui.openPayment({ partyId: p.id, direction: 'OUT' })}>Pay</button>{' '}
+                <DatasheetButton compact className="btn btn-sm btn-quiet" label="Download supplier datasheet (CSV)" target={{ kind: 'party', id: p.id, name: p.name }} />
               </td>
             </tr>
           ))}
