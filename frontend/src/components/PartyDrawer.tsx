@@ -5,6 +5,7 @@ import { digits, percent, rupees, shortDate } from '../lib/format'
 import { useParty, useWrite } from '../lib/queries'
 import { useUI } from '../lib/store'
 import type { Me } from '../lib/types'
+import { DatasheetButton } from './DatasheetButton'
 import { Amount, Drawer, ErrorNote, Section, SkeletonRows, Status, StripCell } from './ui'
 
 export function PartyDrawer({ me }: { me: Me }) {
@@ -127,6 +128,7 @@ export function PartyDrawer({ me }: { me: Me }) {
           </Section>
 
           <div className="row-wrap" style={{ marginTop: 24 }}>
+            {me.user.role !== 'SUPERVISOR' && <DatasheetButton target={{ kind: 'party', id: p.id, name: p.name }} label={`Download ${customer ? 'customer' : 'supplier'} datasheet (CSV)`} className="btn btn-primary" />}
             {me.user.role !== 'SUPERVISOR' && (
               <button className="btn btn-secondary" onClick={() => { ui.selectParty(p.id); ui.setEngineView('network'); ui.openParty(null); navigate('/app/engine') }}>Show in Engine</button>
             )}

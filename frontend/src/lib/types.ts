@@ -1,10 +1,12 @@
 export type Role = 'OWNER' | 'ACCOUNTANT' | 'SUPERVISOR'
 export type Lang = 'en' | 'ta' | 'hi'
+/** Munim can talk and listen in these; screens and message drafts are written in Lang only. */
+export type AssistantLang = Lang | 'te' | 'kn' | 'ml' | 'pa' | 'de' | 'es' | 'zh'
 export type Theme = 'night' | 'day' | 'lamp'
 
 export interface Prefs {
   language_ui: Lang
-  language_assistant: Lang
+  language_assistant: AssistantLang
   language_messages: Lang
   theme: Theme
   text_size: 'S' | 'M' | 'L' | 'XL'

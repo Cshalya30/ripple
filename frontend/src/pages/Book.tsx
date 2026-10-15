@@ -7,7 +7,7 @@ import { api, errorText } from '../lib/api'
 import { clock, dayDate, percent, rupees, shortDate } from '../lib/format'
 import { useBook, useFixes, useRisk, useTransactions } from '../lib/queries'
 import { useUI } from '../lib/store'
-import type { DipItem, Evaluation, Me, Risk, RunPayload } from '../lib/types'
+import type { ChanceAfter, DipItem, Evaluation, Me, Risk, RunPayload } from '../lib/types'
 
 export function Book({ me }: { me: Me }) {
   const { t } = useTranslation()
@@ -174,8 +174,10 @@ function Fixes({ me }: { me: Me }) {
   const tryInEngine = async (evaluation: Evaluation) => {
     setBusy(evaluation.fix.id)
     try {
-      const res = await api.post<{ key: string; evaluation: Evaluation; run: RunPayload }>('/engine/scenario', { fix_id: evaluation.fix.id })
-      ui.setScenario({ key: res.key, label: evaluation.fix.title, evaluation: res.evaluation, run: res.run })
+      const res = await api.post<{ key: string; evaluation: Evaluation; run: RunPayload; chance_after?: ChanceAfter }>('/engine/scenario', { fix_id: evaluation.fix.id })
+      ui.setPlaying(false)
+      ui.setScenario({ key: res.key, label: evaluation.fix.title, evaluation: res.evaluation, run: res.run, chance: res.chance_after, request: { fix_id: evaluation.fix.id } })
+      ui.setDiff(true)
       ui.setEngineView('flow')
       ui.setDay(res.evaluation.first_shortfall_after?.day ?? (fixes.data!.fixes[0]?.dip_after_day ?? 0))
       navigate('/app/engine')

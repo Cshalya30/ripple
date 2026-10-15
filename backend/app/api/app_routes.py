@@ -4,18 +4,20 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import threading
 import uuid
 from datetime import date, timedelta
 from datetime import date as Date
+from decimal import Decimal
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from ..core.auth import ANYONE, FINANCE, OWNER, Principal, for_role, hash_password, limit_ai, limiter
-from ..core.db import delete_business_data, insert, query, query_one, today, tx, update, bump_data_version
+from ..core.db import delete_business_data, insert, query, query_one, today, tx, update, update_business, bump_data_version
 from ..intake.drafts import DraftStore
 from ..intake.extractor import GroqExtractor
 from ..intake.schemas import BusinessFacts, IntakeRequest
@@ -27,7 +29,7 @@ from ..simulation.engine import simulate
 from ..simulation.schemas import MAX_SAFE_INTEGER, ComparisonRequest, SimulationRequest
 from ..snapshot.builder import build_from_records, load_records, OPEN_ORDER_STAGES
 from ..services import fixes as fixes_service
-from ..services import munim, risk as risk_service, runs
+from ..services import datasheet, munim, risk as risk_service, runs
 from ..services.inventory import inventory_rows, movement_rows
 from ..services.messages import CUSTOMER_INTENTS, INTENTS, human_date, render, rupees, wa_link
 from ..services.position import delay_model, exposures, open_invoices, position
@@ -355,6 +357,14 @@ def engine_scenario(body: ScenarioBody, principal: Principal = Depends(FINANCE))
             "chance_after": _chance_after(run, fix)}
 
 
+@router.post("/engine/scenario/chance")
+def engine_scenario_chance(body: ScenarioBody, principal: Principal = Depends(FINANCE)):
+    """Just the shortfall-chance status of a scenario: cheap to poll while the risk run finishes (no engine run here)."""
+    run = current_run(principal)
+    fix = resolve_fix(run, body)
+    return {"chance_after": _chance_after(run, fix)}
+
+
 # ---------------------------------------------------------------- book, fixes, risk
 
 @router.get("/book/summary")
@@ -485,9 +495,30 @@ def export_transactions(principal: Principal = Depends(FINANCE)):
     return PlainTextResponse(buffer.getvalue(), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=ripple-transactions.csv"})
 
 
+def _csv_download(text: str, stem: str) -> PlainTextResponse:
+    return PlainTextResponse(text, media_type="text/csv; charset=utf-8", headers={"Content-Disposition": f'attachment; filename="{stem}.csv"'})
+
+
+@router.get("/export/party/{party_id}/datasheet.csv")
+def export_party_datasheet(party_id: str, principal: Principal = Depends(FINANCE)):
+    """One customer or one supplier: profile, summary, invoices, payments, orders, forecast and notes."""
+    try:
+        text, stem = datasheet.party_sheet(principal.business_id, party_id)
+    except repo.RecordError as exc:
+        raise _error(exc) from exc
+    return _csv_download(text, stem)
+
+
+@router.get("/export/company/datasheet.csv")
+def export_company_datasheet(principal: Principal = Depends(FINANCE)):
+    """The whole business on one sheet: profile, position, forecast, parties, orders, stock, settings."""
+    text, stem = datasheet.company_sheet(principal.business_id)
+    return _csv_download(text, stem)
+
+
 def _csv_safe(value: str) -> str:
-    """Prevent spreadsheet formula injection in exported text."""
-    return "'" + value if value[:1] in ("=", "+", "-", "@") else value
+    """Prevent spreadsheet formula injection in exported text (one guard for every export)."""
+    return datasheet.safe(value)
 
 
 # ---------------------------------------------------------------- khata
@@ -670,6 +701,14 @@ def _qty_label(qty: int, material: dict[str, Any] | None) -> str:
     return f"{text[:-2] if text.endswith('.0') else text} {material['unit']}"
 
 
+def _last_stage_change(raw: str | None) -> dict[str, Any] | None:
+    try:
+        log = json.loads(raw or "[]")
+    except ValueError:
+        return None
+    return {k: log[-1].get(k) for k in ("at", "from", "to", "direction")} if log else None
+
+
 @router.get("/sales-orders")
 def sales_orders(principal: Principal = Depends(ANYONE)):
     bid = principal.business_id
@@ -705,6 +744,7 @@ def sales_orders(principal: Principal = Depends(ANYONE)):
             "forecast_receipt": receipt["executed_date"] if receipt else None,
             "production_start": start["executed_date"] if start else None,
             "stage": so["stage"], "materials": materials_state, "priority": so["priority"],
+            "last_change": _last_stage_change(so["stage_history_json"]),
         })
     return for_role(principal, {"orders": out, "run": run_meta(run)})
 
@@ -739,13 +779,14 @@ def purchase_orders(principal: Principal = Depends(ANYONE)):
 
 
 class StageBody(Strict):
-    stage: Literal["MATERIALS_READY", "IN_PRODUCTION", "READY", "DELIVERED"]
+    """Any stage before PAID, forward or back. Going back undoes what the forward step recorded."""
+    stage: Literal["PLANNED", "MATERIALS_READY", "IN_PRODUCTION", "READY", "DELIVERED"]
 
 
 @router.patch("/sales-orders/{so_id}")
 def patch_sales_order(so_id: str, body: StageBody, principal: Principal = Depends(ANYONE)):
     try:
-        so = repo.advance_stage(principal.business_id, principal.user_id, so_id, body.stage)
+        so = repo.advance_stage(principal.business_id, principal.user_id, so_id, body.stage, principal.role)
     except repo.RecordError as exc:
         raise _error(exc) from exc
     after_write(principal.business_id)
@@ -753,15 +794,16 @@ def patch_sales_order(so_id: str, body: StageBody, principal: Principal = Depend
 
 
 class POStatusBody(Strict):
-    status: Literal["PAID", "ARRIVED", "CANCELLED"]
+    """UNDO steps the order back one step (received -> ordered or paid, paid -> ordered, cancelled -> ordered)."""
+    status: Literal["PAID", "ARRIVED", "CANCELLED", "UNDO"]
 
 
 @router.patch("/purchase-orders/{po_id}")
 def patch_purchase_order(po_id: str, body: POStatusBody, principal: Principal = Depends(ANYONE)):
-    if body.status == "PAID" and principal.role == "SUPERVISOR":
+    if body.status in ("PAID", "CANCELLED") and principal.role == "SUPERVISOR":
         raise HTTPException(status_code=403, detail={"code": "FORBIDDEN_FOR_ROLE"})
     try:
-        po = repo.mark_po(principal.business_id, principal.user_id, po_id, body.status)
+        po = repo.mark_po(principal.business_id, principal.user_id, po_id, body.status, principal.role)
     except repo.RecordError as exc:
         raise _error(exc) from exc
     after_write(principal.business_id)
@@ -941,6 +983,72 @@ def post_movement(body: MovementBody, principal: Principal = Depends(ANYONE)):
     return {"movement": mv}
 
 
+class MaterialBody(Strict):
+    name: str = Field(min_length=1, max_length=120)
+    sku: str | None = Field(default=None, max_length=24, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{1,23}$")
+    unit: Literal["kg", "g", "L", "ml", "m", "pc", "box"]
+    cost_paise: int = Field(default=0, ge=0, le=10**9)
+    opening_qty: Decimal = Field(default=Decimal(0), ge=0, le=Decimal(10**7), max_digits=12, decimal_places=3)
+    supplier_id: str | None = Field(default=None, max_length=160)
+    reorder_safety_days: int = Field(default=7, ge=0, le=90)
+
+    @field_validator("name")
+    @classmethod
+    def _name(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("Give the material a name.")
+        return value
+
+
+class MaterialPatch(Strict):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    sku: str | None = Field(default=None, max_length=24, pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{1,23}$")
+    cost_paise: int | None = Field(default=None, ge=0, le=10**9)
+    supplier_id: str | None = Field(default=None, max_length=160)
+    reorder_safety_days: int | None = Field(default=None, ge=0, le=90)
+
+    @field_validator("name")
+    @classmethod
+    def _name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("Give the material a name.")
+        return value
+
+
+@router.post("/materials")
+def post_material(body: MaterialBody, principal: Principal = Depends(FINANCE)):
+    try:
+        material = repo.create_material(principal.business_id, principal.user_id, body.model_dump())
+    except repo.RecordError as exc:
+        raise _error(exc) from exc
+    after_write(principal.business_id)
+    return {"material": material}
+
+
+@router.patch("/materials/{material_id}")
+def patch_material(material_id: str, body: MaterialPatch, principal: Principal = Depends(FINANCE)):
+    try:
+        material = repo.update_material(principal.business_id, material_id, body.model_dump(exclude_unset=True))
+    except repo.RecordError as exc:
+        raise _error(exc) from exc
+    after_write(principal.business_id)
+    return {"material": material}
+
+
+@router.delete("/materials/{material_id}")
+def remove_material(material_id: str, principal: Principal = Depends(FINANCE)):
+    try:
+        repo.delete_material(principal.business_id, material_id)
+    except repo.RecordError as exc:
+        raise _error(exc) from exc
+    after_write(principal.business_id)
+    return {"ok": True}
+
+
 class RecipeLine(Strict):
     material_id: str = Id
     qty_per_piece: int = Field(gt=0, le=10**7)
@@ -1057,6 +1165,10 @@ def draft_message(body: DraftBody, principal: Principal = Depends(FINANCE)):
 
 # ---------------------------------------------------------------- Munim
 
+# Munim can answer in ten languages (the AI service writes the reply; the templates cover English, Tamil and Hindi).
+AssistantLang = Literal["en", "ta", "hi", "te", "kn", "ml", "pa", "de", "es", "zh"]
+
+
 class ChatTurn(Strict):
     role: Literal["user", "assistant"]
     content: str = Field(max_length=2000)
@@ -1074,7 +1186,7 @@ class ChatBody(Strict):
     message: str = Field(min_length=1, max_length=1000)
     context: ChatContext | None = None
     history: list[ChatTurn] = Field(default_factory=list, max_length=12)
-    language: Literal["en", "ta", "hi"] | None = None
+    language: AssistantLang | None = None
 
 
 @router.post("/assistant/chat")
@@ -1091,20 +1203,84 @@ def assistant_chat(body: ChatBody, request: Request, principal: Principal = Depe
                                         "message": body.message, "tool_calls_json": json.dumps([{"tool": t["tool"], "args": t["args"]} for t in answer["tools"]]),
                                         "reply": answer["reply"], "grounding_passed": int(answer["grounded"]), "mode": answer["mode"]})
     return {"reply": answer["reply"], "mode": answer["mode"], "reason": answer.get("reason"), "grounded": answer["grounded"],
+            "language": answer.get("language", lang), "requested_language": lang,
             "tools": [t["tool"] for t in answer["tools"]], "actions": answer["actions"][:4],
             "run_id": run.id, "run_created_at": run.created_at}
 
 
 # ---------------------------------------------------------------- settings, team, data
 
+GSTIN_RE = re.compile(r"^(\d{2})([A-Z]{5}\d{4}[A-Z])([1-9A-Z])Z([0-9A-Z])$")
+UDYAM_RE = re.compile(r"^UDYAM-[A-Z]{2}-\d{2}-\d{7}$")
+GST_STATE_CODES = {f"{n:02d}" for n in range(1, 39)} | {"97", "99"}
+
+
+def _blank_to_none(value: str | None) -> str | None:
+    if value is None:
+        return None
+    value = " ".join(value.split())
+    return value or None
+
+
 class BusinessBody(Strict):
-    name: str | None = Field(default=None, min_length=1, max_length=120)
+    """Only the fields the client sends are written (so a cleared field really clears)."""
+    name: str | None = Field(default=None, max_length=120)
     owner_name: str | None = Field(default=None, max_length=120)
     address: str | None = Field(default=None, max_length=300)
-    gstin: str | None = Field(default=None, max_length=15)
-    udyam_number: str | None = Field(default=None, max_length=30)
+    gstin: str | None = Field(default=None, max_length=20)
+    udyam_number: str | None = Field(default=None, max_length=40)
     msme_category: Literal["MICRO", "SMALL", "MEDIUM"] | None = None
     fy_start: str | None = Field(default=None, pattern=r"^\d\d-\d\d$")
+
+    @field_validator("name", "owner_name", "address", mode="before")
+    @classmethod
+    def _tidy_text(cls, value: Any) -> Any:
+        return _blank_to_none(value) if isinstance(value, str) else value
+
+    @field_validator("gstin", mode="before")
+    @classmethod
+    def _check_gstin(cls, value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+        value = re.sub(r"[\s-]", "", value).upper()
+        if not value:
+            return None
+        match = GSTIN_RE.match(value)
+        if len(value) != 15 or not match:
+            raise ValueError("GSTIN must be 15 characters: 2-digit state code, 10-character PAN, entity number, Z, check character (for example 33AAJFM4721K1Z9).")
+        if match.group(1) not in GST_STATE_CODES:
+            raise ValueError(f"GSTIN starts with {match.group(1)}, which is not a GST state code.")
+        return value
+
+    @field_validator("udyam_number", mode="before")
+    @classmethod
+    def _check_udyam(cls, value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+        value = re.sub(r"\s", "", value).upper()
+        if not value:
+            return None
+        if not UDYAM_RE.match(value):
+            raise ValueError("Udyam number looks like UDYAM-TN-08-0012345 (state, district, 7 digits).")
+        return value
+
+    @field_validator("fy_start")
+    @classmethod
+    def _check_fy_start(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        month, day = int(value[:2]), int(value[3:])
+        try:
+            date(2024, month, day)  # 2024 is a leap year, so 02-29 is accepted
+        except ValueError as exc:
+            raise ValueError("Financial year start must be a real month-day, like 04-01.") from exc
+        return value
+
+    @model_validator(mode="after")
+    def _name_stays(self) -> "BusinessBody":
+        if "name" in self.model_fields_set and not self.name:
+            raise ValueError("Business name cannot be empty.")
+        return self
 
 
 class MoneyBody(Strict):
@@ -1121,6 +1297,14 @@ class RecurringBody(Strict):
     day_of_month: int = Field(ge=1, le=31)
     active: bool = True
 
+    @field_validator("label")
+    @classmethod
+    def _label(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("Give the expense a name.")
+        return value
+
 
 class FacilityBody(Strict):
     label: str = Field(min_length=1, max_length=80)
@@ -1129,6 +1313,14 @@ class FacilityBody(Strict):
     drawdown_fee_paise: int = Field(default=0, ge=0, le=10**11)
     available_from: Date
     repayment_date: Date
+
+    @field_validator("label")
+    @classmethod
+    def _label(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("Give the facility a name.")
+        return value
 
 
 @router.get("/settings")
@@ -1147,8 +1339,9 @@ def get_settings(principal: Principal = Depends(FINANCE)):
 
 @router.put("/settings/business")
 def put_business(body: BusinessBody, principal: Principal = Depends(OWNER)):
+    changes = body.model_dump(exclude_unset=True)
     with tx() as conn:
-        update(conn, "business", principal.business_id, principal.business_id, body.model_dump(exclude_none=True))
+        update_business(conn, principal.business_id, changes)
         bump_data_version(conn, principal.business_id)
     after_write(principal.business_id)
     return get_settings(principal)
@@ -1157,7 +1350,7 @@ def put_business(body: BusinessBody, principal: Principal = Depends(OWNER)):
 @router.put("/settings/money")
 def put_money(body: MoneyBody, principal: Principal = Depends(FINANCE)):
     with tx() as conn:
-        update(conn, "business", principal.business_id, principal.business_id, body.model_dump(exclude_none=True))
+        update_business(conn, principal.business_id, body.model_dump(exclude_none=True))
         bump_data_version(conn, principal.business_id)
     after_write(principal.business_id)
     return get_settings(principal)

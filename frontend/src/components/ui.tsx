@@ -1,5 +1,5 @@
 import * as RadixDialog from '@radix-ui/react-dialog'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { rupees } from '../lib/format'
 import { useUI } from '../lib/store'
 import { Glyph, type GlyphName } from './Glyph'
@@ -146,5 +146,23 @@ export function LastSix({ delays }: { delays: number[] }) {
         <span key={i} className={`mark ${d <= 0 ? 'on-time' : 'late'}`} title={d <= 0 ? 'On time' : `${d} days late`}>{d > 0 ? d : ''}</span>
       ))}
     </span>
+  )
+}
+
+/** A destructive button that asks twice: the first press arms it, the second does it. It disarms itself after a few seconds. */
+export function ConfirmButton({ label, confirmLabel = 'Press again to confirm', onConfirm, disabled, className = 'btn btn-sm btn-quiet' }: {
+  label: ReactNode; confirmLabel?: ReactNode; onConfirm: () => void; disabled?: boolean; className?: string
+}) {
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const timer = window.setTimeout(() => setArmed(false), 4000)
+    return () => window.clearTimeout(timer)
+  }, [armed])
+  return (
+    <button type="button" className={armed ? className.replace('btn-quiet', 'btn-danger').replace('btn-secondary', 'btn-danger') : className} disabled={disabled}
+      onClick={() => { if (armed) { setArmed(false); onConfirm() } else setArmed(true) }}>
+      {armed ? confirmLabel : label}
+    </button>
   )
 }

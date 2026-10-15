@@ -1,12 +1,14 @@
-import { MicrophoneIcon } from '@phosphor-icons/react'
+import { MicrophoneIcon, StopIcon } from '@phosphor-icons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Fragment, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '../components/Glyph'
-import { ErrorNote, Section, Seg } from '../components/ui'
+import { LanguageSelect } from '../components/VoiceSettings'
+import { ErrorNote, Section } from '../components/ui'
 import { api, errorText } from '../lib/api'
 import { useMe } from '../lib/queries'
-import type { Lang } from '../lib/types'
+import { useSpeechInput } from '../lib/useVoice'
+import { voiceLanguage, type VoiceLang } from '../lib/voice'
 
 interface Draft {
   draft_id: string
@@ -19,7 +21,7 @@ interface Draft {
   source_text: string
 }
 
-const PLACEHOLDER: Record<Lang, string> = {
+const PLACEHOLDER: Partial<Record<VoiceLang, string>> = {
   en: 'Tell Ripple about your business. Opening cash, who you buy from, who buys from you, what is owed, when.',
   ta: 'உங்கள் தொழிலைப் பற்றிச் சொல்லுங்கள். கையிருப்பு, யாரிடம் வாங்குகிறீர்கள், யார் வாங்குகிறார்கள், யார் யாருக்கு எவ்வளவு, எப்போது.',
   hi: 'अपने कारोबार के बारे में बताइए। हाथ में नकद, किससे खरीदते हैं, कौन खरीदता है, किसका कितना बाकी है, कब तक।',
@@ -29,14 +31,14 @@ export default function Setup() {
   const me = useMe()
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const [lang, setLang] = useState<Lang>('en')
+  const [lang, setLang] = useState<VoiceLang>('en')
   const [text, setText] = useState('')
   const [draft, setDraft] = useState<Draft | null>(null)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [hot, setHot] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
-  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  const dictation = useSpeechInput({ lang, continuous: true, maxMs: 180_000, onFinal: (heard) => setText((t) => `${t} ${heard}`.trim().slice(0, 8000)) })
 
   if (me.isError) return <div className="page"><ErrorNote text="Sign in first." /> <Link to="/login">Sign in</Link></div>
   const owner = me.data?.user.role === 'OWNER'
@@ -74,15 +76,6 @@ export default function Setup() {
     } catch (err) { setError(err) } finally { setBusy(null) }
   }
 
-  const listen = () => {
-    const recognition = new SpeechRecognition()
-    recognition.lang = { en: 'en-IN', ta: 'ta-IN', hi: 'hi-IN' }[lang]
-    recognition.continuous = true
-    recognition.onresult = (e: any) => setText((t) => `${t} ${Array.from(e.results).slice(e.resultIndex).map((r: any) => r[0].transcript).join(' ')}`.trim())
-    recognition.start()
-    setTimeout(() => recognition.stop(), 30_000)
-  }
-
   return (
     <div className="density-simple" style={{ minHeight: '100%' }}>
       <div className="page" style={{ maxWidth: 1200 }}>
@@ -94,10 +87,15 @@ export default function Setup() {
         {!draft && (
           <Section title="1 Describe">
             <div className="row" style={{ marginBottom: 8 }}>
-              <Seg label="Language" value={lang} onChange={setLang} options={[{ value: 'en', label: 'English' }, { value: 'ta', label: 'தமிழ்' }, { value: 'hi', label: 'हिन्दी' }]} />
-              {SpeechRecognition && <button className="btn btn-secondary" onClick={listen}><MicrophoneIcon size={16} /> Speak</button>}
+              <LanguageSelect label="Language you will speak or type in" value={lang} onChange={setLang} />
+              <button className="btn btn-secondary" disabled={!dictation.supported} aria-pressed={dictation.listening} onClick={dictation.toggle}
+                title={dictation.supported ? undefined : 'Voice input works in Chrome, Edge and Safari'}>
+                {dictation.listening ? <><StopIcon size={16} /> Stop</> : <><MicrophoneIcon size={16} /> Speak in {voiceLanguage(lang).name}</>}
+              </button>
             </div>
-            <textarea className="textarea" rows={10} maxLength={8000} value={text} onChange={(e) => setText(e.target.value)} placeholder={PLACEHOLDER[lang]} lang={lang} />
+            {dictation.error && <div style={{ marginBottom: 8 }}><ErrorNote text={dictation.error} /></div>}
+            {(dictation.listening || dictation.interim) && <p className="small" style={{ color: 'var(--haldi)', margin: '0 0 6px' }} aria-live="polite" lang={lang}><span className="mic-dot" aria-hidden="true" /> {dictation.interim || `Listening in ${voiceLanguage(lang).name}. Keep talking; press Stop when done.`}</p>}
+            <textarea className="textarea" rows={10} maxLength={8000} value={text} onChange={(e) => setText(e.target.value)} placeholder={PLACEHOLDER[lang] ?? PLACEHOLDER.en} lang={lang} />
             <div className="row" style={{ marginTop: 6 }}><span className="micro faint">{text.length} / 8,000</span></div>
             {error !== null && <div style={{ marginTop: 12 }}><ErrorNote text={errorText(error)} /></div>}
             <div className="row-wrap" style={{ marginTop: 14 }}>

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Evaluation, RunPayload } from './types'
+import type { ChanceAfter, Evaluation, RunPayload } from './types'
 
 export type EngineView = 'network' | 'flow' | 'decisions'
 
@@ -8,6 +8,10 @@ export interface ActiveScenario {
   label: string
   evaluation: Evaluation
   run: RunPayload
+  /** Chance of a shortfall under this scenario, once the risk run has finished. */
+  chance?: ChanceAfter
+  /** The request that made it, so the risk figure can be fetched again while it is still being computed. */
+  request?: Record<string, unknown>
 }
 
 export interface ComposerState {
@@ -38,9 +42,22 @@ interface Toast {
   text: string
 }
 
+export type PlaySpeed = 1 | 2 | 4
+
 interface UIState {
   day: number
   setDay: (day: number) => void
+  /** Playback of the forecast, shared by the timeline and every view that lights up the current day. */
+  playing: boolean
+  setPlaying: (value: boolean) => void
+  speed: PlaySpeed
+  setSpeed: (value: PlaySpeed) => void
+  /** While playing, jump between days where something happens instead of stepping through quiet ones. */
+  skipQuiet: boolean
+  setSkipQuiet: (value: boolean) => void
+  /** Flow: light what has happened by the chosen day, dim what is still to come. */
+  spotlight: boolean
+  setSpotlight: (value: boolean) => void
   engineView: EngineView
   setEngineView: (view: EngineView) => void
   tableView: boolean
@@ -77,7 +94,15 @@ let toastId = 0
 
 export const useUI = create<UIState>((set) => ({
   day: 0,
-  setDay: (day) => set({ day: Math.max(0, day) }),
+  setDay: (day) => set({ day: Math.max(0, Math.round(day)) }),
+  playing: false,
+  setPlaying: (playing) => set({ playing }),
+  speed: 1,
+  setSpeed: (speed) => set({ speed }),
+  skipQuiet: true,
+  setSkipQuiet: (skipQuiet) => set({ skipQuiet }),
+  spotlight: true,
+  setSpotlight: (spotlight) => set({ spotlight }),
   engineView: 'network',
   setEngineView: (engineView) => set({ engineView }),
   tableView: typeof window !== 'undefined' && window.innerWidth < 900,

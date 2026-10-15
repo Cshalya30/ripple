@@ -330,8 +330,11 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(response.status_code, 200, response.text)
         party = c.get(f"/api/parties/{mehta['customer_id']}").json()
         self.assertTrue(any(i["number"] == "SO-0113-INV" for i in party["open_items"]))
+        # Going back is allowed now; the full round trip is covered in test_ripple_v3.
         back = c.patch(f"/api/sales-orders/{mehta['id']}", json={"stage": "READY"})
-        self.assertEqual(back.status_code, 422)
+        self.assertEqual(back.status_code, 200, back.text)
+        again = c.patch(f"/api/sales-orders/{mehta['id']}", json={"stage": "READY"})
+        self.assertEqual(again.status_code, 422)
 
     def test_purchase_arrival_adds_stock_and_bill(self):
         c = sandbox()

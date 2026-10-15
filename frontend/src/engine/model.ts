@@ -2,9 +2,10 @@ import { rupees } from '../lib/format'
 import type { EngineEvent, StockSeries } from '../lib/types'
 import type { Tone } from '../components/ui'
 
-export const PX_PER_DAY = 28
-export const LANE_ROW = 64
+export const PX_PER_DAY = 32
+export const LANE_ROW = 76
 export const NODE_W = 152
+export const NODE_H = 52
 
 export const REASON_TEXT: Record<string, string> = {
   INSUFFICIENT_CASH: 'not enough cash',
@@ -105,4 +106,57 @@ export function issueDays(events: EngineEvent[], breachDay: number | null): numb
   }
   if (breachDay !== null) days.add(breachDay)
   return [...days].sort((a, b) => a - b)
+}
+
+
+// ---------------------------------------------------------------- playback: what is happening on a given day
+
+/** Where an event stands on a chosen day: already happened, happening now, held up right now, or still to come. */
+export type Phase = 'done' | 'active' | 'waiting' | 'upcoming'
+
+const RESOURCE = ['INSUFFICIENT_CASH', 'INSUFFICIENT_INVENTORY'] as const
+
+/** The cash or material hold that covers this day, if any. */
+export function waitOn(e: EngineEvent, day: number) {
+  return e.waits.find((w) => (RESOURCE as readonly string[]).includes(w.code) && w.from_day <= day && day <= w.to_day)
+}
+
+export function phaseAt(e: EngineEvent, day: number): Phase {
+  if (e.executed_day !== null) {
+    if (e.executed_day < day) return 'done'
+    if (e.executed_day === day) return 'active'
+  }
+  return waitOn(e, day) ? 'waiting' : 'upcoming'
+}
+
+/** Days worth stopping on while playing: something runs, something gets held up, or the first shortfall. Always includes the first and last day. */
+export function stopDays(events: EngineEvent[], horizon: number, firstShortfallDay: number | null): number[] {
+  const days = new Set<number>([0, Math.max(0, horizon - 1)])
+  for (const e of events) {
+    if (e.executed_day !== null && e.executed_day < horizon) days.add(e.executed_day)
+    for (const w of e.waits) if ((RESOURCE as readonly string[]).includes(w.code) && w.from_day < horizon) days.add(w.from_day)
+  }
+  if (firstShortfallDay !== null) days.add(firstShortfallDay)
+  return [...days].sort((a, b) => a - b)
+}
+
+export const nextStop = (stops: number[], day: number): number | null => stops.find((d) => d > day) ?? null
+export const prevStop = (stops: number[], day: number): number | null => [...stops].reverse().find((d) => d < day) ?? null
+
+/** How an event differs between the baseline run and a what-if run. */
+export interface Change { kind: 'moved' | 'new'; deltaDays: number | null }
+
+export function changeOf(e: EngineEvent, baseline: Map<string, EngineEvent> | null, horizon: number): Change | null {
+  if (!baseline) return null
+  const b = baseline.get(e.id)
+  if (!b) return { kind: 'new', deltaDays: null }
+  if (b.executed_day === e.executed_day) return null
+  if (b.executed_day === null || e.executed_day === null) return { kind: 'moved', deltaDays: (e.executed_day ?? horizon) - (b.executed_day ?? horizon) }
+  return { kind: 'moved', deltaDays: e.executed_day - b.executed_day }
+}
+
+export function deltaText(days: number | null): string {
+  if (days === null) return 'new'
+  if (days === 0) return 'same day'
+  return `${days > 0 ? '+' : '−'}${Math.abs(days)}d`
 }

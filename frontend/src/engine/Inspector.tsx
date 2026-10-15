@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Glyph, type GlyphName } from '../components/Glyph'
 import { Amount, Status } from '../components/ui'
@@ -180,10 +181,14 @@ function qtyLabel(run: RunPayload, id: string, qty: number) {
 
 export function EventTable({ run }: { run: RunPayload }) {
   const ui = useUI()
+  const day = useUI((s) => s.day)
+  const box = useRef<HTMLDivElement>(null)
   const byId = new Map(run.events.map((e) => [e.id, e]))
   const rows = [...run.events].sort((a, b) => (a.executed_day ?? 999) - (b.executed_day ?? 999) || a.id.localeCompare(b.id))
+  // Playing in the table: the rows for the chosen day light up and scroll into view.
+  useEffect(() => { box.current?.querySelector('.enode-row-now')?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }, [day])
   return (
-    <div className="table-wrap" style={{ height: '100%', overflow: 'auto', padding: '0 12px' }}>
+    <div ref={box} className="table-wrap" style={{ height: '100%', overflow: 'auto', padding: '0 12px' }}>
       <table className="table dense">
         <thead style={{ position: 'sticky', top: 0, background: 'var(--ground)' }}>
           <tr><th>Event</th><th>Type</th><th>Party</th><th>Order</th><th>Earliest</th><th>Due</th><th>Executed</th><th>Lateness</th><th>Status</th><th>Reason</th><th className="money">Amount</th></tr>
@@ -192,7 +197,7 @@ export function EventTable({ run }: { run: RunPayload }) {
           {rows.map((e) => {
             const reason = e.waits.find((w) => w.code === 'INSUFFICIENT_CASH' || w.code === 'INSUFFICIENT_INVENTORY')
             return (
-              <tr key={e.id} className={`clickable${ui.selectedEventId === e.id ? ' selected' : ''}`} onClick={() => ui.selectEvent(e.id)} tabIndex={0}
+              <tr key={e.id} className={`clickable${ui.selectedEventId === e.id ? ' selected' : ''}${e.executed_day === day ? ' enode-row-now' : ''}${e.executed_day !== null && e.executed_day < day ? ' faint' : ''}`} onClick={() => ui.selectEvent(e.id)} tabIndex={0}
                 onKeyDown={(k) => k.key === 'Enter' && ui.selectEvent(e.id)}>
                 <td className="small">{e.label}</td>
                 <td className="micro faint">{e.type.replace(/_/g, ' ').toLowerCase()}</td>
