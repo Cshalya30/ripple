@@ -97,7 +97,9 @@ def end_session(request: Request, response: Response, everywhere: bool = False) 
             execute("DELETE FROM session WHERE user_id = ?", (row["user_id"],))
         else:
             execute("DELETE FROM session WHERE token_hash = ?", (_token_hash(token),))
-    response.delete_cookie(COOKIE, path="/")
+    response.delete_cookie(
+        COOKIE, path="/", secure=_secure(request), httponly=True, samesite="lax",
+    )
 
 
 def current(request: Request) -> Principal:

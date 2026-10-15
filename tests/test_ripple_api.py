@@ -395,7 +395,12 @@ class HardeningTests(unittest.TestCase):
     def test_logout_ends_the_session(self):
         c = signed_in()
         self.assertEqual(c.get("/api/me").status_code, 200)
-        c.post("/api/auth/logout")
+        c.headers.update({"X-Forwarded-Proto": "https"})
+        response = c.post("/api/auth/logout")
+        cookie = response.headers["set-cookie"].lower()
+        self.assertIn("httponly", cookie)
+        self.assertIn("samesite=lax", cookie)
+        self.assertIn("secure", cookie)
         self.assertEqual(c.get("/api/me").status_code, 401)
 
     def test_prompt_injection_in_party_note_stays_data(self):
