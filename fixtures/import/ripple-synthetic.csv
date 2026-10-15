@@ -1,0 +1,17 @@
+record_type,business_name,opening_cash,party_name,party_type,item,quantity,unit,amount,paid_amount,date,due_date,reference,description
+business,Meera Precision Works,185000,,,,,,,,,,,
+inventory,,,,,Mild steel sheet,120,kg,,,,,,
+inventory,,,,,Copper wire,80,kg,,,,,,
+inventory,,,,,Industrial fastener,600,pcs,,,,,,
+receivable,,,Arvind Auto Components,Customer,,,,92000,20000,2026-10-10,2026-11-09,INV-2401,Chassis brackets
+receivable,,,Kaveri Pumps,Customer,,,,68500,0,2026-10-12,2026-11-11,INV-2402,Pump housings
+receivable,,,Northstar Fabricators,Customer,,,,41000,10000,2026-10-14,2026-11-28,INV-2403,Custom assemblies
+purchase,,,Ravi Metals,Supplier,,,,47500,0,2026-10-11,2026-10-25,PO-118,Steel and aluminium
+purchase,,,South Wire Traders,Supplier,,,,28500,5000,2026-10-13,2026-11-12,PO-119,Copper wire
+purchase,,,Metro Fasteners,Supplier,,,,16200,0,2026-10-14,2026-10-29,PO-120,Fasteners
+order,,,Arvind Auto Components,Customer,,,,132000,30000,2026-10-16,2026-11-20,SO-3101,Priority bracket order
+order,,,Kaveri Pumps,Customer,,,,88000,0,2026-10-16,2026-12-05,SO-3102,Pump housing order
+order,,,Northstar Fabricators,Customer,,,,56000,0,2026-10-16,2026-11-27,SO-3103,Assembly order
+expense,,,,,,,,24500,0,2026-10-20,2026-10-20,EXP-001,Factory electricity
+expense,,,,,,,,18000,0,2026-10-25,2026-10-25,EXP-002,Workshop rent
+expense,,,,,,,,12500,0,2026-10-31,2026-10-31,EXP-003,Wages advance
