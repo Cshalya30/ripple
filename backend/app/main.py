@@ -24,6 +24,7 @@ log = logging.getLogger("ripple")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 MAX_BODY_BYTES = 256 * 1024
+APP_TITLE = "Ripple API"
 DIST = Path(os.getenv("FRONTEND_DIST", str(Path(__file__).resolve().parents[2] / "frontend" / "dist")))
 
 
@@ -35,7 +36,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Ripple API", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title=APP_TITLE, lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 origins = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]
 if origins:
