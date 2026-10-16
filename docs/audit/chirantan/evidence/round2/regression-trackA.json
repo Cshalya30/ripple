@@ -1,0 +1,206 @@
+[
+ {
+  "id": "R1a",
+  "name": "a screen crash shows the recovery message instead of a blank app",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R1b",
+  "name": "the navigation is still on screen after the crash",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R1c",
+  "name": "moving to another screen clears the crash message",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R2a",
+  "name": "the question is sent to the backend",
+  "status": "PASS",
+  "detail": "{\"message\":\"Who owes me the most?\",\"language\":\"en\",\"history\":[],\"context\":{\"route\":\"/app/today\"}}"
+ },
+ {
+  "id": "R2b",
+  "name": "the answer is rendered, and it is about who owes money",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R3a",
+  "name": "a blank question sends nothing",
+  "status": "PASS",
+  "detail": "calls=0"
+ },
+ {
+  "id": "R3b",
+  "name": "a failed request shows an error message, not a fake answer",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R3c",
+  "name": "retrying after the failure works",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R4a",
+  "name": "a 401 mid-session returns to the sign-in page",
+  "status": "PASS",
+  "detail": "http://localhost:8770/login"
+ },
+ {
+  "id": "R4b",
+  "name": "after signing in again the person lands back on the page they were on",
+  "status": "PASS",
+  "detail": "http://localhost:8770/app/book"
+ },
+ {
+  "id": "R5a",
+  "name": "a recommended option is marked",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R5b",
+  "name": "the option opens as a what-if in the Engine",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R6a",
+  "name": "the RISK command opens Book, Risk & Finance",
+  "status": "PASS",
+  "detail": "http://localhost:8770/app/book?tab=risk"
+ },
+ {
+  "id": "R6b",
+  "name": "the M key toggles Munim",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R7",
+  "name": "each of the 5 alerts in the bell leads somewhere (a screen or the party drawer)",
+  "status": "PASS",
+  "detail": "[]"
+ },
+ {
+  "id": "R8a",
+  "name": "logging a missed entry confirms it",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R8b",
+  "name": "the miss shows in the per-check tally after the data refreshes",
+  "status": "PASS",
+  "detail": "[\"Possible duplicate payment\",\"0\",\"0\",\"1\",\"·\"]"
+ },
+ {
+  "id": "R9",
+  "name": "Export CSV downloads a real CSV with the ledger data",
+  "status": "PASS",
+  "detail": "ripple-transactions.csv lines=195"
+ },
+ {
+  "id": "R10a",
+  "name": "the arrow keys move the timeline one day at a time",
+  "status": "PASS",
+  "detail": "34 -> 36"
+ },
+ {
+  "id": "R10b",
+  "name": "Space starts playback and the button says Pause",
+  "status": "PASS",
+  "detail": "Pause"
+ },
+ {
+  "id": "R10c",
+  "name": "playback advanced while playing and stays put after Pause",
+  "status": "PASS",
+  "detail": "36 -> 41, paused at 41, later 41"
+ },
+ {
+  "id": "R10d",
+  "name": "Home returns to day 0",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R10e",
+  "name": "N jumps to the next issue",
+  "status": "PASS",
+  "detail": "20"
+ },
+ {
+  "id": "R11a",
+  "name": "recording a payment from Today stores exactly one transaction, even on a double click",
+  "status": "PASS",
+  "detail": "[[3800000,\"OUT\"]]"
+ },
+ {
+  "id": "R11b",
+  "name": "the paid bill leaves \"Do today\"",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R12a",
+  "name": "repeated payments show up as two flagged entries",
+  "status": "PASS",
+  "detail": "2"
+ },
+ {
+  "id": "R12b",
+  "name": "\"Looks fine\" removes the flag from the list",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R12c",
+  "name": "\"It is real\" keeps it, under confirmed issues",
+  "status": "PASS",
+  "detail": ""
+ },
+ {
+  "id": "R12d",
+  "name": "the check tally counts one real, one fine",
+  "status": "PASS",
+  "detail": "[\"Possible duplicate payment\",\"1\",\"1\",\"1\",\"50%\"]"
+ },
+ {
+  "id": "R13",
+  "name": "a denied microphone gives a clear message and a way to dismiss it",
+  "status": "PASS",
+  "detail": "[\"Microphone access is blocked. Allow the microphone for this site in the browser's address bar, then try again.\",\"Dismiss\"]"
+ },
+ {
+  "id": "R14a",
+  "name": "invalid day counts are refused on screen without calling the engine",
+  "status": "PASS",
+  "detail": "posts=0"
+ },
+ {
+  "id": "R14b",
+  "name": "the form says what is wrong in words",
+  "status": "PASS",
+  "detail": "What if A customer pays later or earlier Ask a customer for a deposit Material arrives late Pay a supplier in parts A supplier gives more time to pay Borrow to "
+ },
+ {
+  "id": "R14c",
+  "name": "a valid what-if runs the engine once and shows the scenario banner",
+  "status": "PASS",
+  "detail": "posts=1"
+ },
+ {
+  "id": "R14d",
+  "name": "Back to baseline clears the scenario",
+  "status": "PASS",
+  "detail": ""
+ }
+]

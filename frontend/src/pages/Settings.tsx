@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { DatasheetButton } from '../components/DatasheetButton'
-import { ConfirmButton, ErrorNote, Section, Seg } from '../components/ui'
+import { SkeletonRows, ConfirmButton, ErrorNote, Section, Seg } from '../components/ui'
 import { VoiceSettings } from '../components/VoiceSettings'
 import { api, errorText, fieldIssues } from '../lib/api'
 import { rupees, shortDate } from '../lib/format'
@@ -52,12 +52,13 @@ export default function Settings({ me }: { me: Me }) {
     <div className="page" style={{ maxWidth: 960 }}>
       <div className="page-head"><h1 className="h1">Settings</h1></div>
 
-      {finance && settings.isLoading && <p className="small muted">Loading your settings</p>}
+      {finance && settings.isLoading && <SkeletonRows rows={10} h={64} />}
       {finance && settings.isError && <ErrorNote text={errorText(settings.error)} retry={() => settings.refetch()} />}
       {finance && settings.data && <BusinessProfile data={settings.data.business} editable={owner} />}
       {finance && settings.data && <MoneyRules data={settings.data} />}
       {owner && settings.data?.team && <Team team={settings.data.team} me={me} />}
 
+      {!(finance && settings.isLoading) && <>
       <Section title="Display">
         <Row label="Theme" hint="Lamp is warm and lower contrast, for long evenings.">
           <Seg label="Theme" value={me.prefs.theme} onChange={(theme) => setPref({ theme })} options={[{ value: 'night', label: 'Night' }, { value: 'day', label: 'Day' }, { value: 'lamp', label: 'Lamp' }]} />
@@ -84,7 +85,7 @@ export default function Settings({ me }: { me: Me }) {
       <Section title="Accessibility">
         {([['reduce_motion', 'Reduce motion', 'Scenario changes apply instantly with an outline instead of the ripple.'],
           ['high_contrast', 'High contrast', 'Secondary text at full strength.'],
-          ['large_targets', 'Larger touch targets', '44px rows and buttons everywhere.']] as const).map(([key, label, hint]) => (
+          ['large_targets', 'Larger touch targets', 'At least 44px rows and controls, including compact actions.']] as const).map(([key, label, hint]) => (
           <Row key={key} label={label} hint={hint}>
             <label className="check"><input type="checkbox" checked={me.prefs[key]} onChange={(e) => setPref({ [key]: e.target.checked } as Partial<Prefs>)} /> {me.prefs[key] ? 'On' : 'Off'}</label>
           </Row>
@@ -109,6 +110,7 @@ export default function Settings({ me }: { me: Me }) {
         <Row label="Signed in as"><span>{me.user.name} · <span className="mono small">{me.user.email}</span> · {me.user.role.toLowerCase()}</span></Row>
         <div className="row" style={{ marginTop: 8 }}><button className="btn btn-primary" onClick={() => logout()}>Log out</button></div>
       </Section>
+      </>}
     </div>
   )
 }

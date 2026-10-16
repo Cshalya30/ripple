@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api, errorText } from '../lib/api'
 import { rupees } from '../lib/format'
 import { useMe, useParties, useParty, useWrite } from '../lib/queries'
 import { useUI } from '../lib/store'
+import { parseMoney } from '../lib/validate'
 import { Dialog, ErrorNote } from './ui'
 
 const MEDIUMS = ['UPI', 'NEFT', 'RTGS', 'IMPS', 'CASH', 'CHEQUE'] as const
@@ -22,6 +23,7 @@ export function PaymentDialog() {
   const [medium, setMedium] = useState<(typeof MEDIUMS)[number]>('UPI')
   const [reference, setReference] = useState('')
   const party = useParty(partyId || null)
+  const sending = useRef(false)
 
   useEffect(() => {
     if (!state) return
@@ -47,11 +49,14 @@ export function PaymentDialog() {
   const all = [...(customers.data?.parties ?? []), ...(suppliers.data?.parties ?? [])]
   const selected = all.find((p) => p.id === partyId)
   const direction = selected?.kind === 'SUPPLIER' ? 'OUT' : 'IN'
-  const paise = Math.round(Number(amount.replace(/,/g, '')) * 100)
-  const valid = !!selected && Number.isFinite(paise) && paise > 0 && !!date
+  const amountCheck = parseMoney(amount, { label: 'Amount' })
+  const paise = amountCheck.ok ? amountCheck.value : 0
+  const valid = !!selected && amountCheck.ok && !!date && date <= (me?.today ?? date)
   const item = party.data?.open_items.find((i) => i.id === invoiceId)
 
   const submit = async () => {
+    if (sending.current || !valid) return // a fast double click must not record the payment twice
+    sending.current = true
     try {
       const result = await write.mutateAsync({
         party_id: partyId, direction, amount_paise: paise, date, medium, reference: reference || null, invoice_id: invoiceId || null,
@@ -63,6 +68,8 @@ export function PaymentDialog() {
       close(null)
     } catch {
       /* shown below */
+    } finally {
+      sending.current = false
     }
   }
 
@@ -92,7 +99,8 @@ export function PaymentDialog() {
         )}
         <label className="field">
           <span className="field-label">Amount in rupees ({direction === 'IN' ? 'money in' : 'money out'})</span>
-          <input className="input mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="145000" />
+          <input className="input mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="145000" aria-invalid={amount !== '' && !amountCheck.ok} />
+          {amount !== '' && !amountCheck.ok && <span className="error-text" role="alert">{amountCheck.error}</span>}
           {item && paise > item.amount_paise && <span className="error-text">More than the {rupees(item.amount_paise)} outstanding.</span>}
         </label>
         <label className="field">

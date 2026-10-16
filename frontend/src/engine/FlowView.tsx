@@ -138,6 +138,16 @@ const NO_ROWS: DecisionRow[] = []
 
 const nodeTypes = { event: EventNode, waitbar: WaitBar, laneBand: LaneBand, ghost: Ghost, dayband: DayBand, rails: Rails, links: Links }
 
+function FlowControls({ reduceMotion }: { reduceMotion: boolean }) {
+  const { fitView } = useReactFlow()
+  const fit = () => {
+    requestAnimationFrame(() => {
+      void fitView({ padding: 0.12, minZoom: 0.2, maxZoom: 1.6, duration: reduceMotion ? 0 : 300 })
+    })
+  }
+  return <Controls showInteractive={false} position="bottom-right" onFitView={fit} />
+}
+
 // ---------------------------------------------------------------- camera
 
 /** Keeps what is happening on the chosen day in view as the day changes. */
@@ -397,7 +407,7 @@ export function FlowView({ run, baseline }: { run: RunPayload; baseline?: RunPay
             const d = n.data as EventData
             return d.phase === 'active' ? 'var(--haldi)' : d.phase === 'waiting' || d.e.state === 'BLOCKED' ? 'var(--out)' : d.phase === 'done' ? 'var(--text-2)' : 'var(--text-3)'
           }} maskColor="rgba(0,0,0,0.35)" />
-        <Controls showInteractive={false} position="bottom-right" />
+        <FlowControls reduceMotion={reduceMotion} />
       </ReactFlow>
       <DayBrief run={run} baseline={showDiff ? baseline ?? null : null} rows={rows} loading={log.isLoading} playing={playing} />
       </div>

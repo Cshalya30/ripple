@@ -105,7 +105,7 @@ export function NetworkView({ network, run, sort, drivers, businessName }: {
   return (
     <ReactFlow
       nodes={nodes} edges={edges} nodeTypes={nodeTypes} fitView fitViewOptions={{ padding: 0.12 }}
-      minZoom={0.3} maxZoom={2} nodesConnectable={false} nodesDraggable={false} elementsSelectable
+      minZoom={0.3} maxZoom={2} nodesConnectable={false} nodesDraggable={false} elementsSelectable edgesFocusable={false}
       onNodeMouseEnter={(_, n) => n.type === 'party' && setHover(n.id)}
       onNodeMouseLeave={() => setHover(null)}
       onNodeClick={(_, n) => (n.type === 'party' ? ui.selectParty(n.id) : ui.selectParty(null))}

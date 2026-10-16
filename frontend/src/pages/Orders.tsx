@@ -7,7 +7,7 @@ import { addDays, dayDate, percent, rupees, shortDate } from '../lib/format'
 import { useCatalogue, usePurchaseOrders, useSalesOrders, useWrite } from '../lib/queries'
 import { useUI } from '../lib/store'
 import type { Me } from '../lib/types'
-import { parseQuantity } from '../lib/validate'
+import { parseMoney, parseQuantity } from '../lib/validate'
 
 const STAGES = ['PLANNED', 'MATERIALS_READY', 'IN_PRODUCTION', 'READY', 'DELIVERED', 'PAID'] as const
 const STAGE_LABEL: Record<string, string> = { PLANNED: 'Planned', MATERIALS_READY: 'Materials ready', IN_PRODUCTION: 'In production', READY: 'Ready', DELIVERED: 'Delivered', PAID: 'Paid' }
@@ -65,7 +65,7 @@ function Sales({ finance }: { finance: boolean }) {
                     {o.forecast_lateness_days ? <> <Status tone="attn">+{o.forecast_lateness_days} days</Status></> : o.forecast_delivery ? <> <Status tone="in">On time</Status></> : null}
                   </td>
                   <td style={{ minWidth: 140 }}>
-                    <div className="stepper" aria-label={`Stage: ${STAGE_LABEL[o.stage]}`}>{STAGES.map((s, i) => <span key={s} className={i < index ? 'done' : i === index ? 'now' : ''} />)}</div>
+                    <div className="stepper" role="img" aria-label={`Stage: ${STAGE_LABEL[o.stage]}`}>{STAGES.map((s, i) => <span key={s} className={i < index ? 'done' : i === index ? 'now' : ''} />)}</div>
                     <span className="sub">{STAGE_LABEL[o.stage]}</span>
                     {change?.direction === 'BACK' && change.to === o.stage && <span className="sub">moved back from {STAGE_LABEL[change.from].toLowerCase()}</span>}
                   </td>
@@ -146,8 +146,8 @@ function Purchases({ finance, preset }: { finance: boolean; preset: string | nul
                     </button>
                   )}{' '}
                   {finance && o.status === 'ORDERED' && <button className="btn btn-sm btn-quiet" disabled={mark.isPending} onClick={() => mark.mutate({ id: o.id, status: 'CANCELLED' }, { onSuccess: () => ui.toast(`${o.number} cancelled.`) })}>Cancel</button>}
-                  {finance && o.status === 'ORDERED' && o.terms_type !== 'CREDIT' && <button className="btn btn-sm btn-quiet" onClick={() => mark.mutate({ id: o.id, status: 'PAID' })}>Mark paid</button>}{' '}
-                  {(o.status === 'ORDERED' || o.status === 'PAID') && <button className="btn btn-sm btn-secondary" onClick={() => mark.mutate({ id: o.id, status: 'ARRIVED' }, { onSuccess: () => ui.toast(`${o.number} received. Stock updated.`) })}>Received</button>}
+                  {finance && o.status === 'ORDERED' && o.terms_type !== 'CREDIT' && <button className="btn btn-sm btn-quiet" disabled={mark.isPending} onClick={() => mark.mutate({ id: o.id, status: 'PAID' })}>Mark paid</button>}{' '}
+                  {(o.status === 'ORDERED' || o.status === 'PAID') && <button className="btn btn-sm btn-secondary" disabled={mark.isPending} onClick={() => mark.mutate({ id: o.id, status: 'ARRIVED' }, { onSuccess: () => ui.toast(`${o.number} received. Stock updated.`) })}>Received</button>}
                 </div></td>
               </tr>
             ))}
@@ -256,15 +256,17 @@ function WhatIf() {
   const [busy, setBusy] = useState(false)
   const accept = useWrite((body: unknown) => api.post('/sales-orders', body))
   const p = me?.products.find((x: any) => x.id === product)
+  const qtyCheck = parseQuantity(qty, 'Quantity', { decimals: 0, max: 10 ** 7 })
+  const priceCheck = price.trim() ? parseMoney(price, { label: 'Price' }) : null
   const body = () => ({
-    customer_id: customer, product_id: product, qty: Number(qty), unit_price_paise: price ? Math.round(Number(price) * 100) : undefined,
+    customer_id: customer, product_id: product, qty: qtyCheck.ok ? qtyCheck.value : 0, unit_price_paise: priceCheck?.ok ? priceCheck.value : undefined,
     promised_date: promised, with_supporting_po: true,
   })
   const check = async () => {
     setBusy(true); setError(null)
     try { setResult(await api.post('/orders/what-if', body())) } catch (err) { setError(err) } finally { setBusy(false) }
   }
-  const ready = customer && product && Number(qty) > 0 && promised
+  const ready = customer && product && qtyCheck.ok && (priceCheck === null || priceCheck.ok) && promised
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -278,8 +280,10 @@ function WhatIf() {
             <option value="">Choose product</option>{me?.products.map((x: any) => <option key={x.id} value={x.id}>{x.name}</option>)}
           </select>
         </label>
-        <label className="field"><span className="field-label">Qty</span><input className="input mono" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} /></label>
-        <label className="field"><span className="field-label">Price each, ₹</span><input className="input mono" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} /></label>
+        <label className="field"><span className="field-label">Qty</span><input className="input mono" inputMode="numeric" value={qty} aria-invalid={!qtyCheck.ok} onChange={(e) => setQty(e.target.value)} />
+          {!qtyCheck.ok && <span className="micro" role="alert" style={{ color: 'var(--out)' }}>{qtyCheck.error}</span>}</label>
+        <label className="field"><span className="field-label">Price each, ₹</span><input className="input mono" inputMode="decimal" value={price} aria-invalid={priceCheck !== null && !priceCheck.ok} onChange={(e) => setPrice(e.target.value)} />
+          {priceCheck && !priceCheck.ok && <span className="micro" role="alert" style={{ color: 'var(--out)' }}>{priceCheck.error}</span>}</label>
         <label className="field"><span className="field-label">Promised by</span><input className="input mono" type="date" value={promised} min={addDays(new Date().toISOString().slice(0, 10), 1)} onChange={(e) => setPromised(e.target.value)} /></label>
       </div>
       <div className="row" style={{ marginTop: 14 }}>

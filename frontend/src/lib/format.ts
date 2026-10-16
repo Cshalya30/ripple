@@ -116,3 +116,16 @@ export function plural(n: number, one: string, many: string): string {
 export function digits(phone: string | null | undefined): string {
   return (phone || '').replace(/\D/g, '')
 }
+
+/** The number wa.me needs (country code first, no plus), or null when it cannot be told. Mirrors services/messages.py whatsapp_number. */
+export function whatsappNumber(phone: string | null | undefined): string | null {
+  const raw = (phone || '').trim()
+  let d = digits(raw)
+  let international = raw.startsWith('+')
+  if (d.startsWith('00')) { d = d.slice(2); international = true }
+  if (international) return d.length >= 8 && d.length <= 15 ? d : null
+  if (d.length === 10 && /^[6-9]/.test(d)) return `91${d}` // Indian mobiles start 6 to 9; the rest are landlines
+  if (d.length === 11 && /^0[6-9]/.test(d)) return `91${d.slice(1)}`
+  if (d.length === 12 && d.startsWith('91')) return d
+  return null
+}

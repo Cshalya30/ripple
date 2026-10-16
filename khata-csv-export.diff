@@ -1,0 +1,244 @@
+--- a/backend/app/api/routes.py
++++ b/backend/app/api/routes.py
+@@ -2,10 +2,13 @@
+ 
+ from __future__ import annotations
+ 
++import csv
++import io
+ import time
+ from collections import defaultdict, deque
++from datetime import datetime
+ 
+-from fastapi import APIRouter, File, Header, HTTPException, Request, UploadFile
++from fastapi import APIRouter, File, Header, HTTPException, Request, Response, UploadFile
+ from starlette.concurrency import run_in_threadpool
+ 
+ from ..assistant import chat as chat_mod
+@@ -140,6 +143,47 @@
+     return {"added": [party_out(p, set()) for p in added], "skipped": skipped[:50]}
+ 
+ 
++EXPORT_HEADERS = [
++    "Party name", "Type", "Phone", "Details", "Item", "Qty",
++    "Bill amount", "Received / Paid", "Still owed", "Bill date", "Due date",
++]
++
++
++def _csv_safe(value: str) -> str:
++    """Stop spreadsheet formula injection: cells starting with = + - @ are shown as text."""
++    return "'" + value if value[:1] in ("=", "+", "-", "@", "\t", "\r") else value
++
++
++@router.get("/parties/export.csv")
++def export_parties(x_workspace_id: str | None = Header(default=None)) -> Response:
++    """The whole khata as CSV. Same columns as the upload template, so it can be re-imported."""
++    parties = get_store().list(_workspace(x_workspace_id))
++    buf = io.StringIO()
++    writer = csv.writer(buf)
++    writer.writerow(EXPORT_HEADERS)
++    for p in parties:
++        quantity = int(p.quantity) if float(p.quantity).is_integer() else p.quantity
++        writer.writerow([
++            _csv_safe(p.name),
++            "Customer" if p.kind == "customer" else "Supplier",
++            p.phone.removeprefix("+91 "),
++            _csv_safe(p.details),
++            _csv_safe(", ".join(p.products)),
++            quantity,
++            p.total_amount,
++            p.paid_amount,
++            p.owed_amount,
++            p.transaction_date.isoformat(),
++            p.due_date.isoformat(),
++        ])
++    filename = f"ripple-khata-{datetime.now(config.TIMEZONE):%Y-%m-%d}.csv"
++    return Response(
++        content="\ufeff" + buf.getvalue(),  # BOM so Excel shows ₹ and Indian names correctly
++        media_type="text/csv; charset=utf-8",
++        headers={"Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "no-store"},
++    )
++
++
+ @router.delete("/parties/{party_id}", status_code=204)
+ def delete_party(party_id: str, request: Request, x_workspace_id: str | None = Header(default=None)) -> None:
+     _rate_limit(request, "write")
+--- a/frontend/src/services/api.ts
++++ b/frontend/src/services/api.ts
+@@ -46,7 +46,7 @@
+   }
+ }
+ 
+-export async function api<T>(path: string, init: RequestInit = {}, timeoutMs = 10_000): Promise<T> {
++async function request(path: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+   const controller = new AbortController()
+   const timer = setTimeout(() => controller.abort(), timeoutMs)
+   const headers = new Headers(init.headers)
+@@ -66,13 +66,24 @@
+       }
+       throw new ApiError(res.status, code, message)
+     }
+-    if (res.status === 204) return undefined as T
+-    return (await res.json()) as T
++    return res
+   } finally {
+     clearTimeout(timer)
+   }
+ }
+ 
++export async function api<T>(path: string, init: RequestInit = {}, timeoutMs = 10_000): Promise<T> {
++  const res = await request(path, init, timeoutMs)
++  if (res.status === 204) return undefined as T
++  return (await res.json()) as T
++}
++
++/** Same as api(), but returns the raw text body (used for CSV downloads). */
++export async function apiText(path: string, init: RequestInit = {}, timeoutMs = 15_000): Promise<string> {
++  const res = await request(path, init, timeoutMs)
++  return res.text()
++}
++
+ const warned = new Set<string>()
+ 
+ /** Log a backend problem once per call site, then let the caller use its offline fallback. */
+--- a/frontend/src/services/partyService.ts
++++ b/frontend/src/services/partyService.ts
+@@ -2,7 +2,7 @@
+ import { mockParties } from '../data/parties'
+ import { sampleRows } from '../data/uploadSample'
+ import { isoFromOffset } from '../lib/dates'
+-import { api, warnFallback } from './api'
++import { api, apiText, warnFallback } from './api'
+ 
+ /**
+  * Party service backed by the FastAPI khata (`/api/parties`).
+@@ -124,3 +124,50 @@
+     return tick(rows, 400)
+   }
+ }
++
++// ── export ───────────────────────────────────────────────────────────────
++
++const EXPORT_HEADERS = ['Party name', 'Type', 'Phone', 'Details', 'Item', 'Qty', 'Bill amount', 'Received / Paid', 'Still owed', 'Bill date', 'Due date']
++
++function csvCell(value: string | number): string {
++  let text = String(value)
++  if (/^[=+\-@\t\r]/.test(text) && typeof value === 'string') text = `'${text}` // no spreadsheet formulas
++  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
++}
++
++/** Build the CSV in the browser (used only when the backend can't be reached). */
++function partiesToCsv(parties: Party[]): string {
++  const rows = parties.map((p) =>
++    [
++      p.name,
++      p.kind === 'customer' ? 'Customer' : 'Supplier',
++      p.phone.replace(/^\+91\s*/, ''),
++      p.details,
++      p.products.join(', '),
++      p.quantity,
++      p.totalAmount,
++      p.paidAmount,
++      p.owedAmount,
++      p.transactionDate,
++      p.dueDate,
++    ]
++      .map(csvCell)
++      .join(','),
++  )
++  return '\ufeff' + [EXPORT_HEADERS.join(','), ...rows].join('\r\n') + '\r\n'
++}
++
++/**
++ * Everything in the khata as CSV, in the same columns the upload accepts,
++ * so the file can be edited in Excel and uploaded again.
++ */
++export async function exportPartiesCsv(current: Party[]): Promise<string> {
++  try {
++    const csv = await apiText('/api/parties/export.csv')
++    // fetch() strips the byte-order mark; put it back so Excel reads ₹ and names correctly.
++    return csv.startsWith('\ufeff') ? csv : '\ufeff' + csv
++  } catch (err) {
++    warnFallback('exportPartiesCsv', err)
++    return partiesToCsv(current)
++  }
++}
+--- a/frontend/src/pages/Khata.tsx
++++ b/frontend/src/pages/Khata.tsx
+@@ -7,7 +7,7 @@
+ import { SampleBadge } from '../components/SampleBadge'
+ import { AnimatedNumber } from '../components/AnimatedNumber'
+ import { useApp } from '../context/AppContext'
+-import { TEMPLATE_CSV } from '../data/uploadSample'
++import { exportPartiesCsv } from '../services/partyService'
+ import { formatINR } from '../lib/format'
+ import type { Party, PartyKind } from '../types'
+ 
+@@ -159,13 +159,14 @@
+   const customers = parties.filter((p) => p.kind === 'customer')
+   const suppliers = parties.filter((p) => p.kind === 'supplier')
+ 
+-  const downloadTemplate = () => {
+-    const url = URL.createObjectURL(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }))
++  const downloadTemplate = async () => {
++    const csv = await exportPartiesCsv(parties)
++    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+     const a = document.createElement('a')
+     a.href = url
+-    a.download = 'ripple-khata-template.csv'
++    a.download = `ripple-khata-${new Date().toISOString().slice(0, 10)}.csv`
+     a.click()
+-    URL.revokeObjectURL(url)
++    setTimeout(() => URL.revokeObjectURL(url), 1000)
+   }
+ 
+   return (
+@@ -193,7 +194,7 @@
+           </button>
+           <button type="button" className="btn btn-ghost" onClick={downloadTemplate}>
+             <Download size={16} aria-hidden="true" />
+-            Download template
++            Download CSV
+           </button>
+         </div>
+       </div>
+--- a/tests/test_ripple_api.py
++++ b/tests/test_ripple_api.py
+@@ -129,6 +129,37 @@
+         r = self.client.post("/api/parties/upload", files={"file": ("big.csv", b"a" * (config.MAX_UPLOAD_BYTES + 10), "text/csv")}, headers=WS)
+         self.assertEqual(r.status_code, 422)
+ 
++    def test_export_csv_has_every_party_and_round_trips(self) -> None:
++        self.client.post("/api/parties", json=new_party(name="=HYPERLINK(\"http://evil\")", products=["Silk", "Cotton"]), headers=WS)
++        r = self.client.get("/api/parties/export.csv", headers=WS)
++        self.assertEqual(r.status_code, 200)
++        self.assertTrue(r.headers["content-type"].startswith("text/csv"))
++        self.assertIn("attachment", r.headers["content-disposition"])
++        text = r.content.decode("utf-8-sig")
++        lines = text.strip().splitlines()
++        self.assertEqual(lines[0], "Party name,Type,Phone,Details,Item,Qty,Bill amount,Received / Paid,Still owed,Bill date,Due date")
++        self.assertEqual(len(lines), 1 + 15)  # 14 demo parties + the one just added
++        self.assertIn("Sharma Yarn Mills,Supplier,98000 00101,", text)
++        self.assertIn("'=HYPERLINK", text)  # formula neutralised
++        self.assertNotIn(",=HYPERLINK", text)
++        # Re-upload the exported file into a fresh workspace: same parties come back.
++        fresh = {"X-Workspace-Id": "unit-test-workspace-0003"}
++        self.client.post("/api/demo/reset", headers=fresh)
++        for p in self.client.get("/api/parties", headers=fresh).json():
++            self.client.delete(f"/api/parties/{p['id']}", headers=fresh)
++        r = self.client.post("/api/parties/upload", files={"file": ("export.csv", r.content, "text/csv")}, headers=fresh)
++        self.assertEqual(r.status_code, 201, r.text)
++        self.assertEqual(len(r.json()["added"]), 15)
++        self.assertEqual(r.json()["skipped"], [])
++        back = {p["name"]: p for p in r.json()["added"]}
++        self.assertEqual(back["Sharma Yarn Mills"]["owedAmount"], 352000)
++        self.assertEqual(back["Sharma Yarn Mills"]["products"], ["Cotton yarn 40s", "Polyester blend yarn"])
++
++    def test_export_isolated_per_workspace(self) -> None:
++        self.client.post("/api/parties", json=new_party(name="Secret Customer"), headers=WS)
++        other = self.client.get("/api/parties/export.csv", headers=OTHER_WS).content.decode("utf-8-sig")
++        self.assertNotIn("Secret Customer", other)
++
+     def test_party_cap(self) -> None:
+         payload = {"parties": [new_party(name=f"Shop {i}") for i in range(200)]}
+         self.assertEqual(self.client.post("/api/parties/import", json=payload, headers=WS).status_code, 201)

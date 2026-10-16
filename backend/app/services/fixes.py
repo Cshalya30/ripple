@@ -17,6 +17,7 @@ from typing import Any
 
 from ..simulation.schemas import BusinessSnapshot, Event, EventType, Scenario
 from ..simulation.validation import SimulationValidationError
+from .messages import rupees
 from .position import round_up
 from .runs import Run, run_variant
 
@@ -95,7 +96,7 @@ def candidates(run: Run) -> list[dict[str, Any]]:
         out.append({
             "id": "early-discount", "kind": "EARLY_DISCOUNT", "party_id": receipt.counterparty_id, "party_name": customer,
             "title": f"Ask {customer} to pay early for 2% off",
-            "summary": f"{customer} pays {receipt.id.replace('receipt-', '').upper()} by {_human(pay_by)} and keeps a 2% discount.",
+            "summary": f"{customer} pays {meta[receipt.id].get('invoice_number') or receipt.id.replace('receipt-', '').upper()} by {_human(pay_by)} and keeps a 2% discount.",
             "cost_paise": discount, "cost_label": "discount",
             "params": {"event_id": receipt.id, "date": pay_by.isoformat(), "discount_paise": discount},
             "message": {"intent": "early_discount", "party_id": receipt.counterparty_id},
@@ -336,15 +337,5 @@ def _human(day: date) -> str:
 
 
 def _rupees(paise: int) -> str:
-    rupees = paise // 100
-    text = str(rupees)
-    if len(text) > 3:
-        head, tail = text[:-3], text[-3:]
-        groups = []
-        while len(head) > 2:
-            groups.insert(0, head[-2:])
-            head = head[:-2]
-        if head:
-            groups.insert(0, head)
-        text = ",".join(groups) + "," + tail
-    return f"₹{text}"
+    """One formatter for money in server-written text: exact paise, Indian grouping, a real minus sign for losses."""
+    return rupees(int(paise))

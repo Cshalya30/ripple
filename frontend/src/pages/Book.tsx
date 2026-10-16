@@ -6,7 +6,7 @@ import { RunwayChart, RunwayTable } from '../components/RunwayChart'
 import { Amount, ErrorNote, Section, Seg, Skeleton, SkeletonRows, Status } from '../components/ui'
 import { api, errorText } from '../lib/api'
 import { clock, dayDate, percent, rupees, shortDate } from '../lib/format'
-import { useBook, useFixes, useRisk, useTransactions } from '../lib/queries'
+import { useBook, useFixes, useRisk, useTransactions, useWrite } from '../lib/queries'
 import { useUI } from '../lib/store'
 import type { ChanceAfter, DipItem, Evaluation, Me, Risk, RunPayload } from '../lib/types'
 
@@ -235,8 +235,10 @@ function Transactions() {
   const [medium, setMedium] = useState('')
   const ui = useUI()
   const tx = useTransactions({ direction, medium })
+  const settle = useWrite(({ id, status }: { id: string; status: 'CLEARED' | 'BOUNCED' }) => api.patch(`/transactions/${encodeURIComponent(id)}`, { status }))
   return (
     <>
+      {settle.isError && <ErrorNote text={errorText(settle.error)} />}
       <div className="row-wrap" style={{ margin: '8px 0 12px' }}>
         <select className="select" style={{ width: 'auto' }} value={direction} onChange={(e) => setDirection(e.target.value)} aria-label="Direction">
           <option value="">All</option><option value="IN">{t('book.ledgerIn')} only</option><option value="OUT">{t('book.ledgerOut')} only</option>
@@ -251,7 +253,7 @@ function Transactions() {
       {tx.isLoading && <SkeletonRows />}
       {tx.isError && <ErrorNote text={errorText(tx.error)} />}
       {tx.data && (
-        <div className="table-wrap" style={{ maxHeight: 520, overflowY: 'auto' }}>
+        <div className="table-wrap" style={{ maxHeight: 520, overflowY: 'auto' }} tabIndex={0} role="region" aria-label="Transactions, scrollable">
           <table className="table">
             <thead style={{ position: 'sticky', top: 0, background: 'var(--ground)' }}>
               <tr>
@@ -264,7 +266,11 @@ function Transactions() {
                 <tr key={r.id}>
                   <td className="mono nowrap">{shortDate(r.date)} <span className="faint">{r.date.slice(2, 4)}</span></td>
                   <td className="truncate" style={{ maxWidth: 200 }}>{r.party_name ?? <span className="faint">·</span>}</td>
-                  <td className="small truncate" style={{ maxWidth: 220 }}>{r.details}{r.status === 'PENDING' && <> <Status tone="wait">Pending</Status></>}{r.status === 'BOUNCED' && <> <Status tone="out">Bounced</Status></>}</td>
+                  <td className={r.status === 'PENDING' ? 'small' : 'small truncate'} style={{ maxWidth: r.status === 'PENDING' ? 320 : 220 }}>{r.details}{r.status === 'PENDING' && <> <Status tone="wait">Pending</Status>{' '}
+                    <button className="btn btn-sm btn-secondary" disabled={settle.isPending} aria-label={`Mark the pending ${r.medium.toLowerCase()} ${r.direction === 'IN' ? 'from' : 'to'} ${r.party_name ?? 'this party'} as cleared`}
+                      onClick={() => settle.mutate({ id: r.id, status: 'CLEARED' })}>Cleared</button>{' '}
+                    <button className="btn btn-sm btn-quiet" disabled={settle.isPending} aria-label={`Mark the pending ${r.medium.toLowerCase()} ${r.direction === 'IN' ? 'from' : 'to'} ${r.party_name ?? 'this party'} as bounced`}
+                      onClick={() => settle.mutate({ id: r.id, status: 'BOUNCED' })}>Bounced</button></>}{r.status === 'BOUNCED' && <> <Status tone="out">Bounced</Status></>}</td>
                   <td className="small">{r.medium}</td>
                   <td className="mono small faint">{r.reference ? `${r.reference.slice(0, 6)}…` : '·'}</td>
                   <td className="money money-first amt-in">{r.direction === 'IN' ? rupees(r.amount_paise) : ''}</td>

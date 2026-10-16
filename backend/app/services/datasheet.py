@@ -62,8 +62,9 @@ def qty_label(qty: int, material: dict[str, Any] | None) -> str:
     factor = material["unit_factor"] or 1
     if factor == 1:
         return f"{qty:,} {material['unit']}"
-    text = f"{qty / factor:,.1f}"
-    return f"{text[:-2] if text.endswith('.0') else text} {material['unit']}"
+    decimals = len(str(factor)) - 1
+    text = f"{qty / factor:,.{decimals}f}".rstrip("0").rstrip(".")
+    return f"{text} {material['unit']}"
 
 
 class Sheet:

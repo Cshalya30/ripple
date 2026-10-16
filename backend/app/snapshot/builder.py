@@ -58,7 +58,7 @@ def load_records(business_id: str) -> dict[str, Any]:
         "movements": q("stock_movement", "ORDER BY date, id"),
         "sales_orders": q("sales_order", "ORDER BY number"),
         "purchase_orders": q("purchase_order", "ORDER BY number"),
-        "invoices": q("invoice", "AND status != 'PAID' ORDER BY number"),
+        "invoices": q("invoice", "AND status != 'PAID' ORDER BY number, id"),
         "txns": q("txn", "ORDER BY date, id"),
         "recurring": q("recurring_expense", "AND active = 1 ORDER BY id"),
         "scheduled": q("scheduled_expense", "AND paid = 0 ORDER BY due_date"),
@@ -124,6 +124,14 @@ def build_from_records(records: dict[str, Any], as_of: date, horizon_days: int |
     def add(event: Event, **info: Any) -> None:
         events.append(event)
         meta_events[event.id] = info
+
+    def free_id(base: str) -> str:
+        """Two records can slug to the same text ('INV 1' and 'INV-1', or one supplier's bill 1001 and another's). The engine needs
+        every event id to be unique, so the later one gets a numeric suffix instead of the whole forecast refusing to build."""
+        candidate, n = base, 2
+        while candidate in meta_events:
+            candidate, n = f"{base}-{n}", n + 1
+        return candidate
 
     def party_name(party_id: str | None) -> str | None:
         return parties[party_id]["name"] if party_id in parties else None
@@ -217,15 +225,15 @@ def build_from_records(records: dict[str, Any], as_of: date, horizon_days: int |
                 expected, why = due, f"{inv['number']}: timed at the due date."
             else:
                 expected, why = as_of, f"{inv['number']}: already overdue; assumed collectable from today."
-            add(Event(id=f"receipt-{stable(inv['number'])}", type=EventType.CASH_RECEIPT, counterparty_id=inv["party_id"],
+            add(Event(id=free_id(f"receipt-{stable(inv['number'])}"), type=EventType.CASH_RECEIPT, counterparty_id=inv["party_id"],
                       earliest_date=expected, due_date=due, amount_paise=outstanding, assumptions=[why]),
                 label=f"{party['name']} pays {inv['number']}", detail=inv["description"] or "", amount_paise=outstanding,
                 direction="IN", record_type="invoice", record_id=inv["id"], lane=old_lane["id"], party_id=inv["party_id"],
-                party_name=party["name"], receipt_kind="FIXED_DATE", due_date=inv["due_date"],
+                party_name=party["name"], receipt_kind="FIXED_DATE", due_date=inv["due_date"], invoice_number=inv["number"],
                 anchor_date=(promised or due).isoformat())
         else:
             earliest = max(as_of, due)
-            add(Event(id=f"pay-{stable(inv['number'])}", type=EventType.SUPPLIER_PAYMENT, counterparty_id=inv["party_id"],
+            add(Event(id=free_id(f"pay-{stable(inv['number'])}"), type=EventType.SUPPLIER_PAYMENT, counterparty_id=inv["party_id"],
                       earliest_date=earliest, due_date=due, amount_paise=outstanding,
                       assumptions=[f"{inv['number']}: paid on its due date when cash allows."]),
                 label=f"Pay {party['name']}", detail=f"{inv['number']} · {inv['description'] or ''}".strip(" ·"),
@@ -364,6 +372,9 @@ def _qty_label(qty: int, material: dict | None) -> str:
     if material is None:
         return str(qty)
     factor = material["unit_factor"] or 1
-    value = qty / factor
-    text = f"{value:,.1f}".rstrip("0").rstrip(".") if factor != 1 else f"{qty:,}"
+    if factor == 1:
+        text = f"{qty:,}"
+    else:
+        decimals = len(str(factor)) - 1
+        text = f"{qty / factor:,.{decimals}f}".rstrip("0").rstrip(".")
     return f"{text} {material['unit']}"

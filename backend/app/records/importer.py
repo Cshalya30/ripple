@@ -9,7 +9,7 @@ import hashlib
 import json
 from datetime import timedelta
 
-from ..core.db import bump_data_version, delete_business_data, insert, today, tx
+from ..core.db import bump_data_version, delete_business_data, insert, now_iso, today, tx
 from ..intake.builder import money_to_paise
 from ..intake.schemas import BusinessFacts, CollectionTimingType, ReleaseCondition
 
@@ -18,17 +18,33 @@ def _key(*parts: str | None) -> str:
     return hashlib.sha256("|".join(p or "" for p in parts).encode()).hexdigest()[:10]
 
 
-def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
+def import_facts(business_id: str, facts: BusinessFacts, *, replace: bool = True) -> dict[str, int]:
     as_of = today()
     counts = {"parties": 0, "orders": 0, "invoices": 0, "purchases": 0, "materials": 0, "expenses": 0, "facilities": 0}
     with tx() as conn:
-        delete_business_data(conn, business_id)
-        changes = {"opening_balance_paise": money_to_paise(facts.opening_cash), "opening_balance_date": (as_of - timedelta(days=1)).isoformat()}
-        if facts.business_name:
-            changes["name"] = facts.business_name[:120]
-        conn.execute(
-            "UPDATE business SET opening_balance_paise = ?, opening_balance_date = ?, name = COALESCE(?, name) WHERE id = ?",
-            (changes["opening_balance_paise"], changes["opening_balance_date"], changes.get("name"), business_id))
+        if replace:
+            delete_business_data(conn, business_id)
+            changes = {"opening_balance_paise": money_to_paise(facts.opening_cash), "opening_balance_date": (as_of - timedelta(days=1)).isoformat()}
+            if facts.business_name:
+                changes["name"] = facts.business_name[:120]
+            conn.execute(
+                "UPDATE business SET opening_balance_paise = ?, opening_balance_date = ?, name = COALESCE(?, name) WHERE id = ?",
+                (changes["opening_balance_paise"], changes["opening_balance_date"], changes.get("name"), business_id))
+        elif facts.business_name:
+            conn.execute("UPDATE business SET name = ? WHERE id = ?", (facts.business_name[:120], business_id))
+
+        def put(conn, table, row):
+            if replace:
+                insert(conn, table, row)
+            else:
+                values = {**row}
+                stamp = now_iso()
+                values.setdefault("created_at", stamp)
+                values.setdefault("updated_at", stamp)
+                cols = ", ".join(values)
+                marks = ", ".join("?" for _ in values)
+                conn.execute(f"INSERT OR IGNORE INTO {table} ({cols}) VALUES ({marks})",
+                             [json.dumps(value) if isinstance(value, (list, dict)) else value for value in values.values()])
 
         parties: dict[tuple[str, str], str] = {}
 
@@ -37,7 +53,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
             key = (kind, label.lower())
             if key not in parties:
                 parties[key] = f"{business_id}:p:{_key(kind, label)}"
-                insert(conn, "party", {"id": parties[key], "business_id": business_id, "kind": kind, "name": label, "terms_type": "CREDIT",
+                put(conn, "party", {"id": parties[key], "business_id": business_id, "kind": kind, "name": label, "terms_type": "CREDIT",
                                        "terms_days": 30, "lead_time_days": 0, "tags_json": [], "notes_json": [], "since": as_of.isoformat()})
                 counts["parties"] += 1
             return parties[key]
@@ -49,7 +65,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
             ref = (item.material_reference or name).lower()
             if ref not in materials:
                 materials[ref] = f"{business_id}:m:{_key(ref)}"
-                insert(conn, "material", {"id": materials[ref], "business_id": business_id, "sku": f"RM-{_key(ref)[:6].upper()}", "name": name,
+                put(conn, "material", {"id": materials[ref], "business_id": business_id, "sku": f"RM-{_key(ref)[:6].upper()}", "name": name,
                                           "unit": item.unit or "unit", "base_unit": item.unit or "unit", "unit_factor": 1,
                                           "reorder_safety_days": 7, "primary_supplier_id": None, "avg_cost_paise": 0})
                 counts["materials"] += 1
@@ -57,7 +73,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
 
         for index, item in enumerate(facts.opening_inventory):
             mid = material(item)
-            insert(conn, "stock_movement", {"id": f"{business_id}:mv:open{index}", "business_id": business_id, "item_type": "MATERIAL", "item_id": mid,
+            put(conn, "stock_movement", {"id": f"{business_id}:mv:open{index}", "business_id": business_id, "item_type": "MATERIAL", "item_id": mid,
                                             "qty_delta": item.quantity or 0, "reason": "ADJUSTMENT", "ref": None, "note": "Opening stock from intake",
                                             "user_id": None, "date": (as_of - timedelta(days=1)).isoformat()})
 
@@ -74,7 +90,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
             if has_goods and unpaid and purchase.release_condition == ReleaseCondition.FULL_PAYMENT:
                 conn.execute("UPDATE party SET terms_type = 'ADVANCE' WHERE id = ?", (supplier,))
                 for m_index, item in enumerate(purchase.materials):
-                    insert(conn, "purchase_order", {"id": f"{business_id}:po:{_key(ref, str(m_index))}", "business_id": business_id,
+                    put(conn, "purchase_order", {"id": f"{business_id}:po:{_key(ref, str(m_index))}", "business_id": business_id,
                                                     "number": f"{ref}-{m_index + 1}"[:40], "supplier_id": supplier, "material_id": material(item),
                                                     "qty": item.quantity or 0, "amount_paise": amount if m_index == 0 else 0, "ordered_date": as_of.isoformat(),
                                                     "expected_arrival": None, "payment_due": (purchase.earliest_payment_date or as_of).isoformat(),
@@ -82,13 +98,13 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
                     counts["purchases"] += 1
                 continue
             if unpaid:
-                insert(conn, "invoice", {"id": f"{business_id}:inv:{_key('pay', ref)}", "business_id": business_id, "kind": "PAYABLE", "party_id": supplier,
+                put(conn, "invoice", {"id": f"{business_id}:inv:{_key('pay', ref)}", "business_id": business_id, "kind": "PAYABLE", "party_id": supplier,
                                          "number": ref[:40], "description": "From intake", "amount_paise": amount,
                                          "invoice_date": min(as_of, pay_date).isoformat(), "due_date": pay_date.isoformat(), "status": "OPEN"})
                 counts["invoices"] += 1
             if has_goods:
                 for m_index, item in enumerate(purchase.materials):
-                    insert(conn, "purchase_order", {"id": f"{business_id}:po:{_key(ref, str(m_index))}", "business_id": business_id,
+                    put(conn, "purchase_order", {"id": f"{business_id}:po:{_key(ref, str(m_index))}", "business_id": business_id,
                                                     "number": f"{ref}-{m_index + 1}"[:40], "supplier_id": supplier, "material_id": material(item),
                                                     "qty": item.quantity or 0, "amount_paise": 0, "ordered_date": as_of.isoformat(),
                                                     "expected_arrival": arrival.isoformat(), "payment_due": None, "terms_type": "ADVANCE",
@@ -101,7 +117,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
             value = money_to_paise(order.outstanding_collection) if order.outstanding_collection and not order.already_collected else 0
             fixed = order.collection_timing_type == CollectionTimingType.FIXED_DATE
             so_id = f"{business_id}:so:{_key(ref)}"
-            insert(conn, "sales_order", {
+            put(conn, "sales_order", {
                 "id": so_id, "business_id": business_id, "number": ref[:40], "customer_id": customer, "product_id": None, "qty": 1,
                 "unit_price_paise": value, "order_date": as_of.isoformat(),
                 "earliest_start_date": (order.earliest_production_start_date or as_of).isoformat(),
@@ -114,7 +130,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
             })
             counts["orders"] += 1
             if fixed and value and order.collection_date:
-                insert(conn, "invoice", {"id": f"{business_id}:inv:{_key('so', ref)}", "business_id": business_id, "kind": "RECEIVABLE", "party_id": customer,
+                put(conn, "invoice", {"id": f"{business_id}:inv:{_key('so', ref)}", "business_id": business_id, "kind": "RECEIVABLE", "party_id": customer,
                                          "order_id": so_id, "number": f"{ref}-COLL"[:40], "description": "Agreed collection date",
                                          "amount_paise": value, "invoice_date": as_of.isoformat(), "due_date": order.collection_date.isoformat(), "status": "OPEN"})
                 counts["invoices"] += 1
@@ -125,7 +141,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
             customer = party("CUSTOMER", receivable.customer)
             due = receivable.expected_collection_date or as_of
             ref = receivable.source_reference or f"R{index + 1}"
-            insert(conn, "invoice", {"id": f"{business_id}:inv:{_key('rec', ref)}", "business_id": business_id, "kind": "RECEIVABLE", "party_id": customer,
+            put(conn, "invoice", {"id": f"{business_id}:inv:{_key('rec', ref)}", "business_id": business_id, "kind": "RECEIVABLE", "party_id": customer,
                                      "number": ref[:40], "description": "From intake", "amount_paise": money_to_paise(receivable.amount),
                                      "invoice_date": min(as_of, due).isoformat(), "due_date": due.isoformat(), "status": "OPEN"})
             counts["invoices"] += 1
@@ -133,7 +149,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
         for index, expense in enumerate(facts.expenses):
             if expense.amount is None:
                 continue
-            insert(conn, "scheduled_expense", {"id": f"{business_id}:sx:{index}", "business_id": business_id,
+            put(conn, "scheduled_expense", {"id": f"{business_id}:sx:{index}", "business_id": business_id,
                                                "label": (expense.description or "Expense")[:120], "amount_paise": money_to_paise(expense.amount),
                                                "due_date": (expense.due_date or as_of).isoformat(), "paid": 0})
             counts["expenses"] += 1
@@ -141,7 +157,7 @@ def import_facts(business_id: str, facts: BusinessFacts) -> dict[str, int]:
         for index, facility in enumerate(facts.approved_facilities):
             if not facility.approved or facility.approved_limit is None:
                 continue
-            insert(conn, "credit_facility", {"id": f"{business_id}:cf:{index}", "business_id": business_id,
+            put(conn, "credit_facility", {"id": f"{business_id}:cf:{index}", "business_id": business_id,
                                              "label": facility.facility_id or f"Approved facility {index + 1}",
                                              "approved_limit_paise": money_to_paise(facility.approved_limit),
                                              "annual_rate_bps": facility.annual_interest_rate_bps or 0,

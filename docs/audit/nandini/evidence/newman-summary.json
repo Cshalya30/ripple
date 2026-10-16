@@ -1,0 +1,3347 @@
+{
+ "collection": "Ripple API (Track A: today, book, engine, fixes, risk, guard, Munim. Track B: parties, invoices, payments, orders, inventory, settings, cross-business)",
+ "stats": {
+  "iterations": {
+   "total": 1,
+   "pending": 0,
+   "failed": 0
+  },
+  "items": {
+   "total": 273,
+   "pending": 0,
+   "failed": 0
+  },
+  "scripts": {
+   "total": 295,
+   "pending": 0,
+   "failed": 0
+  },
+  "prerequests": {
+   "total": 273,
+   "pending": 0,
+   "failed": 0
+  },
+  "requests": {
+   "total": 273,
+   "pending": 0,
+   "failed": 0
+  },
+  "tests": {
+   "total": 273,
+   "pending": 0,
+   "failed": 0
+  },
+  "assertions": {
+   "total": 413,
+   "pending": 0,
+   "failed": 0
+  },
+  "testScripts": {
+   "total": 273,
+   "pending": 0,
+   "failed": 0
+  },
+  "prerequestScripts": {
+   "total": 22,
+   "pending": 0,
+   "failed": 0
+  }
+ },
+ "timings": {
+  "started": 1792072554408,
+  "completed": 1792072597247
+ },
+ "failures": [],
+ "requests": [
+  {
+   "name": "health",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    },
+    {
+     "name": "only status ok, nothing else leaks",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "health (short path)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "today needs a session",
+   "status": 401,
+   "assertions": [
+    {
+     "name": "status is 401",
+     "passed": true
+    },
+    {
+     "name": "error envelope",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "engine run needs a session",
+   "status": 401,
+   "assertions": [
+    {
+     "name": "status is 401",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "guard needs a session",
+   "status": 401,
+   "assertions": [
+    {
+     "name": "status is 401",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "book summary needs a session",
+   "status": 401,
+   "assertions": [
+    {
+     "name": "status is 401",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "munim needs a session",
+   "status": 401,
+   "assertions": [
+    {
+     "name": "status is 401",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "write without the CSRF header is refused before anything else",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    },
+    {
+     "name": "error code is MISSING_CSRF_HEADER",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "unknown API path is a JSON 404",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "no API documentation is exposed",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "not an interactive docs page",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "open a sandbox business",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "a session cookie was set",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "who am I",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "owner role",
+     "passed": true
+    },
+    {
+     "name": "sandbox flag set",
+     "passed": true
+    },
+    {
+     "name": "no password hash or token in the payload",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "today",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    },
+    {
+     "name": "headline and position present",
+     "passed": true
+    },
+    {
+     "name": "money is whole paise",
+     "passed": true
+    },
+    {
+     "name": "guard brief present with a valid level",
+     "passed": true
+    },
+    {
+     "name": "removed count boxes are gone",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "alerts",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "count matches list",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "book summary",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "series covers the horizon",
+     "passed": true
+    },
+    {
+     "name": "every point has integer cash and net",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "transactions list",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "rows and totals",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "transactions: bad direction filter",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "engine run",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "series and events",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "engine network view",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "engine day 0",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "day log shape",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "engine day outside the horizon",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DAY_OUT_OF_RANGE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "engine run for an unknown scenario key",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    },
+    {
+     "name": "error code is SCENARIO_EXPIRED",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: extension of a supplier bill",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "a key and an evaluation come back",
+     "passed": true
+    },
+    {
+     "name": "the moved bill is reported as changed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: new payment (ADD_PAYMENT)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the added payment appears as a new event",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: missing fields",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is MISSING_FIELDS",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: date outside the horizon",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DATE_OUTSIDE_HORIZON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: unknown kind",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: extra property is refused",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: negative amount",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario: unknown event",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "scenario chance (cheap poll)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "status is a known value",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ways to fix",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "each fix has a title and a dip after",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "fix evaluate: unknown fix",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    },
+    {
+     "name": "error code is UNKNOWN_FIX",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "fix evaluate: neither fix nor kind",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is FIX_OR_KIND_REQUIRED",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "risk forecast",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "known status",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "guard",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    },
+    {
+     "name": "both halves and a verdict",
+     "passed": true
+    },
+    {
+     "name": "safe amounts are whole thousands and never grow with the window",
+     "passed": true
+    },
+    {
+     "name": "checks passed count is consistent",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "guard: yield too high",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "guard: yield negative",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: a bill",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "first option is the baseline and the best is one of the options",
+     "passed": true
+    },
+    {
+     "name": "each option has a verdict and a figure",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: a new payment",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "skipping it is never the recommendation",
+     "passed": true
+    },
+    {
+     "name": "a real payment lowers the forecast low point",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: nothing to check",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: date outside the forecast",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DATE_OUTSIDE_HORIZON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: unknown bill",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: negative amount",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment check: extra property",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "flag review: unknown check",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "flag review: bad verdict",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "log a missed entry",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the miss is counted (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "missed count rose by one",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "log a miss for an unknown check",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ask why there is a dip",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "a non-empty reply in a known mode",
+     "passed": true
+    },
+    {
+     "name": "no raw error text in the reply",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ask who owes the most",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "answers from the books, not with the runway message",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ask how much is safe to spend",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "uses the Risk and Finance tool",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "out-of-scope question is declined",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "declines instead of giving an unrelated answer",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "script tag in the question is plain text",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the reply does not echo markup",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "blank question",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "empty question",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "question over 1000 characters",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "unknown language",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "extra property is refused",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "wrong content type",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "customers list",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    },
+    {
+     "name": "rows, a total, integer money",
+     "passed": true
+    },
+    {
+     "name": "every row is a customer with an integer outstanding",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "suppliers list",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "suppliers only",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "parties: bad kind",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "party detail",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "has open bills with integer amounts",
+     "passed": true
+    },
+    {
+     "name": "no password, hash or token anywhere",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "party detail: unknown id",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    },
+    {
+     "name": "error code is NOT_FOUND",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "party detail: path traversal text",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create customer",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "created with the name given and a new id",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "created customer is in the list (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the new party is listed once",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: missing name",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: empty name",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: name over 120",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: bad kind",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: phone with letters",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: credit days 366",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: credit days as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: extra property (mass assignment)",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: wrong content type",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: malformed JSON",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: markup in the name is stored as text",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the name comes back unchanged, never interpreted",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create party: a name that starts like a spreadsheet formula",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "update party",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the update was stored (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "city and terms changed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "update party: unknown id",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "update party: extra property",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "add a note",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the note is stored",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "note present",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "add a note: empty",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "add a note: too long",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "party datasheet (CSV)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "CSV with a download name",
+     "passed": true
+    },
+    {
+     "name": "starts with a byte-order mark so Excel reads it as UTF-8",
+     "passed": true
+    },
+    {
+     "name": "no cell can start a formula",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "party datasheet: unknown party",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "company datasheet (CSV)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200 and CSV",
+     "passed": true
+    },
+    {
+     "name": "no secrets in the sheet",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "message draft: reminder",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "text has no unfilled placeholders and a WhatsApp link with a country code",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "message draft: intent that does not fit",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "message draft: unknown language",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create an invoice",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "stored open, amount in paise",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the invoice shows on the party (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "open item present",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: duplicate number for the same party",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DUPLICATE_INVOICE_NUMBER",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: due before invoice date",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DUE_BEFORE_INVOICE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: year 9999",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: amount zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: amount negative",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: amount with decimals",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: amount as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: amount beyond any real figure",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: unknown party",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: promised date",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "invoice: promised date unknown invoice",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: part payment by UPI",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "cleared, with the amount stored exactly",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the payment is in the ledger and the bill went down (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the ledger has the payment",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: more than the bill",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is AMOUNT_EXCEEDS_OUTSTANDING",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: dated in the future",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is FUTURE_DATE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: wrong direction for a customer",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DIRECTION_MISMATCH",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: another party's bill",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is INVOICE_MISMATCH",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: unknown party",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: unknown medium",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: amount zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: amount as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: date as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "payment: extra property",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "cheque for the rest of the bill is pending",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "pending, so not cash yet",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "a second cheque for the same money is refused",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is AMOUNT_EXCEEDS_OUTSTANDING",
+     "passed": true
+    },
+    {
+     "name": "says how much is held by pending cheques",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "bounce the cheque",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "status is BOUNCED",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "a bounced cheque cannot be changed again",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is NOT_PENDING",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the money is free again after the bounce",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "clear the cheque",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the bill is now paid (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "no open item left for PM-1001",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "transaction status: invalid value",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "transaction status: unknown id",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ledger: limit 0",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ledger: limit over 1000",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "ledger: medium filter",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "only UPI rows",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "a payment from the formula-named customer",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "transactions CSV: formula guard and byte-order mark",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status 200 and CSV",
+     "passed": true
+    },
+    {
+     "name": "starts with a byte-order mark",
+     "passed": true
+    },
+    {
+     "name": "the formula-like party name is neutralised",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "sales orders",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "orders with a stage and integer value",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "move an order forward",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the stage was stored (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the order is at MATERIALS_READY",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: same stage again",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is INVALID_TRANSITION",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: undo back to planned",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: unknown stage",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: unknown id",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: extra property",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase orders",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "catalogue (products, materials, suppliers)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "lists present",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create a purchase order",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "ordered",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase order: a customer is not a supplier",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is NOT_A_SUPPLIER",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase order: quantity zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase order: unknown material",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase order: arrival in year 9999",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "mark the purchase order arrived",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "arriving twice is refused",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is INVALID_TRANSITION",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "undo the arrival",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase order: unknown status",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "purchase order: unknown id",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "accept an order (create a sales order)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "planned, with the quantity asked",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the new order is listed (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "present once",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: quantity zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: quantity as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: unknown customer",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "order: promised date year 1999",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "what-if: can I take this order",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "what-if: quantity zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "what-if: price as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "what-if: date year 9999",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "what-if: unknown customer",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "inventory",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "materials with an on-hand quantity and a status",
+     "passed": true
+    },
+    {
+     "name": "summary has integer counts",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "inventory summary",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create a material",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "stored with its cost in paise",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the material is listed with its opening stock (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "present with 2.5 kg = 2500 g",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: same name again",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is MATERIAL_EXISTS",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: empty name",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: unknown unit",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: negative cost",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: opening stock below zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: opening stock with four decimals",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: sku with spaces",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: extra property",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "rename the material",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "material: patch unknown id",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: add with a note",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: the movement is listed",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the count note is in the list",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: zero change",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is ZERO_QUANTITY",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: no note",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: taking out more than is there",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is NOT_ENOUGH_STOCK",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: still the same amount (nothing was taken)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "on hand unchanged and not negative",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: unknown item",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "stock: bad item type",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recipe: read",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recipe: duplicate material line",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is DUPLICATE_MATERIAL",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recipe: unknown material",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recipe: unknown product",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recipe: negative quantity",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "a material with stock history cannot be deleted",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is MATERIAL_IN_USE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "create a scrap material with no history",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "delete the scrap material",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "the material is gone (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "not listed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "delete a material that is in use",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is MATERIAL_IN_USE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "delete an unknown material",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "settings",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "profile, money, recurring, facilities, team",
+     "passed": true
+    },
+    {
+     "name": "team rows carry no password data",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "business profile: change the owner name",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "business profile is stored (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "owner name changed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "business profile: GSTIN of the wrong length",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "business profile: Udyam number of the wrong shape",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "business profile: name over 120",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "business profile: unknown field",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "money rules: safety buffer",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "money rules are stored",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "buffer changed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "money rules: negative buffer",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "money rules: credit days 366",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "money rules: buffer as text",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recurring expense: add",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "listed with the amount in paise",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recurring expense: day 32",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recurring expense: amount zero",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recurring expense: remove",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "recurring expense: remove unknown",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    },
+    {
+     "name": "error code is NOT_FOUND",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "credit facility: repayment before it is available",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is REPAYMENT_BEFORE_AVAILABLE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "credit facility: rate over 100%",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "credit facility: add",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "listed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "credit facility: remove",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "export everything (JSON)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "content type is JSON",
+     "passed": true
+    },
+    {
+     "name": "has the business tables and no secrets",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: invite",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "a one-time password is returned once",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: the invitee is listed (persistence) and has no password data",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "listed",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: inviting the same email again says only that it cannot be done",
+   "status": 409,
+   "assertions": [
+    {
+     "name": "status is 409",
+     "passed": true
+    },
+    {
+     "name": "error code is CANNOT_INVITE",
+     "passed": true
+    },
+    {
+     "name": "no hint about who has an account",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: an address that belongs to the shared demo gets the same answer",
+   "status": 409,
+   "assertions": [
+    {
+     "name": "status is 409",
+     "passed": true
+    },
+    {
+     "name": "error code is CANNOT_INVITE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: invalid email",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: unknown role",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: remove the invitee",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: remove yourself",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is CANNOT_REMOVE_SELF",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "team: remove a person who does not exist",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "reset: wrong confirmation",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    },
+    {
+     "name": "error code is CONFIRMATION_MISMATCH",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "reset: confirmation missing",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "preferences: change the theme",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "the new theme comes back",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "preferences are stored (persistence)",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "theme is day",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "preferences: unknown theme",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "preferences: unknown field",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "preferences: text size as number",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "sessions list carries no token",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "only dates and a device name",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "body over the limit is refused",
+   "status": 413,
+   "assertions": [
+    {
+     "name": "status is 413",
+     "passed": true
+    },
+    {
+     "name": "error code is BODY_TOO_LARGE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "remember business A's ids",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "sign out of A",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "open sandbox B",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot read A's party",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    },
+    {
+     "name": "error code is NOT_FOUND",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot pay against A's party",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot edit A's party",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot read A's datasheet",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot move A's order",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot receive A's purchase order",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot change A's material",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot adjust A's stock",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B cannot remove A's team member",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "B's own data is untouched and reachable",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "B still has its own parties",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "sign in as the supervisor",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor cannot read today",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor cannot read the engine",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor cannot read the guard",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor cannot read the book",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor cannot log a miss",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor gets no money tools from Munim",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "no finance tool was used",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "sign in as the supervisor",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: parties are finance only",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    },
+    {
+     "name": "error code is FORBIDDEN_FOR_ROLE",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot record a payment",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot create an invoice",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot read the ledger or export it",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot export the business",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot change money rules",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot invite or remove people",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot reset the business",
+   "status": 403,
+   "assertions": [
+    {
+     "name": "status is 403",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: sales orders carry no money",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "no rupee amount anywhere in the response",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: purchase orders carry no money",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "no rupee amount anywhere in the response",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: inventory carries no money",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "no rupee amount anywhere in the response",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: stock movements carry no money",
+   "status": 200,
+   "assertions": [
+    {
+     "name": "status is 200",
+     "passed": true
+    },
+    {
+     "name": "no rupee amount anywhere in the response",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: cannot move an order back past delivery",
+   "status": 404,
+   "assertions": [
+    {
+     "name": "status is 404",
+     "passed": true
+    }
+   ]
+  },
+  {
+   "name": "supervisor: can adjust stock only with a note",
+   "status": 422,
+   "assertions": [
+    {
+     "name": "status is 422",
+     "passed": true
+    }
+   ]
+  }
+ ]
+}

@@ -35,6 +35,15 @@ def invoice_outstanding(invoice: dict[str, Any]) -> int:
     return invoice["amount_paise"] - cleared_paid_by_invoice(txns).get(invoice["id"], 0)
 
 
+def invoice_unallocated(invoice: dict[str, Any]) -> tuple[int, int]:
+    """(amount still free to be paid, amount held by pending cheques). A pending cheque has not cleared, so the invoice
+    still shows it as owed, but it is spoken for: a second cheque must not be able to pay the same money again."""
+    txns = query("SELECT invoice_id, amount_paise, status FROM txn WHERE invoice_id = ? AND business_id = ?", (invoice["id"], invoice["business_id"]))
+    cleared = sum(t["amount_paise"] for t in txns if t["status"] == "CLEARED")
+    pending = sum(t["amount_paise"] for t in txns if t["status"] == "PENDING")
+    return invoice["amount_paise"] - cleared - pending, pending
+
+
 def _refresh_invoice(conn, invoice_id: str, business_id: str) -> None:
     invoice = query_one("SELECT * FROM invoice WHERE id = ? AND business_id = ?", (invoice_id, business_id))
     if invoice is None:
@@ -63,9 +72,9 @@ def record_payment(business_id: str, user_id: str, data: dict[str, Any]) -> dict
         invoice = owned("invoice", data["invoice_id"], business_id)
         if invoice["party_id"] != party["id"] or (invoice["kind"] == "RECEIVABLE") != (direction == "IN"):
             raise RecordError("INVOICE_MISMATCH", {"invoice_id": invoice["id"]})
-        outstanding = invoice_outstanding(invoice)
-        if data["amount_paise"] > outstanding:
-            raise RecordError("AMOUNT_EXCEEDS_OUTSTANDING", {"outstanding_paise": outstanding})
+        free, held = invoice_unallocated(invoice)
+        if data["amount_paise"] > free:
+            raise RecordError("AMOUNT_EXCEEDS_OUTSTANDING", {"outstanding_paise": max(free, 0), "pending_cheques_paise": held})
     status = data.get("status") or ("PENDING" if data["medium"] == "CHEQUE" else "CLEARED")
     txn_id = new_id(business_id, "t")
     with tx() as conn:
@@ -85,6 +94,10 @@ def set_txn_status(business_id: str, txn_id: str, status: str) -> dict[str, Any]
     txn = owned("txn", txn_id, business_id)
     if txn["status"] != "PENDING":
         raise RecordError("NOT_PENDING", {"status": txn["status"]})
+    if status == "CLEARED" and txn["invoice_id"]:
+        invoice = owned("invoice", txn["invoice_id"], business_id)
+        if txn["amount_paise"] > invoice_outstanding(invoice):
+            raise RecordError("AMOUNT_EXCEEDS_OUTSTANDING", {"outstanding_paise": max(invoice_outstanding(invoice), 0)})
     with tx() as conn:
         update(conn, "txn", txn_id, business_id, {"status": status})
         if txn["invoice_id"]:
@@ -333,9 +346,13 @@ def create_invoice(business_id: str, data: dict[str, Any]) -> dict[str, Any]:
     due = date.fromisoformat(data.get("due_date") or (invoice_date + timedelta(days=party["terms_days"])).isoformat())
     if due < invoice_date:
         raise RecordError("DUE_BEFORE_INVOICE", {})
+    number = data["number"].strip()
+    same = lambda text: "".join(ch for ch in text.lower() if ch.isalnum())  # 'INV 1', 'inv-1' and 'INV/1' are one number
+    if any(same(row["number"]) == same(number) for row in query("SELECT number FROM invoice WHERE business_id = ? AND party_id = ?", (business_id, party["id"]))):
+        raise RecordError("DUPLICATE_INVOICE_NUMBER", {"number": number})
     with tx() as conn:
         insert(conn, "invoice", {"id": invoice_id, "business_id": business_id, "kind": kind, "party_id": party["id"], "order_id": None,
-                                 "number": data["number"].strip(), "description": data.get("description"), "amount_paise": data["amount_paise"],
+                                 "number": number, "description": data.get("description"), "amount_paise": data["amount_paise"],
                                  "invoice_date": invoice_date.isoformat(), "due_date": due.isoformat(),
                                  "promised_date": data.get("promised_date"), "status": "OPEN"})
         bump_data_version(conn, business_id)
@@ -395,6 +412,10 @@ def stock_adjustment(business_id: str, user_id: str, data: dict[str, Any]) -> di
     owned(table, data["item_id"], business_id)
     if not (data.get("note") or "").strip():
         raise RecordError("NOTE_REQUIRED", {})
+    if data["qty_delta"] < 0:
+        on_hand_now = _stock_of(business_id, data["item_id"])
+        if on_hand_now + data["qty_delta"] < 0:
+            raise RecordError("NOT_ENOUGH_STOCK", {"on_hand": on_hand_now, "removing": -data["qty_delta"]})
     mv_id = new_id(business_id, "mv")
     with tx() as conn:
         insert(conn, "stock_movement", {"id": mv_id, "business_id": business_id, "item_type": data["item_type"], "item_id": data["item_id"],

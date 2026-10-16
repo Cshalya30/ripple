@@ -8,7 +8,7 @@
   --rule-strong:   #463F34;
   --text:          #ECE5D3;
   --text-2:        #B3A994;
-  --text-3:        #7F7766;
+  --text-3:        #918977;
   --haldi:         #E4A43A;
   --haldi-wash:    rgba(228,164,58,0.12);
   --in:            #7DB88A;
@@ -32,9 +32,9 @@
   --rule-strong:   #BDB5A5;
   --text:          #17150F;
   --text-2:        #554F46;
-  --text-3:        #857E72;
-  --haldi:         #9E640C;
-  --haldi-wash:    rgba(158,100,12,0.10);
+  --text-3:        #6B6559;
+  --haldi:         #8F5A09;
+  --haldi-wash:    rgba(143,90,9,0.10);
   --in:            #2D7845;
   --out:           #BC3A22;
   --in-wash:       rgba(45,120,69,0.10);
@@ -56,7 +56,7 @@
   --rule-strong:   #54493A;
   --text:          #E6D6B6;
   --text-2:        #B9A887;
-  --text-3:        #8A7B62;
+  --text-3:        #A09278;
   --haldi:         #D9A646;
   --haldi-wash:    rgba(217,166,70,0.12);
   --in:            #A6B878;
@@ -122,4 +122,4 @@
 html[data-size="S"] { font-size: 93.75%; zoom: 0.94; }
 html[data-size="L"] { zoom: 1.15; }
 html[data-size="XL"] { zoom: 1.3; }
-html[data-targets="large"] { --control: 44px; --row: 44px; }
+html[data-targets="large"] { --control: 48px; --row: 48px; }

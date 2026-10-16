@@ -6,9 +6,9 @@ import type { DecisionRow, StockSeries } from '../lib/types'
 import { REASON_TEXT } from './model'
 
 const GROUPS = [
-  { key: 'BRING_IN', title: '1 Bring in', sub: 'receipts, arrivals, credit' },
-  { key: 'MOVE_GOODS', title: '2 Move goods', sub: 'completions, deliveries' },
-  { key: 'PAY_OUT', title: '3 Pay out', sub: 'payments, expenses, production, repayments' },
+  { key: 'BRING_IN', title: 'Bring in', sub: 'receipts, arrivals, credit' },
+  { key: 'MOVE_GOODS', title: 'Move goods', sub: 'completions, deliveries' },
+  { key: 'PAY_OUT', title: 'Pay out', sub: 'payments, expenses, production, repayments' },
 ] as const
 
 export function Decisions({ stock }: { stock: StockSeries[] }) {
@@ -62,7 +62,9 @@ function Row({ row, stock, onSelect, selected }: { row: DecisionRow; stock: Stoc
     <button className="dec-row" onClick={onSelect}
       style={{ display: 'block', width: '100%', textAlign: 'left', border: 0, borderBottom: '1px solid var(--rule)', background: selected ? 'var(--haldi-wash)' : 'transparent', cursor: 'pointer', padding: '8px 4px' }}>
       <div className="row" style={{ alignItems: 'flex-start' }}>
-        <span className="mono faint" style={{ width: 18, flex: 'none' }}>{blocked ? '' : row.seq + 1}</span>
+        <span className={`dec-serial${blocked ? ' dec-serial-blocked' : ''}`} aria-label={blocked ? 'Not executed' : `Execution step ${row.seq + 1}`}>
+          {blocked ? '—' : `#${row.seq + 1}`}
+        </span>
         <span className="grow">{row.label}</span>
       </div>
       <div className="row-wrap" style={{ paddingLeft: 26, gap: 10 }}>

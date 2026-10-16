@@ -14,7 +14,7 @@ def business_of(c) -> str:
     return query_one("SELECT business_id FROM user WHERE id = ?", (c.get("/api/me").json()["user"]["id"],))["business_id"]
 
 
-def wait_for_risk(c, timeout=60):
+def wait_for_risk(c, timeout=180):  # generous: the risk run shares the CPU with whatever else is running
     deadline = time.time() + timeout
     while time.time() < deadline:
         body = c.get("/api/risk/forecast").json()

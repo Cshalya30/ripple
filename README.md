@@ -85,9 +85,20 @@ The password comes from `DEMO_PASSWORD`. No admin or infrastructure credentials 
 | `/app/orders` | Sales orders with forecast delivery and Undo (a step back removes exactly the records the step created), purchase orders with Undo received / Undo payment / Reopen, "Can I take this order?" |
 | `/app/inventory` | Raw materials (add, edit, delete when unused; needed, free, cover, reorder point, ABC, filters), finished goods, recipes (editable), movements |
 | `/app/settings` | Business profile (GSTIN and Udyam checked), money rules, team and access, display, language, voice (ten languages), accessibility, data (company datasheet), privacy, account |
-| `/setup` | Describe the business in words, review what was understood against your own quotes, approve |
+| `/setup` | Describe the business in words or upload a CSV, review the parsed data, approve (CSV imports can replace or merge and always ask for confirmation first) |
+| `/privacy`, `/terms`, `/login` | Public pages: what is stored and where text goes, the terms of use, sign-in, and account creation. New accounts are owners of an empty business and continue to `/setup`. Only these are in `/sitemap.xml`; `robots.txt` keeps search engines out of `/app/`, `/api/` and `/setup`. An address that is not a page shows a 404 page and returns status 404 |
 
 Keyboard: `/` or `Ctrl K` opens the command line (`ENG`, `BOOK`, `DAY 34`, `PAY KAVERI`, `FIX`), `M` toggles Munim.
+
+### CSV setup import
+
+The owner can upload a UTF-8 CSV at `/setup`. The existing ledger headers
+(`Party name, Type, Bill amount, Received / Paid, Due date`) are supported, as
+is the downloadable Ripple template with `record_type` rows for `business`,
+`inventory`, `receivable`, `purchase`, `order`, and `expense`. Uploads are
+previewed and validated before anything is written. Replace mode resets the
+business records; merge mode keeps existing records and ignores repeated
+deterministic IDs. CSVs are limited to 2 MB and 2,000 rows.
 In the Engine: `Space` play or pause, `←` `→` one step (one day, or the next day with events when "Skip quiet days" is on), `Shift ←` `Shift →` one week, `Home` `End`, `N` next issue.
 
 Datasheets (priority export): `GET /api/export/party/{id}/datasheet.csv` for one customer or supplier and `GET /api/export/company/datasheet.csv` for the business. Sectioned UTF-8 CSV with a byte-order mark, plain-rupee numbers, ISO dates, formula-safe text.
@@ -121,6 +132,13 @@ Voice: Munim listens and speaks English, Hindi, Tamil, Telugu, Kannada, Malayala
 
 ## Architecture
 
+> 🌐 **Interactive Blueprint:** Open [docs/architecture.html](docs/architecture.html) in your browser for the full interactive visual topology, engine specifications, and tech stack map.
+
+For the complete engine behavior, snapshot mapping, scheduling policy, result
+contract, scenarios, risk flow, and endpoint reference, see
+[docs/ENGINE.md](docs/ENGINE.md). The lower-level wire contract remains in
+[docs/SIMULATION_CONTRACT.md](docs/SIMULATION_CONTRACT.md).
+
 ```
 Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, same origin)
                                                  ├─ records (SQLite, every row scoped by business_id)
@@ -131,6 +149,7 @@ Browser (React SPA) ──HTTPS, cookie session──▶ FastAPI (one service, s
                                                  ├─ Munim: read-only tools, Groq tool calling, number grounding, templates
                                                  └─ intake: text → facts with quotes → approval → records
 ```
+
 
 Recompute pipeline: every write bumps the business's data version, which invalidates the cached run. The next read
 rebuilds the snapshot and runs the engine (about 10 ms), and a risk run is queued two seconds later in a worker process.
@@ -196,8 +215,8 @@ Render works the same way with a persistent disk at `/data`. The Dockerfile has 
 
 See `.env.example`. `GROQ_API_KEY` is optional: without it, the set-up screen cannot read descriptions (the API still accepts reviewed facts) and Munim answers
 from templates, labelled as such on screen. Others: `DATABASE_URL`, `DEMO_PASSWORD`, `ALLOWED_ORIGINS`,
-`COOKIE_SECURE`, `RISK_SAMPLES`, `RISK_DRIVER_SAMPLES`, `RISK_FIX_SAMPLES`, `RISK_PROCESSES`, `MAX_SANDBOXES`,
-`RIPPLE_TODAY`.
+`COOKIE_SECURE`, `TRUST_PROXY`, `TRUSTED_PROXY_HOPS`, `RISK_SAMPLES`, `RISK_DRIVER_SAMPLES`, `RISK_FIX_SAMPLES`, `RISK_PROCESSES`, `MAX_SANDBOXES`,
+`RIPPLE_TODAY`, `PUBLIC_BASE_URL` (the site's own address, used for the share image and the sitemap; leave empty to use the address each request came to).
 
 ## Database
 
@@ -207,10 +226,13 @@ shared demo business is seeded on first start; owners can restore it from Settin
 ## Tests
 
 ```
-python -m unittest discover -s tests -v        # 125 backend tests: engine, intake, builder, risk, fixes, API, security
+python -m unittest discover -s tests -v        # 190+ backend tests: engine, intake, builder, risk, fixes, API, security, audit regressions, a schema-driven fuzz
 cd frontend && npx vitest run                  # money and date formatting, input checks, voice helpers, flow line routing
                                                # (a repo path containing '#' breaks Vite: run from a copy at a plain path)
 cd e2e && npm install && node smoke.mjs shots  # browser smoke against a running server (RIPPLE_URL, BROWSER_PATH)
+                                               # also: regression-trackA.mjs, regression-trackB.mjs (user journeys), audit-controls.mjs (click every control),
+                                               # audit-a11y.mjs (axe, contrast, overflow, titles), audit-keyboard.mjs, audit-speed.mjs
+node postman/build_collection.py               # then: newman run postman/collections/ripple-api.json --env-var base_url=http://localhost:8000
 python -m scripts.bench_engine                 # E-5: one engine run and one risk refresh on the demo data
 ```
 
@@ -223,8 +245,10 @@ under 200 ms while it runs.
 - Sessions are random tokens stored hashed on the server, sent as `HttpOnly`, `SameSite=Lax` cookies. Login errors are generic.
 - Roles are enforced by the API; supervisors' responses have every `*_paise` field removed on the server.
 - `business_id` always comes from the session. Another business's IDs return 404.
-- Writes require an `X-Ripple: 1` header (blocks cross-site form posts). Bodies are limited to 256 KB and validated
-  by Pydantic with length limits.
+- Writes require an `X-Ripple: 1` header (blocks cross-site form posts). Bodies are limited to 256 KB, counted as they arrive (a body sent in
+  chunks is cut off too), and validated by Pydantic: lengths, whole-number money (a string such as "100" is refused), dates between 2000 and 2100.
+- The shared demo accounts cannot change the team or reset the shared business, so one tester cannot lock the others out.
+- A pending cheque holds its amount against the bill, so two cheques cannot pay the same money twice; it counts as cash only when marked cleared.
 - Rate limits: login 10 per minute per IP; Munim and set-up 20 per minute per user and 60 per hour per IP; demo
   copies 6 per minute per IP.
 - CSP, `X-Frame-Options: DENY` and `nosniff` on every response; no stack traces in errors; CSV exports neutralise formulas.
@@ -239,6 +263,8 @@ under 200 ms while it runs.
 - Tamil and Hindi UI strings and message templates were written by the build team and need review by a fluent speaker. Screens and message drafts exist in English, Tamil and Hindi only; Munim's voice and replies cover ten languages.
 - Voice quality depends on the device: a language with no installed voice cannot be read aloud (Settings > Voice says so), and listening needs a network connection because the browser's speech service does the recognition.
 - Undoing a delivery is refused once a payment is recorded against its invoice, and undoing a stage is refused when the stock it created has since been used.
+- Only the navigation, Today and Book labels are translated into Tamil and Hindi; the other screens show English text until a fluent speaker supplies reviewed translations.
+- Page speed on a slow phone connection (4x CPU slowdown, 1.6 Mbps): largest paint about 2.5 to 3.3 seconds, layout shift under 0.1. Settings loads Tamil and Devanagari fonts when their language names are shown.
 - Excel import, receipt image upload, WhatsApp and SMS notifications, and bank feeds are not built.
 - One business shape only: buy materials, produce, deliver, collect on credit.
 

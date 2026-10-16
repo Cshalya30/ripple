@@ -41,12 +41,31 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T
 }
 
+async function upload<T>(path: string, file: File): Promise<T> {
+  const response = await fetch(`/api${path}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'X-Ripple': '1', 'X-Filename': file.name },
+    body: file,
+  })
+  const text = await response.text()
+  let data: unknown = null
+  try { data = text ? JSON.parse(text) : null } catch { data = null }
+  if (!response.ok) {
+    const error = (data as { error?: { code?: string; details?: unknown } } | null)?.error
+    if (response.status === 401 && !path.startsWith('/auth/')) unauthorizedListeners.forEach((fn) => fn())
+    throw new ApiError(response.status, error?.code ?? `HTTP_${response.status}`, error?.details)
+  }
+  return data as T
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
   put: <T>(path: string, body: unknown) => request<T>('PUT', path, body),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   del: <T>(path: string) => request<T>('DELETE', path),
+  upload,
 }
 
 /** Pydantic's "loc" -> a field name people recognise. */
@@ -76,8 +95,9 @@ export function errorText(error: unknown): string {
   const d = (error.details ?? {}) as Record<string, any>
   const map: Record<string, string> = {
     BAD_CREDENTIALS: 'Email or password is wrong',
+    PASSWORD_MISMATCH: 'Passwords do not match.',
     RATE_LIMITED: 'Too many requests. Wait a minute and try again.',
-    AMOUNT_EXCEEDS_OUTSTANDING: 'That is more than is outstanding on this bill.',
+    AMOUNT_EXCEEDS_OUTSTANDING: d.pending_cheques_paise ? 'That is more than is still free on this bill: a pending cheque already covers part of it. Clear or bounce that cheque first.' : 'That is more than is outstanding on this bill.',
     FUTURE_DATE: 'A payment cannot be dated in the future.',
     DIRECTION_MISMATCH: 'Customers pay you; you pay suppliers. Check the direction.',
     NOT_ENOUGH_MATERIAL: 'Not enough material in stock to start this order.',
@@ -91,8 +111,13 @@ export function errorText(error: unknown): string {
     NOTE_REQUIRED: 'Stock adjustments need a note.',
     DEMO_CAPACITY: 'Too many demo copies right now. Sign in with the demo owner account instead.',
     EMAIL_TAKEN: 'That email already has an account.',
+    CANNOT_INVITE: 'That email cannot be invited. Use a different address.',
+    SHARED_DEMO_PROTECTED: 'This is the shared demo business, so its team and data cannot be changed. Use Open demo business for your own copy.',
+    DUPLICATE_INVOICE_NUMBER: `This party already has a bill numbered ${d.number ?? 'that'}. Use a different number.`,
+    BODY_TOO_LARGE: 'That is too large to send. Shorten it and try again.',
     INVOICE_HAS_PAYMENTS: `Payments are already recorded against ${d.invoice ?? 'the invoice'}, so this step cannot be undone.`,
     ORDER_ALREADY_PAID: `This order is already paid${d.invoice ? ` (${d.invoice})` : ''}, so it cannot be moved back.`,
+    NOT_ENOUGH_STOCK: 'There is less than that in stock, so it cannot be taken out. Check the count and try again.',
     NOT_ENOUGH_FINISHED_STOCK: 'The finished pieces from this order are no longer in stock (they were sold or adjusted), so it cannot go back.',
     NOT_ENOUGH_MATERIAL_TO_REVERSE: 'Some of that material has already been used or adjusted, so the delivery cannot be undone.',
     MATERIAL_EXISTS: 'A material with that name already exists.',
@@ -114,6 +139,25 @@ export function errorText(error: unknown): string {
     NOT_FOUND: 'That record no longer exists. Refresh and try again.',
     NOT_SIGNED_IN: 'Your session ended. Sign in again.',
     INTERNAL_ERROR: 'The server hit a problem. Nothing was saved. Try again.',
+    AMOUNT_AND_DATE_REQUIRED: 'Give an amount and a date, or pick a bill to check.',
+    DAY_OUT_OF_RANGE: 'That day is outside the forecast window.',
+    DRAFT_NOT_READY: 'The description still has open questions. Answer them before approving.',
+    DUE_BEFORE_INVOICE: 'The due date cannot be before the invoice date.',
+    EXPLICIT_APPROVAL_REQUIRED: 'Review the facts and approve them before saving.',
+    FIX_OR_KIND_REQUIRED: 'Pick a fix, or choose what you want to change.',
+    INTENT_DOES_NOT_FIT_PARTY: 'That kind of message does not fit this customer or supplier.',
+    INVALID_STATUS: 'That status is not possible for this order.',
+    INVOICE_MISMATCH: 'That bill belongs to a different party, or to the other direction. Pick the right bill.',
+    NOT_EARLIER: 'Pick a date earlier than the one it has now.',
+    NOT_PENDING: 'Only a pending cheque can be changed this way.',
+    NO_OPEN_INVOICE: 'This party has no open bill to write about.',
+    NO_OPEN_ORDER: 'This customer has no open order, so there is nothing to ask a deposit on.',
+    SNAPSHOT_TOO_LARGE: 'That is too much to simulate at once. Shorten the description or the horizon.',
+    STALE_DRAFT_VERSION: 'The draft changed while you were editing. Reload it and try again.',
+    UNKNOWN_BUSINESS: 'That business was not found. Sign in again.',
+    UNKNOWN_DRAFT: 'That draft no longer exists. Start again.',
+    UNKNOWN_RULE: 'That check does not exist.',
+    UNSUPPORTED_FIX: 'That kind of fix is not available.',
   }
   if (error.code === 'VALIDATION_ERROR') {
     const issues = fieldIssues(error)

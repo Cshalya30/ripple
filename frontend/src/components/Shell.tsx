@@ -82,7 +82,7 @@ export function Shell({ children, me }: { children: ReactNode; me: Me }) {
 
       <header className="topbar">
         <div className="topbar-biz">
-          <strong className="truncate">{me.business.name}{me.business.is_sandbox && <span className="faint" style={{ fontWeight: 400 }}> · your demo copy</span>}</strong>
+          <strong className="truncate">{me.business.name}</strong>
           <span>{dayDate(me.today)} · Day {ui.scenario || engineRoute ? ui.day : 0}</span>
         </div>
         <button className="cmdline" onClick={() => ui.setCommandOpen(true)} aria-label="Open command line">

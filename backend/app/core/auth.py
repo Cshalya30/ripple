@@ -97,7 +97,9 @@ def end_session(request: Request, response: Response, everywhere: bool = False) 
             execute("DELETE FROM session WHERE user_id = ?", (row["user_id"],))
         else:
             execute("DELETE FROM session WHERE token_hash = ?", (_token_hash(token),))
-    response.delete_cookie(COOKIE, path="/")
+    response.delete_cookie(
+        COOKIE, path="/", secure=_secure(request), httponly=True, samesite="lax",
+    )
 
 
 def current(request: Request) -> Principal:
@@ -175,10 +177,23 @@ limiter = RateLimiter()
 
 
 def client_ip(request: Request) -> str:
+    """The address rate limits are counted against.
+
+    Behind a proxy, each proxy appends the address it saw to X-Forwarded-For, so everything to the LEFT of the entries our own
+    proxies added was written by the client and can be anything. The Nth entry from the right (N = TRUSTED_PROXY_HOPS, default 1)
+    is the one a trusted proxy recorded. Taking the leftmost entry, as this used to, let one client dodge every limit by sending
+    a different X-Forwarded-For header each time. Set TRUST_PROXY=0 when the app is not behind a proxy.
+    """
     if os.getenv("TRUST_PROXY", "1") == "1":
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
-            return forwarded.split(",")[0].strip()[:64]
+            parts = [part.strip() for part in forwarded.split(",") if part.strip()]
+            try:
+                hops = max(1, int(os.getenv("TRUSTED_PROXY_HOPS", "1")))
+            except ValueError:
+                hops = 1
+            if parts:
+                return parts[-min(hops, len(parts))][:64]
     return request.client.host if request.client else "unknown"
 
 

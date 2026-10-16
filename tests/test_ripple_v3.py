@@ -255,6 +255,23 @@ class MaterialTests(unittest.TestCase):
     def supplier(self, c):
         return next(p for p in c.get("/api/parties?kind=SUPPLIER").json()["parties"] if p["name"] == "Sharma Yarn Mills")
 
+    def test_small_converted_quantities_keep_their_display_precision(self):
+        c = sandbox()
+        cases = (("Dye gram", "g", 1, "1 g"), ("Dye millilitre", "ml", 1, "1 ml"), ("Thread centimetre", "m", 0.01, "0.01 m"))
+        for name, unit, opening_qty, expected in cases:
+            material = c.post("/api/materials", json={"name": name, "unit": unit, "opening_qty": opening_qty}).json()["material"]
+            row = next(m for m in c.get("/api/inventory").json()["materials"] if m["id"] == material["id"])
+            self.assertEqual(row["on_hand_label"], expected)
+
+    def test_small_converted_quantities_keep_precision_in_purchase_orders(self):
+        c = sandbox()
+        supplier = self.supplier(c)
+        material = c.post("/api/materials", json={"name": "Dye gram", "unit": "g"}).json()["material"]
+        order = c.post("/api/purchase-orders", json={"supplier_id": supplier["id"], "material_id": material["id"], "qty": 1})
+        self.assertEqual(order.status_code, 200, order.text)
+        purchase = next(o for o in c.get("/api/purchase-orders").json()["orders"] if o["id"] == order.json()["order"]["id"])
+        self.assertEqual(purchase["qty_label"], "1 g")
+
     def test_new_material_shows_up_everywhere_it_matters(self):
         c = sandbox()
         sup = self.supplier(c)

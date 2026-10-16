@@ -156,8 +156,27 @@ def render(intent_key: str, tone: str, lang: str, slots: dict[str, str], msme: d
     return re.sub(r"\s+", " ", text).strip()
 
 
+def whatsapp_number(phone: str | None) -> str | None:
+    """The digits wa.me needs: country code first, no plus, no leading zeros. A bare 10-digit mobile number or one written with a trunk
+    zero is taken to be Indian (91). Anything else without a country code returns None rather than a link that opens the wrong chat."""
+    raw = (phone or "").strip()
+    digits = re.sub(r"\D", "", raw)
+    international = raw.startswith("+")
+    if digits.startswith("00"):
+        digits, international = digits[2:], True
+    if international:
+        return digits if 8 <= len(digits) <= 15 else None
+    if len(digits) == 10 and digits[0] in "6789":  # Indian mobile numbers start 6 to 9; others are landlines, which have no WhatsApp
+        return "91" + digits
+    if len(digits) == 11 and digits[0] == "0" and digits[1] in "6789":
+        return "91" + digits[1:]
+    if len(digits) == 12 and digits.startswith("91"):
+        return digits
+    return None
+
+
 def wa_link(phone: str | None, text: str) -> str | None:
-    digits = re.sub(r"\D", "", phone or "")
-    if not digits:
+    number = whatsapp_number(phone)
+    if not number:
         return None
-    return f"https://wa.me/{digits}?text={quote(text)}"
+    return f"https://wa.me/{number}?text={quote(text)}"

@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ripple v2 — System Architecture & Simulation Engine Specifications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090E;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.9);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.35);
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      
+      --cyan: #0EA5E9;
+      --cyan-glow: rgba(14, 165, 233, 0.25);
+      --emerald: #10B981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+      --rose: #F43F5E;
+      --rose-glow: rgba(244, 63, 94, 0.25);
+      --purple: #8B5CF6;
+      --purple-glow: rgba(139, 92, 246, 0.25);
+      --amber: #F59E0B;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --blue: #3B82F6;
+      
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 12% 15%, rgba(14, 165, 233, 0.09) 0%, transparent 45%),
+        radial-gradient(circle at 88% 85%, rgba(139, 92, 246, 0.09) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.04) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 2.5rem 1.5rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+    }
+
+    /* Top Metadata Bar */
+    .top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .team-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .team-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Badge Bar */
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.8rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+
+    .badge-cyan { background: var(--cyan-glow); color: var(--cyan); border-color: rgba(14, 165, 233, 0.4); }
+    .badge-emerald { background: var(--emerald-glow); color: var(--emerald); border-color: rgba(16, 185, 129, 0.4); }
+    .badge-purple { background: var(--purple-glow); color: var(--purple); border-color: rgba(139, 92, 246, 0.4); }
+    .badge-rose { background: var(--rose-glow); color: var(--rose); border-color: rgba(244, 63, 94, 0.4); }
+    .badge-amber { background: var(--amber-glow); color: var(--amber); border-color: rgba(245, 158, 11, 0.4); }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Title Block */
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #FFFFFF 20%, #94A3B8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    .lead {
+      font-size: 1.25rem;
+      color: var(--cyan);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-family: var(--font-display);
+    }
+
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 980px;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    /* Interactive Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 0.4rem;
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 2.25rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 0.65rem 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      box-shadow: 0 4px 16px rgba(14, 165, 233, 0.18);
+    }
+
+    /* Panels */
+    .panel {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Glass Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 1.85rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 45px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.9rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .card-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Visual Topology Box */
+    .topology-container {
+      background: rgba(10, 15, 28, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topology-svg {
+      width: 100%;
+      height: auto;
+      min-height: 480px;
+      display: block;
+    }
+
+    /* Animated Flow Lines */
+    .flow-line {
+      stroke: var(--cyan);
+      stroke-width: 2.2;
+      stroke-dasharray: 6 6;
+      animation: dash 35s linear infinite;
+    }
+
+    .flow-line-purple {
+      stroke: var(--purple);
+      stroke-width: 2.2;
+      stroke-dasharray: 6 6;
+      animation: dash 35s linear infinite;
+    }
+
+    .flow-line-emerald {
+      stroke: var(--emerald);
+      stroke-width: 2.2;
+      stroke-dasharray: 6 6;
+      animation: dash 35s linear infinite;
+    }
+
+    .flow-line-rose {
+      stroke: var(--rose);
+      stroke-width: 2.2;
+      stroke-dasharray: 6 6;
+      animation: dash 35s linear infinite;
+    }
+
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+
+    /* Engine Step Lists */
+    .engine-step {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1.25rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+
+    .engine-step:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(14, 165, 233, 0.3);
+    }
+
+    .step-number {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--cyan-glow);
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .step-content h4 {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      color: #fff;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-content p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Code Box */
+    pre, code {
+      font-family: var(--font-mono);
+    }
+
+    .code-box {
+      background: #030712;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-size: 0.84rem;
+      color: #E2E8F0;
+      line-height: 1.55;
+    }
+
+    .token-kw { color: #F43F5E; }
+    .token-fn { color: #38BDF8; }
+    .token-str { color: #34D399; }
+    .token-num { color: #FBBF24; }
+    .token-comment { color: #64748B; font-style: italic; }
+
+    /* Metric Strip */
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .metric-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.35rem;
+      text-align: left;
+    }
+
+    .metric-value {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .metric-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+    }
+
+    /* Tag Pills */
+    .pill {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.22rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      color: #CBD5E1;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: inline-block;
+      margin-right: 0.35rem;
+      margin-bottom: 0.35rem;
+    }
+
+    /* Stack Layers */
+    .stack-layer {
+      margin-bottom: 1.35rem;
+    }
+
+    .stack-layer-title {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stack-layer-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(14, 165, 233, 0.2);
+    }
+
+    .stack-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .stack-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #F1F5F9;
+      transition: all 0.2s;
+    }
+
+    .stack-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .stack-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Interactive UI Screen Table */
+    .screen-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .screen-table th {
+      text-align: left;
+      padding: 0.8rem 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .screen-table td {
+      padding: 0.9rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+    }
+
+    .screen-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 4.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    @media print {
+      body { background: #fff; color: #000; padding: 0; }
+      .card, .topology-container { border: 1px solid #ddd; background: #fff; box-shadow: none; color: #000; }
+      .panel { display: block !important; margin-bottom: 2rem; }
+      .tab-nav { display: none; }
+    }
+
+    @media (max-width: 860px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Top Metadata Bar -->
+  <div class="top-meta">
+    <div class="team-badge">
+      <span>TEAM:</span>
+      <span class="team-pill">HitNRun</span>
+      <span>•</span>
+      <span>Chirantan (lead), Aman, Moksha, Nandini, John</span>
+    </div>
+    <div class="team-badge">
+      <span>TRACK:</span>
+      <span style="color: var(--cyan); font-weight: 600;">Microfinance: Supplier-Business-Customer Loop</span>
+      <span>•</span>
+      <span>Manipal Hackathon 2026</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="badge-bar">
+      <span class="badge badge-cyan"><span class="pulse-dot"></span> GREEDY_DAILY Core Engine</span>
+      <span class="badge badge-emerald">48/48 Unit Tests Passing</span>
+      <span class="badge badge-purple">Monte Carlo Risk Engine</span>
+      <span class="badge badge-rose">Munim Grounded Assistant</span>
+      <span class="badge badge-amber">Integer Paise Math</span>
+      <span class="badge">Railway (Nixpacks) + Vercel Edge</span>
+    </div>
+
+    <h1>RIPPLE v2: Full Architectural Blueprint</h1>
+    <div class="lead">See how one late payment ripples through your business, before it does.</div>
+    <p class="subtitle">
+      Comprehensive architectural reference covering the deterministic daily greedy simulation core, SQLite multi-tenancy records, Monte Carlo payment-delay risk modeling, Groq-grounded "Munim" assistant, and Vite React frontend.
+    </p>
+  </header>
+
+  <!-- Interactive Navigation Tabs -->
+  <nav class="tab-nav" aria-label="Architecture Views">
+    <button class="tab-btn active" onclick="showPanel('topology')">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+      1. System Topology & Flow
+    </button>
+    <button class="tab-btn" onclick="showPanel('engine')">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+      2. Deterministic Engine Core
+    </button>
+    <button class="tab-btn" onclick="showPanel('risk')">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+      3. Risk & Monte Carlo Worker
+    </button>
+    <button class="tab-btn" onclick="showPanel('munim')">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+      4. "Munim" Grounded Assistant
+    </button>
+    <button class="tab-btn" onclick="showPanel('screens')">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+      5. UI Screens & Keyboard Nav
+    </button>
+    <button class="tab-btn" onclick="showPanel('stack')">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+      6. Tech Stack & Precision
+    </button>
+  </nav>
+
+  <!-- 1. SYSTEM TOPOLOGY & FLOW PANEL -->
+  <div id="topology" class="panel active">
+    <!-- Quick KPI Ticker -->
+    <div class="metrics-strip">
+      <div class="metric-card">
+        <div class="metric-value">~10 ms</div>
+        <div class="metric-label">Engine Run Latency</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color: var(--cyan);">90 Days</div>
+        <div class="metric-label">Discrete Simulation Horizon</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color: var(--emerald);">0 Paise</div>
+        <div class="metric-label">Floating-Point Drift (Integer Safe)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value" style="color: var(--purple);">100%</div>
+        <div class="metric-label">Munim Number Grounding Check</div>
+      </div>
+    </div>
+
+    <!-- Interactive Topology SVG -->
+    <div class="topology-container">
+      <div class="card-header" style="border: none; margin-bottom: 0.5rem; padding: 0;">
+        <span class="card-title">
+          <span style="color: var(--cyan);">●</span> Full Recompute Pipeline & Service Architecture
+        </span>
+        <span class="card-subtitle">Every write bumps data_version ➔ Invalidates cached run ➔ Rebuilds snapshot in ~10ms</span>
+      </div>
+      <svg class="topology-svg" viewBox="0 0 1160 460" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="grad-card" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0F172A" stop-opacity="0.95"/>
+            <stop offset="100%" stop-color="#1E293B" stop-opacity="0.95"/>
+          </linearGradient>
+          <linearGradient id="grad-glow-cyan" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+          </linearGradient>
+          <linearGradient id="grad-glow-green" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#10B981" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#0F172A" stop-opacity="0.95"/>
+          </linearGradient>
+          <filter id="glow-eff">
+            <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Connecting Data Flow Paths -->
+        <!-- Browser to FastAPI -->
+        <path d="M 220 220 L 350 220" class="flow-line" />
+        <!-- FastAPI to Records SQLite -->
+        <path d="M 460 160 L 460 90 L 610 90" class="flow-line" />
+        <!-- Records to Snapshot Builder -->
+        <path d="M 720 120 L 720 170" class="flow-line" />
+        <!-- Snapshot Builder to Simulation Engine Core -->
+        <path d="M 830 220 L 920 220" class="flow-line-emerald" />
+        <!-- Simulation Core to Risk Engine Worker -->
+        <path d="M 1010 300 L 1010 370 L 830 370" class="flow-line-purple" />
+        <!-- FastAPI to Munim -->
+        <path d="M 460 280 L 460 370 L 610 370" class="flow-line-rose" />
+
+        <!-- Node 1: Browser Client (React SPA) -->
+        <g transform="translate(30, 110)">
+          <rect width="190" height="220" rx="14" fill="url(#grad-glow-cyan)" stroke="#0EA5E9" stroke-width="1.6" filter="url(#glow-eff)" />
+          <text x="18" y="34" fill="#FFFFFF" font-family="Outfit" font-weight="700" font-size="16">Browser Client</text>
+          <text x="18" y="54" fill="#94A3B8" font-family="JetBrains Mono" font-size="10.5">React 18 + Vite + TS</text>
+          <line x1="18" y1="66" x2="172" y2="66" stroke="rgba(255,255,255,0.12)" />
+          <text x="18" y="90" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11.5">/app/today (Morning View)</text>
+          <text x="18" y="114" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11.5">/app/engine (Topology Flow)</text>
+          <text x="18" y="138" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11.5">/app/book (Runway Fan Chart)</text>
+          <text x="18" y="162" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11.5">/app/khata (Party Drawer)</text>
+          <text x="18" y="186" fill="#38BDF8" font-family="JetBrains Mono" font-size="10.5">format.ts (paise ➔ ₹)</text>
+        </g>
+
+        <!-- Node 2: FastAPI Boundary -->
+        <g transform="translate(350, 150)">
+          <rect width="180" height="150" rx="14" fill="url(#grad-card)" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
+          <text x="18" y="34" fill="#FFFFFF" font-family="Outfit" font-weight="700" font-size="15">FastAPI App</text>
+          <text x="18" y="52" fill="#94A3B8" font-family="JetBrains Mono" font-size="10.5">Single Origin ASGI</text>
+          <line x1="18" y1="64" x2="162" y2="64" stroke="rgba(255,255,255,0.1)" />
+          <text x="18" y="88" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11">Cookie Session (scrypt)</text>
+          <text x="18" y="110" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11">CORS & Security Headers</text>
+          <text x="18" y="132" fill="#38BDF8" font-family="JetBrains Mono" font-size="10.5">business_id Scoping</text>
+        </g>
+
+        <!-- Node 3: Records (SQLite) -->
+        <g transform="translate(610, 40)">
+          <rect width="220" height="90" rx="12" fill="url(#grad-card)" stroke="#F59E0B" stroke-width="1.4" />
+          <text x="18" y="30" fill="#FFFFFF" font-family="Outfit" font-weight="600" font-size="14">Records (SQLite)</text>
+          <text x="18" y="48" fill="#FBBF24" font-family="JetBrains Mono" font-size="10.5">data/ripple.db (/data volume)</text>
+          <text x="18" y="70" fill="#94A3B8" font-family="Plus Jakarta Sans" font-size="11">Parties, Invoices, Stock, Orders, Seed</text>
+        </g>
+
+        <!-- Node 4: Snapshot Builder -->
+        <g transform="translate(610, 175)">
+          <rect width="220" height="90" rx="12" fill="url(#grad-card)" stroke="#0EA5E9" stroke-width="1.4" />
+          <text x="18" y="30" fill="#FFFFFF" font-family="Outfit" font-weight="600" font-size="14">Snapshot Builder</text>
+          <text x="18" y="48" fill="#38BDF8" font-family="JetBrains Mono" font-size="10.5">records ➔ BusinessSnapshot</text>
+          <text x="18" y="70" fill="#94A3B8" font-family="Plus Jakarta Sans" font-size="11">Stable IDs & Labels (PRD 10)</text>
+        </g>
+
+        <!-- Node 5: Pure Simulation Engine Core -->
+        <g transform="translate(920, 120)">
+          <rect width="210" height="200" rx="16" fill="url(#grad-glow-green)" stroke="#10B981" stroke-width="2" filter="url(#glow-eff)" />
+          <text x="20" y="36" fill="#FFFFFF" font-family="Outfit" font-weight="800" font-size="16">SIMULATION CORE</text>
+          <text x="20" y="56" fill="#34D399" font-family="JetBrains Mono" font-size="11">GREEDY_DAILY (10 ms)</text>
+          <line x1="20" y1="68" x2="190" y2="68" stroke="rgba(255,255,255,0.15)" />
+          <text x="20" y="92" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11">Phase 1: Cash/Stock Inflows</text>
+          <text x="20" y="114" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11">Phase 2: Production/Delivery</text>
+          <text x="20" y="136" fill="#E2E8F0" font-family="Plus Jakarta Sans" font-size="11">Phase 3: Outflow & Late Queue</text>
+          <text x="20" y="160" fill="#F43F5E" font-family="JetBrains Mono" font-size="10.5">Audit: Zero Conservation Drift</text>
+          <text x="20" y="182" fill="#CBD5E1" font-family="Plus Jakarta Sans" font-size="11">Cached sim_run (Hash Scoped)</text>
+        </g>
+
+        <!-- Node 6: Risk Engine (Monte Carlo Worker) -->
+        <g transform="translate(610, 325)">
+          <rect width="220" height="95" rx="12" fill="url(#grad-card)" stroke="#8B5CF6" stroke-width="1.4" />
+          <text x="18" y="30" fill="#FFFFFF" font-family="Outfit" font-weight="600" font-size="14">Risk Engine (Worker)</text>
+          <text x="18" y="48" fill="#A78BFA" font-family="JetBrains Mono" font-size="10.5">services/risk.py (Monte Carlo)</text>
+          <text x="18" y="70" fill="#94A3B8" font-family="Plus Jakarta Sans" font-size="11">Samples customer delays ➔ Fan Chart</text>
+        </g>
+
+        <!-- Node 7: Munim Assistant -->
+        <g transform="translate(350, 325)">
+          <rect width="180" height="95" rx="12" fill="url(#grad-card)" stroke="#F43F5E" stroke-width="1.4" />
+          <text x="16" y="30" fill="#FFFFFF" font-family="Outfit" font-weight="600" font-size="14">Munim Assistant</text>
+          <text x="16" y="48" fill="#FB7185" font-family="JetBrains Mono" font-size="10.5">Groq LLaMA + Tools</text>
+          <text x="16" y="70" fill="#94A3B8" font-family="Plus Jakarta Sans" font-size="11">Number grounding verification</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Architectural Deep-Dive Grid -->
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" style="color: var(--cyan);">Invalidation Pipeline</span>
+          <span class="card-subtitle">services/runs.py</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          Every mutation bumps the business's <code style="color: var(--cyan);">data_version</code>. The subsequent read triggers a blazing-fast snapshot rebuild and ~10ms engine evaluation. Two seconds later, an asynchronous worker executes Monte Carlo risk sampling.
+        </p>
+        <span class="pill">data_version</span>
+        <span class="pill">sim_run cache</span>
+        <span class="pill">snapshot_hash</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" style="color: var(--emerald);">Deterministic Core</span>
+          <span class="card-subtitle">simulation/engine.py</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          Pure Python domain logic. No network access, no floating point operations. Accepts a <code style="color: var(--emerald);">BusinessSnapshot</code> and runs a strict daily greedy policy across the 90-day horizon with zero drift.
+        </p>
+        <span class="pill">simulation.contract.v1</span>
+        <span class="pill">Integer Paise</span>
+        <span class="pill">Decisions Log</span>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" style="color: var(--purple);">Fixes & Scenarios</span>
+          <span class="card-subtitle">services/fixes.py</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          When a cash buffer breach is detected, candidate fixes (early receivables, supplier instalment split, credit bridge) are constructed as pure scenario transforms and re-simulated to mathematically verify dip closure.
+        </p>
+        <span class="pill">MOVE_RECEIPT_DATE</span>
+        <span class="pill">SPLIT_SUPPLIER_PAYMENT</span>
+        <span class="pill">ADD_CREDIT_BRIDGE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. DETERMINISTIC ENGINE CORE PANEL -->
+  <div id="engine" class="panel">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Three-Phase Daily Greedy Policy</span>
+          <span class="card-subtitle">Strict Execution Order</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1.25rem;">
+          For every day $t \in [1, 90]$, events are processed in an exact, deterministic sequence that guarantees physical conservation of cash, stock, and debt:
+        </p>
+
+        <div class="engine-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Eligible Inflows (Cash & Materials)</h4>
+            <p>Customer payments due today are collected; approved credit facility drawdowns deposit cash; raw material deliveries replenish inventory bins.</p>
+          </div>
+        </div>
+
+        <div class="engine-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Neutral Operations (Production & Delivery)</h4>
+            <p>Production jobs complete if required raw materials were consumed; finished goods are allocated to sales orders; orders deliver on time or log delay.</p>
+          </div>
+        </div>
+
+        <div class="engine-step">
+          <div class="step-number" style="background: var(--rose-glow); border-color: var(--rose); color: var(--rose);">3</div>
+          <div class="step-content">
+            <h4>Cash-Consuming Commitments (Outflows)</h4>
+            <p>Operational payroll, supplier invoices, and debt repayments are processed. <strong>If cash is below the bill, it is queued as late—cash never dips below ₹0.</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Committed Cash vs Real Balance</span>
+          <span class="card-subtitle">Deriving The "Red Dip"</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          Real balance stays non-negative because vendors simply aren't paid. The chart displays <strong>committed cash</strong> (what cash would be if every bill was paid on its contractual due date):
+        </p>
+        <div class="code-box" style="margin-bottom: 1rem;">
+<span class="token-comment"># Engine Derivation of the Red Dip:</span>
+<span class="token-kw">for</span> day <span class="token-kw">in</span> range(<span class="token-num">1</span>, <span class="token-num">91</span>):
+    actual_cash[day] = run.daily_balances[day].cash  <span class="token-comment"># &gt;= 0</span>
+    overdue_amount = sum(b.unpaid_amount <span class="token-kw">for</span> b <span class="token-kw">in</span> late_bills <span class="token-kw">if</span> b.due_day &lt;= day)
+    committed_cash[day] = actual_cash[day] - overdue_amount
+
+<span class="token-kw">if</span> committed_cash[day] &lt; safety_buffer:
+    <span class="token-fn">register_dip</span>(day=day, deficit=safety_buffer - committed_cash[day])
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">
+          The "Why the dip happens" inspector reports the causal chain (e.g., <em>Sharma Yarn Mills bill on Day 41 delayed 7 days due to Kaveri Boutique receivable pending</em>).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. RISK & MONTE CARLO PANEL -->
+  <div id="risk" class="panel">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Empirical Delay Sampling (Monte Carlo)</span>
+          <span class="card-subtitle">backend/app/services/risk.py</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          Rather than relying on abstract statistical distributions, Ripple samples payment delays directly from each customer's historical ledger behavior:
+        </p>
+        <div class="engine-step">
+          <div class="step-content">
+            <h4>Empirical Shrinkage</h4>
+            <p>If a customer has few historical invoices, their delay distribution is Bayesian-shrunk towards the global business customer average.</p>
+          </div>
+        </div>
+        <div class="engine-step">
+          <div class="step-content">
+            <h4>Worker Process Re-runs</h4>
+            <p>The worker executes $N$ Monte Carlo iterations. In each iteration, sampled delays perturb the snapshot and re-run the pure deterministic core.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">The Runway Fan Chart & Risk Drivers</span>
+          <span class="card-subtitle">Visualizing Probability Bands</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          The Book view displays 10th, 25th, 50th, 75th, and 90th percentile cash runway bands:
+        </p>
+        <div class="code-box">
+<span class="token-comment"># Monte Carlo Risk Output Structure:</span>
+{
+  <span class="token-str">"p10_runway_day"</span>: <span class="token-num">28</span>,  <span class="token-comment">// Pessimistic 10% worst case</span>
+  <span class="token-str">"p50_runway_day"</span>: <span class="token-num">44</span>,  <span class="token-comment">// Median baseline outcome</span>
+  <span class="token-str">"p90_runway_day"</span>: <span class="token-num">76</span>,  <span class="token-comment">// Optimistic timely payments</span>
+  <span class="token-str">"top_drivers"</span>: [
+    { <span class="token-str">"party"</span>: <span class="token-str">"Kaveri Boutique"</span>, <span class="token-str">"risk_contribution"</span>: <span class="token-str">"64%"</span> }
+  ]
+}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. MUNIM GROUNDED ASSISTANT PANEL -->
+  <div id="munim" class="panel">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Munim: Grounded Business Assistant</span>
+          <span class="card-subtitle">backend/app/services/munim.py</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          "Munim" is an intelligent copilot designed specifically for Indian SMEs, operating under strict factual grounding:
+        </p>
+        <div class="engine-step">
+          <div class="step-number" style="background: var(--purple-glow); border-color: var(--purple); color: var(--purple);">1</div>
+          <div class="step-content">
+            <h4>Read-Only Tool Calling</h4>
+            <p>Munim queries the system via read-only tools (<code style="color:var(--cyan);">get_position</code>, <code style="color:var(--cyan);">get_runway</code>, <code style="color:var(--cyan);">get_party_summary</code>, <code style="color:var(--cyan);">explain_dip</code>).</p>
+          </div>
+        </div>
+        <div class="engine-step">
+          <div class="step-number" style="background: var(--rose-glow); border-color: var(--rose); color: var(--rose);">2</div>
+          <div class="step-content">
+            <h4>Strict Grounding Verification</h4>
+            <p>Every numerical figure in the LLM's draft answer is cross-checked against tool outputs. Any ungrounded hallucination is immediately caught and replaced with template facts.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Bilingual Communication & WhatsApp Drafts</span>
+          <span class="card-subtitle">English, Tamil, Hindi</span>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+          Munim drafts culturally natural reminders across 3 Indian languages, with one-click <code style="color: #25D366;">wa.me</code> dispatch:
+        </p>
+        <div class="code-box">
+<span class="token-comment"># WhatsApp Draft Generation:</span>
+{
+  <span class="token-str">"en"</span>: <span class="token-str">"Dear Kaveri Boutique, reminder for inv #104 (₹1.8L) due today. Kindly confirm transfer."</span>,
+  <span class="token-str">"hi"</span>: <span class="token-str">"नमस्ते कावेरी बुटीक, बिल #104 (₹1.8L) आज देय है। कृपया भुगतान की पुष्टि करें।"</span>,
+  <span class="token-str">"ta"</span>: <span class="token-str">"வணக்கம் காவேரி பொட்டிக், விலைப்பட்டியல் #104 (₹1.8L) இன்று செலுத்தப்பட வேண்டும்."</span>,
+  <span class="token-str">"wa_link"</span>: <span class="token-str">"https://wa.me/919845012345?text=..."</span>
+}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. UI SCREENS & KEYBOARD NAV PANEL -->
+  <div id="screens" class="panel">
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header">
+        <span class="card-title">Ripple v2 Production Screens</span>
+        <span class="card-subtitle">Role-Based Access (Owner, Accountant, Supervisor)</span>
+      </div>
+      <table class="screen-table">
+        <thead>
+          <tr>
+            <th>Route</th>
+            <th>Primary Purpose</th>
+            <th>Key Features & Interactive Controls</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/today</code></td>
+            <td>Morning Executive Briefing</td>
+            <td>Headline sentence, cash position ticker, ranked daily actions, weekly receivables glance.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/engine</code></td>
+            <td>Interactive Simulation Studio</td>
+            <td>Network view (suppliers left, customers right), event flow graph, day-by-day execution replay, decision timeline.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/book</code></td>
+            <td>Financial Position & Cash Runway</td>
+            <td>Fan chart with Monte Carlo bands, risk drivers breakdown, "Why the dip" causality analysis, fix candidates.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/khata</code></td>
+            <td>Parties & Debt Ledger</td>
+            <td>Party cards, receivables/payables tally, Excel/CSV importer, 45-day statutory MSME payment clock.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/orders</code></td>
+            <td>Sales & Purchase Operations</td>
+            <td>Order delivery forecasts, order commitments, "Can I take this order?" capacity simulation.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/inventory</code></td>
+            <td>Material & Stock Manager</td>
+            <td>Raw materials, finished goods recipes, reorder thresholds, ABC material classifications.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/app/settings</code></td>
+            <td>Business Configuration</td>
+            <td>Safety buffer rules, language settings, RBAC permissions, demo data reset trigger.</td>
+          </tr>
+          <tr>
+            <td><code style="color: var(--cyan);">/setup</code></td>
+            <td>Onboarding Intake</td>
+            <td>Natural language business intake, fact extraction with quotes, human-in-the-loop approval.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Power Keyboard Command Bar</span>
+          <span class="card-subtitle">Ctrl + K or /</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          CMDK command palette enables frictionless, keyboard-first navigation for business owners:
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+          <span class="pill" style="color: var(--cyan);">ENG ➔ Go to Engine</span>
+          <span class="pill" style="color: var(--cyan);">BOOK ➔ Open Book</span>
+          <span class="pill" style="color: var(--amber);">DAY 34 ➔ Jump to Day 34</span>
+          <span class="pill" style="color: var(--emerald);">PAY KAVERI ➔ Pay Bill</span>
+          <span class="pill" style="color: var(--purple);">FIX ➔ Show Dip Fixes</span>
+          <span class="pill" style="color: var(--rose);">M ➔ Toggle Munim</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Simulation Scrubbing Keys</span>
+          <span class="card-subtitle">Timeline Navigation</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          Scrub through the 90-day time continuum in real-time inside the Engine view:
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+          <span class="pill">← / → Step 1 Day</span>
+          <span class="pill">Shift + ← / → Step 1 Week</span>
+          <span class="pill">N ➔ Next Issue</span>
+          <span class="pill">Space ➔ Play / Pause</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. TECH STACK & PRECISION PANEL -->
+  <div id="stack" class="panel">
+    <div class="grid-2">
+      <!-- Full Production Stack -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Production Tech Stack</span>
+          <span class="card-subtitle">Zero Bloat Architecture</span>
+        </div>
+
+        <div class="stack-layer">
+          <div class="stack-layer-title">Frontend Tier</div>
+          <div class="stack-items">
+            <div class="stack-item"><div class="stack-dot" style="background:#0EA5E9;"></div>React 18</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#38BDF8;"></div>TypeScript 5 (Strict)</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#6366F1;"></div>Vite 5</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#F43F5E;"></div>TanStack Query</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#F59E0B;"></div>Zustand</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#10B981;"></div>React Flow (@xyflow)</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#A855F7;"></div>Radix UI & CMDK</div>
+          </div>
+        </div>
+
+        <div class="stack-layer">
+          <div class="stack-layer-title">Backend & Simulation</div>
+          <div class="stack-items">
+            <div class="stack-item"><div class="stack-dot" style="background:#10B981;"></div>Python 3.12 / 3.14</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#34D399;"></div>FastAPI (ASGI)</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#0EA5E9;"></div>Pydantic v2.13.5</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#F59E0B;"></div>SQLite3 (std lib)</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#FB7185;"></div>Groq LLaMA 3.3 70B</div>
+          </div>
+        </div>
+
+        <div class="stack-layer">
+          <div class="stack-layer-title">Testing & Cloud Deployment</div>
+          <div class="stack-items">
+            <div class="stack-item"><div class="stack-dot" style="background:#10B981;"></div>Python Unittest (48 Tests)</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#38BDF8;"></div>Railway (Nixpacks Backend)</div>
+            <div class="stack-item"><div class="stack-dot" style="background:#8B5CF6;"></div>Vercel (Frontend Edge)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Integer Paise Precision -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Financial Integer Invariants</span>
+          <span class="card-subtitle">Zero Floating Point Math</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          To prevent IEEE 754 floating-point inaccuracies, every monetary figure in the database and engine is represented as integer <strong>paise</strong>:
+        </p>
+        <div class="code-box">
+<span class="token-comment"># Exact Integer Conservation Invariant:</span>
+closing_cash = (
+    opening_cash
+    + sum(cash_inflows)
+    - sum(cash_outflows)
+    - sum(financing_fees)
+)
+<span class="token-kw">assert</span> closing_cash == audit_ledger_total
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 1rem;">
+          Currency conversion to rupees ($\text{paise} / 100$) occurs exclusively at the browser edge in <code style="color: var(--cyan);">frontend/src/lib/format.ts</code>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div>
+      <strong>Ripple v2 Architectural Blueprint</strong> • Team HitNRun • Manipal Hackathon 2026
+    </div>
+    <div>
+      Official Repository: <span style="font-family: var(--font-mono); color: var(--cyan);">Manipal-Hackathon-2026/HitNRun</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  function showPanel(panelId) {
+    const panels = document.querySelectorAll('.panel');
+    panels.forEach(p => p.classList.remove('active'));
+
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+
+    const activePanel = document.getElementById(panelId);
+    if (activePanel) activePanel.classList.add('active');
+
+    const clickedBtn = Array.from(buttons).find(b => b.getAttribute('onclick').includes(panelId));
+    if (clickedBtn) clickedBtn.classList.add('active');
+  }
+</script>
+
+</body>
+</html>

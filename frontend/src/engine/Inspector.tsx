@@ -53,7 +53,6 @@ export function Inspector({ run, network, drivers }: { run: RunPayload; network?
     </div>
   )
 }
-
 function EngineFacts({ run }: { run: RunPayload }) {
   const s = run.summary
   return (
@@ -218,4 +217,3 @@ export function EventTable({ run }: { run: RunPayload }) {
     </div>
   )
 }
-

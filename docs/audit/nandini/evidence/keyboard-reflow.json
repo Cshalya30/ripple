@@ -1,0 +1,239 @@
+{
+ "summary": {
+  "routes_tabbed": 14,
+  "tab_stops": 376,
+  "routes_with_focus_problems": [
+   {
+    "path": "/app/orders?tab=new",
+    "problems": [
+     "input:\"Promised by\" visible=true indicator=false"
+    ]
+   },
+   {
+    "path": "/app/settings",
+    "problems": [
+     "input:\"Available from\" visible=true indicator=false"
+    ]
+   }
+  ],
+  "reflow_overflows": []
+ },
+ "focus": [
+  {
+   "path": "/login",
+   "stops": 9,
+   "problems": []
+  },
+  {
+   "path": "/privacy",
+   "stops": 6,
+   "problems": []
+  },
+  {
+   "path": "/terms",
+   "stops": 6,
+   "problems": []
+  },
+  {
+   "path": "/no-such-page",
+   "stops": 1,
+   "problems": []
+  },
+  {
+   "path": "/app/today",
+   "stops": 38,
+   "problems": []
+  },
+  {
+   "path": "/app/engine",
+   "stops": 45,
+   "problems": []
+  },
+  {
+   "path": "/app/book",
+   "stops": 27,
+   "problems": []
+  },
+  {
+   "path": "/app/book?tab=ledger",
+   "stops": 21,
+   "problems": []
+  },
+  {
+   "path": "/app/khata",
+   "stops": 41,
+   "problems": []
+  },
+  {
+   "path": "/app/orders",
+   "stops": 45,
+   "problems": []
+  },
+  {
+   "path": "/app/orders?tab=purchase",
+   "stops": 26,
+   "problems": []
+  },
+  {
+   "path": "/app/orders?tab=new",
+   "stops": 24,
+   "problems": [
+    "input:\"Promised by\" visible=true indicator=false"
+   ]
+  },
+  {
+   "path": "/app/inventory",
+   "stops": 42,
+   "problems": []
+  },
+  {
+   "path": "/app/settings",
+   "stops": 45,
+   "problems": [
+    "input:\"Available from\" visible=true indicator=false"
+   ]
+  }
+ ],
+ "reflow": [
+  {
+   "path": "/login",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/login",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/privacy",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/privacy",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/terms",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/terms",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/no-such-page",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/no-such-page",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/today",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/today",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/engine",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/engine",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/book",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/book",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/book?tab=ledger",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/book?tab=ledger",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/khata",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/khata",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/orders",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/orders",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/orders?tab=purchase",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/orders?tab=purchase",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/orders?tab=new",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/orders?tab=new",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/inventory",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/inventory",
+   "width": 720,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/settings",
+   "width": 320,
+   "overflow_px": 0
+  },
+  {
+   "path": "/app/settings",
+   "width": 720,
+   "overflow_px": 0
+  }
+ ]
+}

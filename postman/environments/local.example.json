@@ -1,0 +1,18 @@
+{
+ "id": "ripple-local",
+ "name": "Ripple local (template)",
+ "values": [
+  {
+   "key": "base_url",
+   "value": "http://localhost:8000",
+   "enabled": true
+  },
+  {
+   "key": "supervisor_password",
+   "value": "",
+   "enabled": true,
+   "type": "secret"
+  }
+ ],
+ "_postman_variable_scope": "environment"
+}

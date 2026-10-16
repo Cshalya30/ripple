@@ -1,0 +1,1317 @@
+{
+ "summary": {
+  "axe_scans": 80,
+  "axe_violation_groups": 0,
+  "axe_by_rule": {},
+  "layout_checks": 48,
+  "horizontal_overflow": [],
+  "basics_failed": []
+ },
+ "base": "http://localhost:8770",
+ "axe": [
+  {
+   "route": "login",
+   "path": "/login",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "login",
+   "path": "/login",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "login",
+   "path": "/login",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "login",
+   "path": "/login",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "login",
+   "path": "/login",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "theme": "night",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "theme": "day",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "theme": "lamp",
+   "contrast": "normal",
+   "violations": []
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "theme": "night",
+   "contrast": "high",
+   "violations": []
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "theme": "day",
+   "contrast": "high",
+   "violations": []
+  }
+ ],
+ "layout": [
+  {
+   "route": "login",
+   "path": "/login",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "login",
+   "path": "/login",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "login",
+   "path": "/login",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 2,
+   "small_sample": [
+    "a:Ripple, back to sign in:328x22",
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 2,
+   "small_sample": [
+    "a:Ripple, back to sign in:358x22",
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "privacy",
+   "path": "/privacy",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 2,
+   "small_sample": [
+    "a:Ripple, back to sign in:720x22",
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 2,
+   "small_sample": [
+    "a:Ripple, back to sign in:328x22",
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 2,
+   "small_sample": [
+    "a:Ripple, back to sign in:358x22",
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "terms",
+   "path": "/terms",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 2,
+   "small_sample": [
+    "a:Ripple, back to sign in:720x22",
+    "a:Privacy:37x13"
+   ]
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "notfound",
+   "path": "/nope",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "a:Sign in:36x15"
+   ]
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "a:Sign in:36x15"
+   ]
+  },
+  {
+   "route": "setup",
+   "path": "/setup",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "a:Sign in:36x15"
+   ]
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "today",
+   "path": "/app/today",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "input::16x16"
+   ]
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "input::16x16"
+   ]
+  },
+  {
+   "route": "engine",
+   "path": "/app/engine",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 1,
+   "small_sample": [
+    "input::16x16"
+   ]
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 6,
+   "small_sample": [
+    "input:Ask Kaveri Boutique to p:13x13",
+    "input:Pay Sharma Yarn Mills in:13x13",
+    "input:Ask Sharma Yarn Mills fo:13x13",
+    "input:Finance the Kaveri Bouti:13x13",
+    "input:Draw ₹1,90,000 from Cana:13x13"
+   ]
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 6,
+   "small_sample": [
+    "input:Ask Kaveri Boutique to p:13x13",
+    "input:Pay Sharma Yarn Mills in:13x13",
+    "input:Ask Sharma Yarn Mills fo:13x13",
+    "input:Finance the Kaveri Bouti:13x13",
+    "input:Draw ₹1,90,000 from Cana:13x13"
+   ]
+  },
+  {
+   "route": "book",
+   "path": "/app/book",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 6,
+   "small_sample": [
+    "input:Ask Kaveri Boutique to p:13x13",
+    "input:Pay Sharma Yarn Mills in:13x13",
+    "input:Ask Sharma Yarn Mills fo:13x13",
+    "input:Finance the Kaveri Bouti:13x13",
+    "input:Draw ₹1,90,000 from Cana:13x13"
+   ]
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "width": 360,
+   "overflow": 0,
+   "wide": [
+    "table.table dense tight",
+    "thead.",
+    "tr.",
+    "th.money",
+    "tbody."
+   ],
+   "small_targets": 1,
+   "small_sample": [
+    "input:What it missed:30x44"
+   ]
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "book-risk",
+   "path": "/app/book?tab=risk",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "book-ledger",
+   "path": "/app/book?tab=ledger",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "khata",
+   "path": "/app/khata",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders",
+   "path": "/app/orders",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders-purchase",
+   "path": "/app/orders?tab=purchase",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "orders-whatif",
+   "path": "/app/orders?tab=new",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "width": 360,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "width": 390,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "inventory",
+   "path": "/app/inventory",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 0,
+   "small_sample": []
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "width": 360,
+   "overflow": 0,
+   "wide": [
+    "table.table dense",
+    "tbody.",
+    "tr.",
+    "td.small",
+    "td.right"
+   ],
+   "small_targets": 8,
+   "small_sample": [
+    "input::16x16",
+    "input::16x16",
+    "input:Speaking speed:129x16",
+    "input::16x16",
+    "input::16x16"
+   ]
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "width": 390,
+   "overflow": 0,
+   "wide": [
+    "table.table dense",
+    "tbody.",
+    "tr.",
+    "td.small truncate",
+    "td.mono small"
+   ],
+   "small_targets": 8,
+   "small_sample": [
+    "input::16x16",
+    "input::16x16",
+    "input:Speaking speed:129x16",
+    "input::16x16",
+    "input::16x16"
+   ]
+  },
+  {
+   "route": "settings",
+   "path": "/app/settings",
+   "width": 768,
+   "overflow": 0,
+   "wide": [],
+   "small_targets": 8,
+   "small_sample": [
+    "input::16x16",
+    "input::16x16",
+    "input:Speaking speed:129x16",
+    "input::16x16",
+    "input::16x16"
+   ]
+  }
+ ],
+ "basics": [
+  {
+   "check": "title",
+   "path": "/login",
+   "expected": "Sign in · Ripple",
+   "actual": "Sign in · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/privacy",
+   "expected": "Privacy · Ripple",
+   "actual": "Privacy · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/terms",
+   "expected": "Terms of use · Ripple",
+   "actual": "Terms of use · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/nope",
+   "expected": "Page not found · Ripple",
+   "actual": "Page not found · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/setup",
+   "expected": "Set up your business · Ripple",
+   "actual": "Set up your business · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/today",
+   "expected": "Today · Ripple",
+   "actual": "Today · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/engine",
+   "expected": "Engine · Ripple",
+   "actual": "Engine · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/book",
+   "expected": "Book · Ripple",
+   "actual": "Book · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/book?tab=risk",
+   "expected": "Book · Ripple",
+   "actual": "Book · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/book?tab=ledger",
+   "expected": "Book · Ripple",
+   "actual": "Book · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/khata",
+   "expected": "Khata · Ripple",
+   "actual": "Khata · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/orders",
+   "expected": "Orders · Ripple",
+   "actual": "Orders · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/orders?tab=purchase",
+   "expected": "Orders · Ripple",
+   "actual": "Orders · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/orders?tab=new",
+   "expected": "Orders · Ripple",
+   "actual": "Orders · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/inventory",
+   "expected": "Inventory · Ripple",
+   "actual": "Inventory · Ripple",
+   "pass": true
+  },
+  {
+   "check": "title",
+   "path": "/app/settings",
+   "expected": "Settings · Ripple",
+   "actual": "Settings · Ripple",
+   "pass": true
+  },
+  {
+   "check": "in-app 404 shows the page and keeps the sidebar",
+   "pass": true
+  },
+  {
+   "check": "head tags",
+   "description": "Ripple shows how one late payment travels through a small business, before it does.",
+   "ogTitle": "Ripple: see where the cash goes short, before it does",
+   "ogImage": "/og-image.png",
+   "twitter": "summary_large_image",
+   "icons": [
+    "/favicon.svg",
+    "/favicon-32.png",
+    "/apple-touch-icon.png"
+   ],
+   "lang": "en-IN",
+   "imgs": [],
+   "pass": true
+  },
+  {
+   "check": "GET /favicon.svg",
+   "status": 200,
+   "type": "image/svg+xml",
+   "bytes": 394,
+   "pass": true
+  },
+  {
+   "check": "GET /favicon-32.png",
+   "status": 200,
+   "type": "image/png",
+   "bytes": 922,
+   "pass": true
+  },
+  {
+   "check": "GET /apple-touch-icon.png",
+   "status": 200,
+   "type": "image/png",
+   "bytes": 5330,
+   "pass": true
+  },
+  {
+   "check": "GET /og-image.png",
+   "status": 200,
+   "type": "image/png",
+   "bytes": 51870,
+   "pass": true
+  },
+  {
+   "check": "GET /robots.txt",
+   "status": 200,
+   "type": "text/plain; charset=utf-8",
+   "bytes": 115,
+   "pass": true
+  },
+  {
+   "check": "GET /sitemap.xml",
+   "status": 200,
+   "type": "application/xml",
+   "bytes": 258,
+   "pass": true
+  },
+  {
+   "check": "robots disallows /app/ and /api/",
+   "pass": true
+  },
+  {
+   "check": "sitemap lists only public pages",
+   "pass": true
+  },
+  {
+   "check": "status of /nope",
+   "status": 404,
+   "pass": true
+  },
+  {
+   "check": "status of /app/zzz",
+   "status": 404,
+   "pass": true
+  },
+  {
+   "check": "status of /.env",
+   "status": 404,
+   "pass": true
+  },
+  {
+   "check": "status of /assets/missing.js",
+   "status": 404,
+   "pass": true
+  },
+  {
+   "check": "status of /login",
+   "status": 200,
+   "pass": true
+  },
+  {
+   "check": "status of /app/today",
+   "status": 200,
+   "pass": true
+  },
+  {
+   "check": "status of /api/nope",
+   "status": 404,
+   "pass": true
+  }
+ ]
+}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, errorText } from '../lib/api'
-import { digits, percent, rupees, shortDate } from '../lib/format'
+import { percent, rupees, shortDate, whatsappNumber } from '../lib/format'
 import { useParty, useWrite } from '../lib/queries'
 import { useUI } from '../lib/store'
 import type { Me } from '../lib/types'
@@ -27,7 +27,7 @@ export function PartyDrawer({ me }: { me: Me }) {
           <br />
           {[p.description, p.city].filter(Boolean).join(', ')}
           {p.gstin && <> · <span className="mono">GSTIN {p.gstin}</span></>}
-          {p.phone && <> · <span className="mono">{p.phone}</span> <a className="btn-quiet" href={`https://wa.me/${digits(p.phone)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></>}
+          {p.phone && <> · <span className="mono">{p.phone}</span>{whatsappNumber(p.phone) && <> <a className="btn-quiet" href={`https://wa.me/${whatsappNumber(p.phone)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></>}</>}
         </div>
       )}>
       {isLoading && <SkeletonRows rows={8} />}

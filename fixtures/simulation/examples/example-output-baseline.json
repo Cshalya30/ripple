@@ -676,5 +676,6 @@
     "paid_interest_paise": 0,
     "inventory_arrivals_quantity": 1,
     "production_consumption_quantity": 1
-  }
+  },
+  "execution_log": null
 }
