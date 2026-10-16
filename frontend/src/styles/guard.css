@@ -148,3 +148,182 @@ html[data-motion="reduce"] .f-path, .reduce-motion .f-path { animation: none; }
 @media (max-width: 760px) { .guard-strip-link { flex-wrap: wrap; } .guard-strip-facts { width: 100%; } }
 
 .drivers { margin-top: 16px; }
+
+/* risk trend indicator */
+.trend-improving { color: var(--in); font-weight: 600; }
+.trend-worsening { color: var(--out); font-weight: 600; }
+.trend-stable { color: var(--text-2); font-weight: 600; }
+
+/* ================================================================== Payment Gateway Architecture */
+
+.pgw { margin: 0 0 18px; }
+.pgw-top { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 20px; }
+
+/* ---- Checkout card ---- */
+.pgw-co { width: 340px; flex: none; padding: 22px; border: 1px solid var(--rule-strong); border-radius: 8px; background: var(--surface); }
+.pgw-co-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.pgw-co-brand { font-size: var(--t-lead); font-weight: 700; }
+.pgw-co-hl { color: var(--haldi); }
+.pgw-co-amt { font-size: 1.4rem; font-weight: 700; }
+.pgw-co-tabs { display: flex; gap: 0; margin-bottom: 14px; padding: 3px; border: 1px solid var(--rule-strong); border-radius: var(--r-2); background: var(--ground); }
+.pgw-co-tab { flex: 1; padding: 7px 0; border: none; border-radius: 3px; background: transparent; color: var(--text-3); font-size: var(--t-small); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.pgw-co-tab.on { background: var(--raised); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+.pgw-co-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.pgw-co-lbl { display: block; font-size: var(--t-micro); color: var(--text-2); font-weight: 520; margin-bottom: 3px; }
+.pgw-co-inp { display: block; width: 100%; padding: 9px 10px; border: 1px solid var(--rule-strong); border-radius: var(--r-2); background: var(--ground); color: var(--text); font-size: var(--t-small); outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+.pgw-co-inp:focus { border-color: var(--haldi); }
+.pgw-co-pair { display: flex; gap: 10px; }
+.pgw-co-pair > div { flex: 1; }
+.pgw-co-pay { width: 100%; padding: 11px; border: none; border-radius: var(--r-2); background: var(--haldi); color: var(--ground); font-size: var(--t-small); font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em; }
+.pgw-co-pay:hover { opacity: 0.9; }
+.pgw-co-pay:disabled { opacity: 0.6; cursor: default; }
+.pgw-co-pay.done { background: var(--raised); color: var(--text); border: 1px solid var(--rule-strong); }
+.pgw-co-pay.running { background: var(--haldi-wash); color: var(--haldi); cursor: default; }
+.pgw-co-foot { margin-top: 12px; text-align: center; font-size: 10px; color: var(--text-3); letter-spacing: 0.03em; }
+
+/* ---- Info panel ---- */
+.pgw-info { flex: 1; min-width: 260px; }
+.pgw-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 14px; border: 1px solid var(--rule-strong); border-radius: var(--r-2); background: var(--surface); margin-bottom: 12px; }
+.pgw-kv { display: flex; flex-direction: column; gap: 2px; }
+.pgw-badge { display: inline-block; padding: 1px 8px; border-radius: 9px; font: 700 10px var(--font-mono); letter-spacing: 0.04em; }
+.pgw-badge.idle { background: var(--hover); color: var(--text-3); }
+.pgw-badge.running { background: var(--haldi-wash); color: var(--haldi); }
+.pgw-badge.done { background: var(--in-wash); color: var(--in); }
+.pgw-refs { display: flex; flex-direction: column; gap: 8px; }
+.pgw-ref { padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--surface); }
+.pgw-ref-t { display: block; font-size: var(--t-small); font-weight: 600; }
+.pgw-ref-d { display: block; font-size: var(--t-micro); color: var(--text-2); margin-top: 2px; line-height: 1.45; }
+
+/* ---- Architecture grid ----
+   5 columns: block | hconn | block | hconn | block
+   14 rows: headers, 4 internal-forward blocks with vconns,
+            crossing row, gateway settlement, return crossing, books */
+.pgw-arch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px minmax(0, 0.8fr) 40px minmax(0, 1fr);
+  grid-template-rows:
+    auto        /* 1  zone headers */
+    auto 18px   /* 2-3  validate + vconn */
+    auto 18px   /* 4-5  fraud + vconn */
+    auto 18px   /* 6-7  risk + vconn */
+    auto        /* 8  FORWARD CROSSING */
+    18px auto   /* 9-10 vconn + settlement */
+    18px auto   /* 11-12 vconn/turn + RETURN CROSSING */
+    18px auto;  /* 13-14 vconn + books */
+  gap: 0;
+  padding: 16px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-2);
+  background: var(--surface);
+}
+
+/* zone background strips */
+.pgw-strip { border-radius: 6px; z-index: 0; pointer-events: none; margin: -2px -4px; }
+.pgw-strip-int { grid-column: 1; grid-row: 1 / -1; background: color-mix(in srgb, var(--text) 2%, transparent); }
+.pgw-strip-dmz { grid-column: 3; grid-row: 1 / -1; background: color-mix(in srgb, var(--haldi) 3%, transparent); border: 1px dashed color-mix(in srgb, var(--haldi) 12%, transparent); }
+.pgw-strip-gw  { grid-column: 5; grid-row: 1 / -1; background: color-mix(in srgb, var(--in) 2%, transparent); }
+
+/* zone headers */
+.pgw-zh { display: flex; align-items: center; gap: 7px; padding: 4px 6px 8px; font-size: var(--t-small); font-weight: 600; color: var(--text-2); z-index: 1; }
+.pgw-zh-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--text-3); }
+.pgw-zh-dot.dmz { background: var(--haldi); }
+.pgw-zh-dot.gw  { background: var(--in); }
+
+/* ---- Step blocks ---- */
+.pgw-block {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; min-height: 48px;
+  border: 1px solid var(--rule-strong); border-radius: var(--r-2); background: var(--raised);
+  cursor: pointer; opacity: 0.5; z-index: 1;
+  transition: opacity 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.pgw-block:hover { border-color: var(--text-2); opacity: 0.8; }
+.pgw-block.active, .pgw-block.done { opacity: 1; }
+
+.pgw-block.z-int { border-left: 3px solid var(--text-3); }
+.pgw-block.z-dmz { border-left: 3px solid var(--haldi); }
+.pgw-block.z-gw  { border-left: 3px solid var(--in); }
+
+.pgw-block.active { border-color: var(--haldi); box-shadow: 0 0 18px var(--haldi-wash), inset 0 0 0 1px color-mix(in srgb, var(--haldi) 15%, transparent); }
+.pgw-block.active.z-int { border-left-color: var(--haldi); }
+.pgw-block.active.z-dmz { border-left-color: var(--haldi); }
+.pgw-block.done { border-color: var(--in); box-shadow: 0 0 10px var(--in-wash); }
+.pgw-block.done.z-int { border-left-color: var(--in); }
+.pgw-block.done.z-dmz { border-left-color: var(--in); }
+
+.pgw-block-n { color: var(--text-3); font-size: 10px; font-weight: 600; flex: none; width: 16px; }
+.pgw-block-body { flex: 1; min-width: 0; }
+.pgw-block-name { display: block; font-size: var(--t-small); font-weight: 600; line-height: 1.2; }
+.pgw-block-sub  { display: block; font-size: 10px; color: var(--text-2); margin-top: 1px; }
+
+.pgw-block-ind { flex: none; width: 8px; height: 8px; border-radius: 50%; }
+.pgw-block-ind.pulse { background: var(--haldi); animation: pgw-pulse 1.4s ease-in-out infinite; }
+.pgw-block-ind.ok    { background: var(--in); }
+@keyframes pgw-pulse { 0%,100% { box-shadow: 0 0 0 0 var(--haldi-wash); } 50% { box-shadow: 0 0 10px 4px var(--haldi-wash); } }
+
+/* ---- Vertical connectors ---- */
+.pgw-vc { display: flex; justify-content: center; z-index: 1; }
+.pgw-vc > i { display: block; width: 2px; height: 100%; background: var(--rule-strong); position: relative; }
+.pgw-vc.lit > i { background: var(--haldi); }
+.pgw-vc > i::before { content: ''; position: absolute; bottom: -2px; left: -3px; border: 4px solid transparent; border-top: 5px solid var(--rule-strong); border-bottom: 0; }
+.pgw-vc.lit > i::before { border-top-color: var(--haldi); }
+.pgw-vc.lit > i::after { content: ''; position: absolute; left: -2px; top: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--haldi); animation: pgw-vdot 0.9s linear infinite; }
+@keyframes pgw-vdot { 0% { top: 0; opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { top: calc(100% - 6px); opacity: 0; } }
+
+/* ---- Horizontal connectors ---- */
+.pgw-hc { display: flex; align-items: center; z-index: 1; }
+.pgw-hc > i { display: block; flex: 1; height: 2px; background: var(--rule-strong); position: relative; }
+.pgw-hc.lit > i { background: var(--haldi); }
+
+.pgw-hc.fw > i::before { content: ''; position: absolute; right: -2px; top: -3px; border: 4px solid transparent; border-left: 5px solid var(--rule-strong); border-right: 0; }
+.pgw-hc.fw.lit > i::before { border-left-color: var(--haldi); }
+.pgw-hc.ret > i::before { content: ''; position: absolute; left: -2px; top: -3px; border: 4px solid transparent; border-right: 5px solid var(--rule-strong); border-left: 0; }
+.pgw-hc.ret.lit > i::before { border-right-color: var(--haldi); }
+
+.pgw-hc.lit > i::after { content: ''; position: absolute; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--haldi); opacity: 0; }
+.pgw-hc.fw.lit > i::after  { animation: pgw-hfw 1.2s linear infinite; }
+.pgw-hc.ret.lit > i::after { animation: pgw-hret 1.2s linear infinite; }
+@keyframes pgw-hfw  { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 6px); opacity: 0; } }
+@keyframes pgw-hret { 0% { left: calc(100% - 6px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: 0; opacity: 0; } }
+
+/* ---- Bend (L-shaped turn at gateway return) ---- */
+.pgw-bend { position: relative; z-index: 1; min-height: 48px; }
+.pgw-bend::before { content: ''; position: absolute; left: 50%; top: 0; height: 50%; width: 2px; background: var(--rule-strong); transform: translateX(-50%); }
+.pgw-bend::after  { content: ''; position: absolute; left: 0; top: 50%; width: 50%; height: 2px; background: var(--rule-strong); transform: translateY(-50%); }
+.pgw-bend.lit::before, .pgw-bend.lit::after { background: var(--haldi); }
+
+/* ---- Detail panel ---- */
+.pgw-detail { display: flex; gap: 12px; padding: 10px 14px; border-left: 3px solid var(--text-3); background: color-mix(in srgb, var(--text) 5%, transparent); border-radius: 0 var(--r-2) var(--r-2) 0; margin: 12px 0; animation: pgw-dfade 0.15s var(--ease); }
+.pgw-detail.z-dmz { border-left-color: var(--haldi); background: var(--haldi-wash); }
+.pgw-detail.z-gw  { border-left-color: var(--in); background: var(--in-wash); }
+.pgw-detail-n { color: var(--haldi); font-size: var(--t-lead); font-weight: 700; flex: none; width: 24px; }
+.pgw-detail-t { font-weight: 600; font-size: var(--t-small); margin-bottom: 2px; }
+.pgw-detail-z { font-size: 9px; color: var(--text-3); margin-left: 6px; vertical-align: 1px; letter-spacing: 0.06em; }
+.pgw-detail-b { font-size: var(--t-small); color: var(--text-2); line-height: 1.5; }
+@keyframes pgw-dfade { from { opacity: 0; } }
+
+/* ---- Receipt ---- */
+.pgw-receipt { margin-top: 12px; padding: 14px; border: 1px solid var(--in); border-radius: var(--r-2); background: var(--in-wash); max-width: 380px; animation: pgw-dfade 0.2s var(--ease); }
+.pgw-receipt-h { font-weight: 600; font-size: var(--t-small); color: var(--in); margin-bottom: 8px; }
+.pgw-receipt-tbl { margin: 0; }
+
+/* ---- Responsive ---- */
+@media (max-width: 1100px) {
+  .pgw-top { flex-direction: column; }
+  .pgw-co { width: 100%; }
+  .pgw-info-grid { grid-template-columns: 1fr 1fr; }
+  .pgw-arch { display: flex; flex-direction: column; gap: 0; padding: 12px; }
+  .pgw-strip { display: none; }
+  .pgw-zh { padding: 8px 0 4px; }
+  .pgw-zh:not(:first-of-type) { margin-top: 10px; border-top: 1px dashed var(--rule-strong); padding-top: 10px; }
+  .pgw-block { min-height: 42px; }
+  .pgw-hc { width: 2px; height: 18px; margin: 0 auto; flex-direction: column; }
+  .pgw-hc > i { width: 2px; height: 100%; flex: none; }
+  .pgw-hc > i::before, .pgw-hc > i::after { display: none; }
+  .pgw-bend { display: none; }
+}
+html[data-motion="reduce"] .pgw-vc.lit > i::after,
+html[data-motion="reduce"] .pgw-hc.lit > i::after,
+html[data-motion="reduce"] .pgw-block-ind.pulse,
+html[data-motion="reduce"] .pgw-detail,
+html[data-motion="reduce"] .pgw-receipt { animation: none; }

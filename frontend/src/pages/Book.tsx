@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { GatewayView } from '../guard/GatewayView'
 import { GuardView } from '../guard/GuardView'
 import { RunwayChart, RunwayTable } from '../components/RunwayChart'
 import { Amount, ErrorNote, Section, Seg, Skeleton, SkeletonRows, Status } from '../components/ui'
@@ -16,7 +17,7 @@ export function Book({ me }: { me: Me }) {
   const risk = useRisk()
   const location = useLocation()
   const [params, setParams] = useSearchParams()
-  const tab = ['risk', 'ledger'].includes(params.get('tab') ?? '') ? params.get('tab')! : 'position'
+  const tab = ['risk', 'gateway', 'ledger'].includes(params.get('tab') ?? '') ? params.get('tab')! : 'position'
   const [window, setWindow] = useState<30 | 60 | 90>(90)
   const [asTable, setAsTable] = useState(false)
 
@@ -39,10 +40,12 @@ export function Book({ me }: { me: Me }) {
       <div className="tabs" role="tablist">
         <button className="tab" role="tab" aria-selected={tab === 'position'} onClick={() => setParams({})}>Position</button>
         <button className="tab" role="tab" aria-selected={tab === 'risk'} onClick={() => setParams({ tab: 'risk' })}>Risk &amp; Finance</button>
+        <button className="tab" role="tab" aria-selected={tab === 'gateway'} onClick={() => setParams({ tab: 'gateway' })}>Gateway</button>
         <button className="tab" role="tab" aria-selected={tab === 'ledger'} onClick={() => setParams({ tab: 'ledger' })}>Ledger</button>
       </div>
 
       {tab === 'risk' && <GuardView />}
+      {tab === 'gateway' && <GatewayView />}
       {tab === 'ledger' && <Section title={t('book.transactions')}><Transactions /></Section>}
       {tab === 'position' && (
         <>

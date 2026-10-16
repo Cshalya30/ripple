@@ -11,6 +11,19 @@ import { Activity, Checks, Drivers, Flags, Opportunities, SafeLadder, Signals, U
 import type { Guard } from './types'
 
 const LEVEL_WORD = { ok: 'All clear', watch: 'Keep an eye on it', act: 'Act this week' } as const
+const TREND_LABEL = { improving: '↑ Improving', worsening: '↓ Worsening', stable: '→ Stable' } as const
+
+function computeTrend(series: Guard['risk']['series']): 'improving' | 'worsening' | 'stable' {
+  if (series.length < 10) return 'stable'
+  const mid = Math.floor(series.length / 2)
+  const first = series.slice(0, mid).reduce((s, p) => s + p.net_paise, 0) / mid
+  const second = series.slice(mid).reduce((s, p) => s + p.net_paise, 0) / (series.length - mid)
+  const change = second - first
+  const threshold = Math.max(Math.abs(first) * 0.1, 100_000)
+  if (change > threshold) return 'improving'
+  if (change < -threshold) return 'worsening'
+  return 'stable'
+}
 
 export function GuardView() {
   const [yieldText, setYieldText] = useState('6.5')
@@ -64,6 +77,7 @@ export function GuardView() {
 function Hero({ g }: { g: Guard }) {
   const thirty = g.risk.ladder.find((r) => r.days === 30)
   const chance = g.risk.shortfall_chance?.['30']
+  const trend = computeTrend(g.risk.series)
   return (
     <div className={`guard-hero level-${g.verdict.level}`}>
       <div className="guard-verdict">
@@ -78,6 +92,7 @@ function Hero({ g }: { g: Guard }) {
         <StripCell label="Shortfall chance, 30 days" sub={g.risk.n_samples ? `${g.risk.n_samples} simulated futures` : 'calculating'}>{chance === undefined ? '…' : percent(chance)}</StripCell>
         <StripCell label="To review" sub="suspicious entries">{g.finance.flags.open_count}</StripCell>
         <StripCell label="Books check" sub="reconciliation">{g.finance.checks_passed}/{g.finance.checks.length}</StripCell>
+        <StripCell label="Position trend" sub="across forecast horizon"><span className={`trend-${trend}`}>{TREND_LABEL[trend]}</span></StripCell>
       </div>
     </div>
   )
