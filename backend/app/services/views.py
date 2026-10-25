@@ -280,6 +280,7 @@ def why_the_dip(run) -> list[dict[str, Any]]:
             items.append({"kind": "LATE_RECEIPT", "event_id": event["id"], "title": event["party_name"] or event["label"],
                           "label": event["label"], "amount_paise": event["amount_paise"], "day": event["due_day"],
                           "executed_day": event["executed_day"], "party_id": event["party_id"],
+                          "invoice_id": event["record_id"] if event["record_type"] == "invoice" else None,
                           "days_overdue": max(0, -event["due_day"]) if event["due_day"] < 0 else 0})
     for event in evs.values():
         if event["direction"] == "OUT" and event["executed_day"] is not None and day - 7 <= event["executed_day"] < day and event["amount_paise"]:

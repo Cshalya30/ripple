@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS party (
   tags_json TEXT NOT NULL DEFAULT '[]',
   notes_json TEXT NOT NULL DEFAULT '[]',
   since TEXT,
+  do_not_call INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -178,6 +179,8 @@ CREATE TABLE IF NOT EXISTS invoice (
   promised_date TEXT,
   status TEXT NOT NULL DEFAULT 'OPEN',
   paid_date TEXT,
+  disputed INTEGER NOT NULL DEFAULT 0,
+  last_called_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -281,6 +284,31 @@ CREATE TABLE IF NOT EXISTS guard_review (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS voice_call (
+  id TEXT PRIMARY KEY,
+  business_id TEXT NOT NULL,
+  invoice_id TEXT NOT NULL,
+  party_id TEXT NOT NULL,
+  execution_id TEXT UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending_approval',
+  outcome TEXT,
+  promised_date TEXT,
+  partial_amount_paise INTEGER,
+  partial_date TEXT,
+  transcript TEXT,
+  recording_url TEXT,
+  duration_s INTEGER,
+  cost_paise INTEGER,
+  raw_payload_json TEXT,
+  shortfall_before_date TEXT,
+  shortfall_before_paise INTEGER,
+  shortfall_after_date TEXT,
+  shortfall_after_paise INTEGER,
+  approved_by TEXT,
+  approved_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 CREATE INDEX IF NOT EXISTS ix_party_b ON party(business_id);
 CREATE INDEX IF NOT EXISTS ix_invoice_b ON invoice(business_id, party_id);
 CREATE INDEX IF NOT EXISTS ix_txn_b ON txn(business_id, date);
@@ -290,12 +318,14 @@ CREATE INDEX IF NOT EXISTS ix_mv_b ON stock_movement(business_id, item_id);
 CREATE INDEX IF NOT EXISTS ix_sim_b ON sim_run(business_id, kind, created_at);
 CREATE INDEX IF NOT EXISTS ix_risk_b ON risk_run(business_id, snapshot_hash, scenario_hash);
 CREATE INDEX IF NOT EXISTS ix_session_user ON session(user_id);
+CREATE INDEX IF NOT EXISTS ix_voice_call_b ON voice_call(business_id, invoice_id, created_at);
+CREATE INDEX IF NOT EXISTS ix_voice_call_exec ON voice_call(execution_id);
 """
 
 BUSINESS_TABLES = [
     "party", "material", "product", "recipe_line", "stock_movement", "sales_order", "purchase_order",
     "invoice", "txn", "recurring_expense", "scheduled_expense", "credit_facility", "sim_run", "risk_run",
-    "assistant_turn", "guard_review",
+    "assistant_turn", "guard_review", "voice_call",
 ]
 
 _lock = threading.RLock()
@@ -329,6 +359,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
     columns = {row["name"] for row in conn.execute("PRAGMA table_info(sales_order)").fetchall()}
     if "stage_history_json" not in columns:
         conn.execute("ALTER TABLE sales_order ADD COLUMN stage_history_json TEXT NOT NULL DEFAULT '[]'")
+    invoice_columns = {row["name"] for row in conn.execute("PRAGMA table_info(invoice)").fetchall()}
+    if "disputed" not in invoice_columns:
+        conn.execute("ALTER TABLE invoice ADD COLUMN disputed INTEGER NOT NULL DEFAULT 0")
+    if "last_called_at" not in invoice_columns:
+        conn.execute("ALTER TABLE invoice ADD COLUMN last_called_at TEXT")
+    party_columns = {row["name"] for row in conn.execute("PRAGMA table_info(party)").fetchall()}
+    if "do_not_call" not in party_columns:
+        conn.execute("ALTER TABLE party ADD COLUMN do_not_call INTEGER NOT NULL DEFAULT 0")
 
 
 def get_conn() -> sqlite3.Connection:

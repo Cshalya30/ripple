@@ -302,6 +302,42 @@ export interface DipItem {
   lateness_days?: number | null
   days_overdue?: number
   days_before?: number
+  invoice_id?: string | null
+}
+
+export interface VoiceCallPreview {
+  invoice_id: string
+  customer_name: string
+  masked_phone: string | null
+  amount_paise: number
+  days_overdue: number
+  current_shortfall: { date: string; shortfall_paise: number; kind: string } | null
+  blocked_by: string | null
+  opening_hi: string
+  opening_en: string
+  demo_mode: boolean
+}
+
+export interface VoiceCall {
+  id: string
+  invoice_id: string
+  party_id: string
+  execution_id: string | null
+  status: 'pending_approval' | 'queued' | 'in_progress' | 'completed' | 'no_answer' | 'busy' | 'failed'
+  outcome: 'promised' | 'partial' | 'disputed' | 'callback' | 'refused' | 'wrong_person' | 'NA' | null
+  promised_date: string | null
+  partial_amount_paise: number | null
+  partial_date: string | null
+  transcript: string | null
+  recording_url: string | null
+  duration_s: number | null
+  cost_paise: number | null
+  shortfall_before_date: string | null
+  shortfall_before_paise: number | null
+  shortfall_after_date: string | null
+  shortfall_after_paise: number | null
+  created_at: string
+  updated_at: string
 }
 
 export interface PartyRow {

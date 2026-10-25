@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTex
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from .api import app_routes, auth_routes
+from .api import app_routes, auth_routes, voice_routes
 from .intake.builder import SnapshotBuildError
 from .intake.extractor import ExtractionError
 from .simulation.validation import SimulationValidationError
@@ -207,6 +207,8 @@ app.add_middleware(BodyLimit, limit=MAX_BODY_BYTES)
 app.add_middleware(SelectiveGzip)
 app.include_router(auth_routes.router, prefix="/api")
 app.include_router(app_routes.router, prefix="/api")
+app.include_router(voice_routes.router, prefix="/api")
+app.include_router(voice_routes.webhook_router)  # no /api prefix: Bolna cannot send the CSRF header that guards /api/*
 
 
 @app.api_route("/api/{rest:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"], include_in_schema=False)

@@ -82,6 +82,8 @@ interface UIState {
   openComposer: (state: ComposerState | null) => void
   payment: PaymentState | null
   openPayment: (state: PaymentState | null) => void
+  voiceCallInvoiceId: string | null
+  openVoiceCall: (invoiceId: string | null) => void
   drawerPartyId: string | null
   openParty: (id: string | null) => void
   commandOpen: boolean
@@ -127,6 +129,8 @@ export const useUI = create<UIState>((set) => ({
   openComposer: (composer) => set({ composer }),
   payment: null,
   openPayment: (payment) => set({ payment }),
+  voiceCallInvoiceId: null,
+  openVoiceCall: (voiceCallInvoiceId) => set({ voiceCallInvoiceId }),
   drawerPartyId: null,
   openParty: (drawerPartyId) => set({ drawerPartyId }),
   commandOpen: false,
