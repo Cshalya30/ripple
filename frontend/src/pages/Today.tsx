@@ -148,7 +148,12 @@ function DoToday({ items }: { items: any[] }) {
               </>
             )}
           </div>
-          {a.kind === 'CHASE' && <button className="btn btn-secondary" onClick={() => ui.openComposer({ partyId: a.party_id, intent: 'reminder', invoiceId: a.invoice_id })}>{t('common.remind')}</button>}
+          {a.kind === 'CHASE' && (
+            <div className="row" style={{ gap: 6 }}>
+              <button className="btn btn-secondary" onClick={() => ui.openComposer({ partyId: a.party_id, intent: 'reminder', invoiceId: a.invoice_id })}>{t('common.remind')}</button>
+              <button className="btn btn-secondary" onClick={() => ui.openVoiceCall(a.invoice_id)}>Call customer</button>
+            </div>
+          )}
           {a.kind === 'PAY' && <button className="btn btn-secondary" onClick={() => ui.openPayment({ partyId: a.party_id, invoiceId: a.invoice_id, amountPaise: a.amount_paise, direction: 'OUT' })}>{t('common.markPaid')}</button>}
           {a.kind === 'RECEIVE' && <button className="btn btn-secondary" disabled={receive.isPending} onClick={() => receive.mutate(a.po_id, { onSuccess: () => ui.toast('Goods received. Stock and forecast updated.') })}>{t('common.received')}</button>}
           {a.kind === 'STOCK' && <button className="btn btn-secondary" onClick={() => { ui.selectEvent(a.event_id); ui.setEngineView('flow'); ui.setDay(a.from_day); navigate('/app/engine') }}>{t('common.showInEngine')}</button>}

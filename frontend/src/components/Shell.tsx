@@ -19,6 +19,7 @@ import { Composer } from './Composer'
 import { MunimPanel } from './Munim'
 import { PartyDrawer } from './PartyDrawer'
 import { PaymentDialog } from './PaymentDialog'
+import { VoiceCallDialog } from './VoiceCallDialog'
 import { Status, Toasts } from './ui'
 
 const NAV = [
@@ -108,6 +109,7 @@ export function Shell({ children, me }: { children: ReactNode; me: Me }) {
       <CommandPalette me={me} />
       {finance && <Composer />}
       {finance && <PaymentDialog />}
+      {finance && <VoiceCallDialog />}
       {finance && <PartyDrawer me={me} />}
       <Toasts />
     </div>

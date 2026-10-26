@@ -141,6 +141,11 @@ function Why({ items }: { items: DipItem[] }) {
               {item.kind === 'RECENT_OUTFLOW' && <>{item.days_before} days before the dip</>}
             </span>
           </div>
+          {item.kind === 'LATE_RECEIPT' && item.invoice_id && (
+            <button className="btn btn-sm btn-secondary" onClick={(e) => { e.stopPropagation(); ui.openVoiceCall(item.invoice_id!) }}>
+              Call customer
+            </button>
+          )}
           <Amount paise={item.amount_paise} direction={item.kind === 'LATE_RECEIPT' ? 'IN' : 'OUT'} sign={item.kind === 'LATE_RECEIPT'} />
         </li>
       ))}

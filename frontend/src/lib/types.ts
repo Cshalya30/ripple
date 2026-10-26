@@ -332,6 +332,7 @@ export interface VoiceCall {
   recording_url: string | null
   duration_s: number | null
   cost_paise: number | null
+  is_replay: boolean
   shortfall_before_date: string | null
   shortfall_before_paise: number | null
   shortfall_after_date: string | null
