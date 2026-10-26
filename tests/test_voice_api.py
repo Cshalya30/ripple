@@ -12,14 +12,12 @@ from backend.app.core.db import execute, get_conn, query, query_one, update
 from backend.app.voice import bolna_client
 
 
-def _widen_call_window():
-    os.environ["CALL_WINDOW_START"] = "0"
-    os.environ["CALL_WINDOW_END"] = "24"
-
-
 class VoiceApiBase(unittest.TestCase):
     def setUp(self):
-        _widen_call_window()
+        # Widen the call window for this test, then restore it in tearDown: these env vars are process-wide,
+        # and other test modules (test_voice_guardrails.py) depend on the real default when they run later.
+        self._start, self._end = os.environ.get("CALL_WINDOW_START"), os.environ.get("CALL_WINDOW_END")
+        os.environ["CALL_WINDOW_START"], os.environ["CALL_WINDOW_END"] = "0", "24"
         self.c = sandbox()
         email = self.c.get("/api/me").json()["user"]["email"]
         self.business_id = query("SELECT business_id FROM user WHERE email = ?", (email,))[0]["business_id"]
@@ -30,6 +28,13 @@ class VoiceApiBase(unittest.TestCase):
             "invoice_date": "2026-08-01", "due_date": "2026-08-15",
         }).json()["invoice"]
         self.invoice_id = invoice["id"]
+
+    def tearDown(self):
+        for key, value in (("CALL_WINDOW_START", self._start), ("CALL_WINDOW_END", self._end)):
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
 
 class PreviewTests(VoiceApiBase):
