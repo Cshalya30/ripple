@@ -130,6 +130,39 @@ Product decisions made while adding it (the site had repeated itself and had too
 
 Voice: Munim listens and speaks English, Hindi, Tamil, Telugu, Kannada, Malayalam, Punjabi, German, Spanish and Chinese through the browser's own speech services (Chrome, Edge and Safari for listening; any browser with an installed voice for reading aloud). Replies in the languages beyond English, Hindi and Tamil are written by the AI service; the template fallback exists for those three only.
 
+## Ripple Voice (Bolna Buildathon add-on)
+
+A phone call that closes the loop from forecast to fact. On Today and on Book's "Why the dip," an overdue
+customer invoice that is part of the first shortfall gets a **Call customer** button. The owner reviews the
+exact Hindi opening line (with an English translation) and the current shortfall, approves the call, and a
+Bolna voice agent phones the customer, asks politely for a payment date, and never argues, threatens or
+invents a number.
+
+```
+Owner approves  ─▶  Bolna places the call  ─▶  Bolna webhook  ─▶  invoice.promised_date written
+                                                                  ─▶  engine re-runs  ─▶  UI shows shortfall before/after
+```
+
+- **The AI never computes.** Every amount and date in the result card comes from the engine
+  (`services.runs`) or from Bolna's own call extraction, never from an estimate.
+- **Guardrails, all server-side** (`backend/app/voice/guardrails.py`): owner approval required, calls only
+  09:00–19:00 Asia/Kolkata (configurable), one call per invoice per day, blocked if the customer asked not
+  to be called again or the invoice is disputed, blocked if not yet overdue or there is no phone number.
+- **`DEMO_PHONE_OVERRIDE`**: when set, every call dials that number instead of the customer's own (for
+  rehearsals and judging); the UI shows a visible "Demo mode" badge whenever this is active.
+- **Idempotent webhook** at `POST /webhooks/bolna?token=...` (outside `/api`, since Bolna cannot send the
+  CSRF header `/api/*` requires). Bolna POSTs several times per call; repeats are no-ops. A poller
+  (`voice_service.poll_pending`) re-asks Bolna directly if no final webhook arrives within a few minutes,
+  through the exact same processing path.
+- **Setup**: `python -m scripts.bolna_setup` creates/updates the agent and its five dispositions from
+  `bolna/agent_prompt_hi.md` and `bolna/extractions.json`, and prints the `BOLNA_AGENT_ID` to put in `.env`.
+  If the Bolna API shape differs from what the script assumes, `bolna/DASHBOARD_SETUP.md` has the manual
+  steps. `python -m scripts.replay_webhook <payload.json>` replays a saved webhook for offline rehearsal —
+  it is always logged and shown in the UI as a replay, never as a live call.
+- Scope is deliberately narrow: outbound calls to customers only, Hindi only, one invoice per call, no
+  batch/bulk calling. See `PLAN_VOICE.md` for the full design, deviations from the original brief, and
+  open issues still to verify against a real Bolna account.
+
 ## Architecture
 
 > 🌐 **Interactive Blueprint:** Open [docs/architecture.html](docs/architecture.html) in your browser for the full interactive visual topology, engine specifications, and tech stack map.
