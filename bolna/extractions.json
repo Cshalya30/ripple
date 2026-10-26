@@ -1,0 +1,46 @@
+{
+  "_comment": "Dispositions for the Ripple Voice agent, category 'Payment'. Read by scripts/bolna_setup.py and posted to POST /dispositions/bulk. Field names and shapes follow the brief in PLAN_VOICE.md; mark as TODO if the real API disagrees.",
+  "category": "Payment",
+  "dispositions": [
+    {
+      "name": "promised_payment_date",
+      "category": "Payment",
+      "is_objective": false,
+      "is_subjective": true,
+      "subjective_type": "timestamp",
+      "question": "If the customer committed to a full payment date, extract it."
+    },
+    {
+      "name": "call_outcome",
+      "category": "Payment",
+      "is_objective": true,
+      "is_subjective": false,
+      "objective_options": ["promised", "partial", "disputed", "callback", "refused", "wrong_person", "NA"],
+      "question": "What was the outcome of the call?"
+    },
+    {
+      "name": "partial_amount",
+      "category": "Payment",
+      "is_objective": false,
+      "is_subjective": true,
+      "subjective_type": "numeric",
+      "question": "If the customer agreed to pay part, how much in rupees?"
+    },
+    {
+      "name": "partial_payment_date",
+      "category": "Payment",
+      "is_objective": false,
+      "is_subjective": true,
+      "subjective_type": "timestamp",
+      "question": "If the customer agreed to pay part, by what date?"
+    },
+    {
+      "name": "do_not_call",
+      "category": "Payment",
+      "is_objective": true,
+      "is_subjective": false,
+      "objective_options": ["yes", "no"],
+      "question": "Did the customer ask not to be called again?"
+    }
+  ]
+}
