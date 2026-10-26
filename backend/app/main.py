@@ -21,6 +21,7 @@ from .intake.builder import SnapshotBuildError
 from .intake.extractor import ExtractionError
 from .simulation.validation import SimulationValidationError
 from .snapshot.builder import SnapshotBuilderError
+from .voice import service as voice_service
 
 log = logging.getLogger("ripple")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -35,7 +36,9 @@ async def lifespan(_: FastAPI):
     auth_routes.ensure_demo()
     removed = auth_routes.cleanup_sandboxes()
     log.info("startup: demo ready, %s expired sandboxes removed", removed)
+    voice_service.start_background_poller()  # no-op without BOLNA_API_KEY (e.g. in tests)
     yield
+    voice_service.stop_background_poller()
 
 
 class BodyLimit:

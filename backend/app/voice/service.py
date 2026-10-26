@@ -5,7 +5,9 @@ run (`services.runs`) or from Bolna's own extraction output.
 from __future__ import annotations
 
 import json
+import logging
 import os
+import threading
 from datetime import date, datetime, timezone
 from typing import Any
 
@@ -14,6 +16,8 @@ from ..records import repo
 from ..services import runs
 from . import bolna_client
 from .guardrails import GuardrailError, demo_mode, resolve_phone, run_all
+
+log = logging.getLogger("ripple")
 
 TERMINAL_STATUSES = {"completed", "no_answer", "busy", "failed"}
 STATUS_MAP = {"completed": "completed", "no-answer": "no_answer", "no_answer": "no_answer", "busy": "busy", "failed": "failed"}
@@ -129,17 +133,29 @@ def create_call(business_id: str, invoice_id: str, approved_by: str) -> dict[str
     return get_call(business_id, call_id)
 
 
+def _mark_replay(row: dict[str, Any]) -> dict[str, Any]:
+    """scripts/replay_webhook.py stamps replayed payloads `{"replay": true}`; surface that here rather than
+    adding a column, so the UI never shows a rehearsal as a live call result."""
+    try:
+        is_replay = bool(json.loads(row.get("raw_payload_json") or "{}").get("replay"))
+    except (TypeError, ValueError):
+        is_replay = False
+    return {**row, "is_replay": is_replay}
+
+
 def get_call(business_id: str, call_id: str) -> dict[str, Any]:
     row = query_one("SELECT * FROM voice_call WHERE id = ? AND business_id = ?", (call_id, business_id))
     if row is None:
         raise VoiceError("NOT_FOUND", {"id": call_id}, status=404)
-    return row
+    return _mark_replay(row)
 
 
 def list_calls(business_id: str, invoice_id: str | None = None) -> list[dict[str, Any]]:
     if invoice_id:
-        return query("SELECT * FROM voice_call WHERE business_id = ? AND invoice_id = ? ORDER BY created_at DESC", (business_id, invoice_id))
-    return query("SELECT * FROM voice_call WHERE business_id = ? ORDER BY created_at DESC LIMIT 100", (business_id,))
+        rows = query("SELECT * FROM voice_call WHERE business_id = ? AND invoice_id = ? ORDER BY created_at DESC", (business_id, invoice_id))
+    else:
+        rows = query("SELECT * FROM voice_call WHERE business_id = ? ORDER BY created_at DESC LIMIT 100", (business_id,))
+    return [_mark_replay(row) for row in rows]
 
 
 # ---------------------------------------------------------------- webhook + poller, same processing path
@@ -283,3 +299,34 @@ def poll_pending() -> int:
         if process_result(payload) is not None:
             processed += 1
     return processed
+
+
+# ---------------------------------------------------------------- background poller (production only)
+
+_poller_thread: threading.Thread | None = None
+_poller_stop = threading.Event()
+
+
+def _poller_loop(interval_s: int) -> None:
+    while not _poller_stop.wait(interval_s):
+        try:
+            poll_pending()
+        except Exception:
+            log.exception("voice poller failed")
+
+
+def start_background_poller(interval_s: int = 60) -> None:
+    """Started once from main.py's lifespan. Gated on BOLNA_API_KEY being set, so it never starts during
+    tests (which never set it) and never runs uselessly with no account configured."""
+    global _poller_thread
+    if not os.getenv("BOLNA_API_KEY") or _poller_thread is not None:
+        return
+    _poller_stop.clear()
+    _poller_thread = threading.Thread(target=_poller_loop, args=(interval_s,), daemon=True, name="voice-poller")
+    _poller_thread.start()
+
+
+def stop_background_poller() -> None:
+    global _poller_thread
+    _poller_stop.set()
+    _poller_thread = None

@@ -16,7 +16,12 @@ WEBHOOK_SECRET = "test-secret"
 
 
 class VoiceWebhookBase(unittest.TestCase):
+    ENV_KEYS = ("BOLNA_WEBHOOK_SECRET", "BOLNA_IP_ALLOWLIST", "CALL_WINDOW_START", "CALL_WINDOW_END")
+
     def setUp(self):
+        # These are process-wide env vars; save and restore them in tearDown so a later test module
+        # (test_voice_guardrails.py) sees the real defaults rather than whatever this class last set.
+        self._saved_env = {key: os.environ.get(key) for key in self.ENV_KEYS}
         os.environ["BOLNA_WEBHOOK_SECRET"] = WEBHOOK_SECRET
         os.environ["BOLNA_IP_ALLOWLIST"] = "false"
         os.environ["CALL_WINDOW_START"], os.environ["CALL_WINDOW_END"] = "0", "24"
@@ -37,6 +42,13 @@ class VoiceWebhookBase(unittest.TestCase):
             created = self.c.post("/api/voice/calls", json={"invoice_id": self.invoice_id, "approved": True})
         self.assertEqual(created.status_code, 200, created.text)
         self.call_id = created.json()["voice_call"]["id"]
+
+    def tearDown(self):
+        for key, value in self._saved_env.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
 
     def post(self, payload, token=WEBHOOK_SECRET):
         # No X-Ripple header: Bolna cannot send it, and the webhook route must not require it.
@@ -160,6 +172,34 @@ class PollerFallbackTests(VoiceWebhookBase):
         self.assertEqual(response.status_code, 200)
         calls = query("SELECT * FROM voice_call WHERE id = ?", (self.call_id,))
         self.assertEqual(len(calls), 1)
+
+
+class ReplayLabelTests(VoiceWebhookBase):
+    """scripts/replay_webhook.py stamps payloads `{"replay": true}`; the API must surface that so the UI
+    never shows a rehearsal as a live call outcome."""
+
+    def test_live_webhook_is_not_marked_a_replay(self):
+        self.post({"execution_id": self.execution_id, "status": "completed",
+                    "extracted_data": {"Payment": {"call_outcome": {"objective": "promised"}, "promised_payment_date": {"subjective": "2026-12-25"}}}})
+        call = self.c.get(f"/api/voice/calls/{self.call_id}").json()["voice_call"]
+        self.assertFalse(call["is_replay"])
+
+    def test_replayed_webhook_is_marked_a_replay(self):
+        self.post({"execution_id": self.execution_id, "status": "completed", "replay": True,
+                    "extracted_data": {"Payment": {"call_outcome": {"objective": "promised"}, "promised_payment_date": {"subjective": "2026-12-25"}}}})
+        call = self.c.get(f"/api/voice/calls/{self.call_id}").json()["voice_call"]
+        self.assertTrue(call["is_replay"])
+
+
+class BackgroundPollerTests(unittest.TestCase):
+    """The poller thread must never start in tests (no BOLNA_API_KEY) and must be a genuine no-op to call
+    repeatedly, since main.py's lifespan calls start/stop on every test's sandbox() startup/shutdown."""
+
+    def test_never_starts_without_an_api_key(self):
+        self.assertIsNone(os.environ.get("BOLNA_API_KEY"))
+        voice_service.start_background_poller()
+        self.assertIsNone(voice_service._poller_thread)
+        voice_service.stop_background_poller()  # must not raise even though nothing was started
 
 
 if __name__ == "__main__":
